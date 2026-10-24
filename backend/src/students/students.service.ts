@@ -248,11 +248,11 @@ export class StudentsService {
     }
     const records = await tx.student.findMany({ select: { matricule: true } });
     const currentYear = new Date().getFullYear();
-    const maximum = Math.max(0, ...records.map(row => { const match = row.matricule.match(new RegExp(`^OS-${currentYear}-(\\d+)$`)); return match ? Number(match[1]) : 0; }));
+    const maximum = Math.max(0, ...records.map(row => { const match = row.matricule.match(new RegExp(`^OK-${currentYear}-(\\d+)$`)); return match ? Number(match[1]) : 0; }));
     const counter = await tx.registrationCounter.findUnique({ where: { year: currentYear } });
     const nextNumber = Math.max(maximum, counter?.value || 0) + 1;
     await tx.registrationCounter.upsert({ where: { year: currentYear }, update: { value: nextNumber }, create: { year: currentYear, value: nextNumber } });
-    const matricule = `OS-${currentYear}-${String(nextNumber).padStart(4, '0')}`;
+    const matricule = `OK-${currentYear}-${String(nextNumber).padStart(4, '0')}`;
 
     let parentId = data.parentId;
 

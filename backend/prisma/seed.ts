@@ -23,7 +23,7 @@ async function main() {
   const adminUser = await prisma.user.create({
     data: {
       username: 'admin',
-      email: 'admin@oumou-salamat.sn',
+      email: 'admin@oumounakhadidja-academie.com',
       firstName: 'Mamadou',
       lastName: 'Diallo',
       role: Role.ADMIN,
@@ -34,7 +34,7 @@ async function main() {
   const comptableUser = await prisma.user.create({
     data: {
       username: 'comptable',
-      email: 'comptable@oumou-salamat.sn',
+      email: 'comptable@oumounakhadidja-academie.com',
       firstName: 'Fatou',
       lastName: 'Ndiaye',
       role: Role.COMPTABLE,
@@ -45,7 +45,7 @@ async function main() {
   const teacher1 = await prisma.user.create({
     data: {
       username: 'enseignant',
-      email: 'enseignant@oumou-salamat.sn',
+      email: 'enseignant@oumounakhadidja-academie.com',
       firstName: 'Ibrahima',
       lastName: 'Sow',
       role: Role.ENSEIGNANT,
@@ -56,7 +56,7 @@ async function main() {
   const teacher2 = await prisma.user.create({
     data: {
       username: 'mariama',
-      email: 'mariama.ba@oumou-salamat.sn',
+      email: 'mariama.ba@oumounakhadidja-academie.com',
       firstName: 'Mariama',
       lastName: 'Bâ',
       role: Role.ENSEIGNANT,
@@ -68,20 +68,20 @@ async function main() {
   const currentYear = await prisma.academicYear.create({
     data: {
       name: '2026-2027',
-      startDate: new Date('2026-10-01'),
-      endDate: new Date('2027-06-30'),
+      startDate: new Date('2026-09-01'),
+      endDate: new Date('2027-07-31'),
       isCurrent: true,
     },
   });
 
   // 4. Classrooms
   const classesData = [
-    { name: 'CI (Cours d\'Initiation)', level: 'CI', capacity: 25, monthlyTuition: 25000, registrationFee: 50000, teacherId: teacher1.id },
-    { name: 'CP (Cours Préparatoire)', level: 'CP', capacity: 30, monthlyTuition: 25000, registrationFee: 50000, teacherId: teacher2.id },
-    { name: 'CE1 (Cours Élémentaire 1)', level: 'CE1', capacity: 30, monthlyTuition: 30000, registrationFee: 55000, teacherId: teacher1.id },
-    { name: 'CE2 (Cours Élémentaire 2)', level: 'CE2', capacity: 30, monthlyTuition: 30000, registrationFee: 55000, teacherId: teacher2.id },
-    { name: 'CM1 (Cours Moyen 1)', level: 'CM1', capacity: 30, monthlyTuition: 35000, registrationFee: 60000, teacherId: teacher1.id },
-    { name: 'CM2 (Cours Moyen 2)', level: 'CM2', capacity: 30, monthlyTuition: 35000, registrationFee: 60000, teacherId: teacher2.id },
+    { name: 'Petite section', level: 'PS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, teacherId: teacher1.id },
+    { name: 'Moyenne section', level: 'MS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, teacherId: teacher2.id },
+    { name: 'Grande section', level: 'GS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, teacherId: teacher1.id },
+    { name: 'Internat Tahfiz', level: 'TAHFIZ', program: 'DAARA_BOARDING', capacity: 30, monthlyTuition: 91000, registrationFee: 160000, teacherId: teacher2.id },
+    { name: 'Internat franco-arabe CI', level: 'CI', program: 'FRANCO_ARAB_BOARDING', capacity: 25, monthlyTuition: 91000, registrationFee: 160000, teacherId: teacher1.id },
+    { name: 'Internat franco-arabe CP', level: 'CP', program: 'FRANCO_ARAB_BOARDING', capacity: 25, monthlyTuition: 91000, registrationFee: 160000, teacherId: teacher2.id },
   ];
 
   const createdClasses: Record<string, any> = {};
@@ -129,14 +129,9 @@ async function main() {
 
   // 7. Students (Élèves)
   const studentsData = [
-    { matricule: 'OS-2026-0001', firstName: 'Seydina', lastName: 'Diop', gender: Gender.MALE, dateOfBirth: new Date('2020-04-12'), placeOfBirth: 'Dakar', parentId: createdParents[0].id, level: 'CI' },
-    { matricule: 'OS-2026-0002', firstName: 'Khadija', lastName: 'Diop', gender: Gender.FEMALE, dateOfBirth: new Date('2018-09-20'), placeOfBirth: 'Dakar', parentId: createdParents[0].id, level: 'CE1' },
-    { matricule: 'OS-2026-0003', firstName: 'Omar', lastName: 'Fall', gender: Gender.MALE, dateOfBirth: new Date('2019-02-15'), placeOfBirth: 'Saint-Louis', parentId: createdParents[1].id, level: 'CP' },
-    { matricule: 'OS-2026-0004', firstName: 'Fatoumata', lastName: 'Fall', gender: Gender.FEMALE, dateOfBirth: new Date('2017-11-05'), placeOfBirth: 'Dakar', parentId: createdParents[1].id, level: 'CE2' },
-    { matricule: 'OS-2026-0005', firstName: 'Babacar', lastName: 'Sarr', gender: Gender.MALE, dateOfBirth: new Date('2019-06-30'), placeOfBirth: 'Thiès', parentId: createdParents[2].id, level: 'CP' },
-    { matricule: 'OS-2026-0006', firstName: 'Rokhaya', lastName: 'Gueye', gender: Gender.FEMALE, dateOfBirth: new Date('2016-08-14'), placeOfBirth: 'Dakar', parentId: createdParents[3].id, level: 'CM1' },
-    { matricule: 'OS-2026-0007', firstName: 'Mouhamed', lastName: 'Gueye', gender: Gender.MALE, dateOfBirth: new Date('2015-03-25'), placeOfBirth: 'Dakar', parentId: createdParents[3].id, level: 'CM2' },
-    { matricule: 'OS-2026-0008', firstName: 'Ndeye Coumba', lastName: 'Kane', gender: Gender.FEMALE, dateOfBirth: new Date('2018-12-10'), placeOfBirth: 'Dakar', parentId: createdParents[4].id, level: 'CE1' },
+    { matricule: 'OK-2026-0001', firstName: 'Seydina', lastName: 'Diop', gender: Gender.MALE, dateOfBirth: new Date('2022-04-12'), placeOfBirth: 'Dakar', parentId: createdParents[0].id, level: 'PS' },
+    { matricule: 'OK-2026-0002', firstName: 'Khadija', lastName: 'Diop', gender: Gender.FEMALE, dateOfBirth: new Date('2021-09-20'), placeOfBirth: 'Dakar', parentId: createdParents[0].id, level: 'MS' },
+    { matricule: 'OK-2026-0003', firstName: 'Omar', lastName: 'Fall', gender: Gender.MALE, dateOfBirth: new Date('2019-02-15'), placeOfBirth: 'Saint-Louis', parentId: createdParents[1].id, level: 'TAHFIZ' },
   ];
 
   const createdStudents: any[] = [];

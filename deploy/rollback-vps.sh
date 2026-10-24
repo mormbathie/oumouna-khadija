@@ -45,8 +45,8 @@ PY
 )
   [[ $(docker inspect -f '{{.Image}}' "$id") == "$expected" ]] || exit 1
 done
-curl --fail --silent --show-error --retry 5 --retry-delay 2 https://assakina-school.com/api/health >/dev/null
-curl --fail --silent --show-error https://assakina-school.com/ >/dev/null
+curl --fail --silent --show-error --retry 5 --retry-delay 2 https://gestion.oumounakhadidja-academie.com/api/health >/dev/null
+curl --fail --silent --show-error https://gestion.oumounakhadidja-academie.com/ >/dev/null
 printf 'APP_VERSION=%s\n' "$APP_VERSION" > deploy/production.env
 printf 'Rollback verified: %s. Databases and documents preserved.\n' "$APP_VERSION"
 if [[ -f /opt/assakina-observability/agent.compose.yaml ]]; then

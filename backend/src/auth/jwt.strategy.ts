@@ -18,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const keycloakInternalUrl =
       configService.get<string>('KEYCLOAK_INTERNAL_URL') || keycloakPublicUrl;
 
-    const realm = configService.get<string>('KEYCLOAK_REALM') || 'oumou-salamat';
+    const realm = configService.get<string>('KEYCLOAK_REALM') || 'oumouna-khadija';
 
     super({
       secretOrKeyProvider: passportJwtSecret({

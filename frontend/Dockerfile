@@ -13,8 +13,8 @@ COPY . .
 # Adresses publiques accessibles depuis le navigateur, définies au build
 ARG VITE_API_URL=/api
 ARG VITE_KEYCLOAK_URL=http://localhost:8080
-ARG VITE_KEYCLOAK_REALM=oumou-salamat
-ARG VITE_KEYCLOAK_CLIENT_ID=oumou-salamat-app
+ARG VITE_KEYCLOAK_REALM=oumouna-khadija
+ARG VITE_KEYCLOAK_CLIENT_ID=oumouna-khadija-app
 
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL

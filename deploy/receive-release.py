@@ -16,15 +16,15 @@ def main():
     if os.geteuid() != 0 or len(sys.argv) != 2 or not re.fullmatch(r'[0-9a-f]{40}', sys.argv[1]):
         raise SystemExit('A full release SHA is required.')
     sha = sys.argv[1]
-    repository = 'mormbathie/Oumou-Salamata-2027'
-    request = urllib.request.Request(f'https://api.github.com/repos/{repository}/git/ref/heads/main', headers={'User-Agent': 'As-Sakina-deployer'})
+    repository = 'mormbathie/oumouna-khadija'
+    request = urllib.request.Request(f'https://api.github.com/repos/{repository}/git/ref/heads/main', headers={'User-Agent': 'Oumouna-Khadija-deployer'})
     with urllib.request.urlopen(request, timeout=30) as response:
         head = json.load(response)['object']['sha']
     if sha != head:
         raise SystemExit('This release is not the current main commit; deployment stopped.')
-    root = Path('/opt/oumou-salamat')
-    subprocess.run(['systemctl', 'start', 'oumou-salamat-backup.service'], check=True)
-    with tempfile.TemporaryDirectory(prefix='assakina-release-') as directory:
+    root = Path('/opt/oumouna-khadija')
+    subprocess.run(['systemctl', 'start', 'oumouna-khadija-backup.service'], check=True)
+    with tempfile.TemporaryDirectory(prefix='oumouna-khadija-release-') as directory:
         archive = Path(directory) / 'release.tar.gz'
         with urllib.request.urlopen(f'https://codeload.github.com/{repository}/tar.gz/{sha}', timeout=90) as response, archive.open('wb') as handle:
             total = 0

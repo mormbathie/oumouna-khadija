@@ -15,8 +15,8 @@ import secrets
 import sys
 
 
-REALM_NAME = "oumou-salamat"
-CLIENT_ID = "oumou-salamat-app"
+REALM_NAME = "oumouna-khadija"
+CLIENT_ID = "oumouna-khadija-app"
 APP_ADMIN = "admin"
 KEYCLOAK_ADMIN = "kcadmin"
 
@@ -59,7 +59,7 @@ def production_realm(template, app_host, auth_host, password):
     realm = {
         "realm": REALM_NAME,
         "enabled": True,
-        "displayName": template.get("displayName", "École As Sakina"),
+        "displayName": template.get("displayName", "Institut Oumouna Khadija"),
         "sslRequired": "external",
         "registrationAllowed": False,
         "internationalizationEnabled": True,
@@ -81,7 +81,7 @@ def production_realm(template, app_host, auth_host, password):
     realm["clients"] = [
         {
             "clientId": CLIENT_ID,
-            "name": client_template.get("name", "As Sakina"),
+            "name": client_template.get("name", "Institut Oumouna Khadija"),
             "enabled": True,
             "clientAuthenticatorType": "client-secret",
             "publicClient": True,
@@ -105,7 +105,7 @@ def production_realm(template, app_host, auth_host, password):
             "email": "admin@localhost.invalid",
             "emailVerified": False,
             "firstName": "Administrateur",
-            "lastName": "As Sakina",
+            "lastName": "Institut Oumouna Khadija",
             "requiredActions": [],
             "credentials": [
                 {"type": "password", "value": password, "temporary": False}
@@ -121,7 +121,7 @@ def environment(app_host, auth_host, passwords):
     values = {
         "APP_HOST": app_host,
         "AUTH_HOST": auth_host,
-        "POSTGRES_VOLUME_NAME": "oumou_salamat_vps_postgres_data",
+        "POSTGRES_VOLUME_NAME": "oumouna_khadija_vps_postgres_data",
         "POSTGRES_BIND_ADDRESS": "127.0.0.1",
         "POSTGRES_PORT": "5434",
         "KEYCLOAK_BIND_ADDRESS": "127.0.0.1",
@@ -132,10 +132,10 @@ def environment(app_host, auth_host, passwords):
         "FRONTEND_PORT": "5173",
         "POSTGRES_USER": "postgres",
         "POSTGRES_PASSWORD": postgres_password,
-        "POSTGRES_DB": "oumou_salamat_db",
+        "POSTGRES_DB": "oumouna_khadija_db",
         "DATABASE_URL": (
             f"postgresql://postgres:{postgres_password}"
-            "@postgres:5432/oumou_salamat_db?schema=public"
+            "@postgres:5432/oumouna_khadija_db?schema=public"
         ),
         "KEYCLOAK_DB_USER": "keycloak",
         "KEYCLOAK_DB_PASSWORD": keycloak_db_password,

@@ -460,7 +460,7 @@ spec:
       path: /networks/school
       value:
         external: true
-        name: oumou-salamat_oumou_net
+        name: oumouna-khadija_oumou_net
     - op: add
       path: /services/ingester/networks/school
       value:

@@ -157,8 +157,8 @@ export class FinanceControlService {
     const email = invoice.student.parent?.email;
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new BadRequestException('Le parent doit avoir une adresse e-mail valide.');
     const name = `${invoice.student.firstName} ${invoice.student.lastName}`;
-    const subject = `École As Sakina — rappel ${invoice.invoiceNumber}`;
-    const text = `Bonjour,\n\nUn solde de ${invoice.balance.toLocaleString('fr-FR')} F CFA reste à régler pour ${name}, facture ${invoice.invoiceNumber} (${invoice.title}), échéance ${invoice.dueDate.toISOString().slice(0,10)}.\n\nSi vous avez déjà effectué ce paiement, contactez la comptabilité.\n\nGroupe scolaire Abou Oubayda As Sakina\nhttps://assakina-school.com`;
+    const subject = `Institut Oumouna Khadija — rappel ${invoice.invoiceNumber}`;
+    const text = `Bonjour,\n\nUn solde de ${invoice.balance.toLocaleString('fr-FR')} F CFA reste à régler pour ${name}, facture ${invoice.invoiceNumber} (${invoice.title}), échéance ${invoice.dueDate.toISOString().slice(0,10)}.\n\nSi vous avez déjà effectué ce paiement, contactez la comptabilité.\n\nInstitut Oumouna Khadija\nhttps://oumounakhadidja-academie.com`;
     const approvalToken = createHash('sha256').update(JSON.stringify([email, subject, text])).digest('hex');
     return { email, subject, text, approvalToken, balance: invoice.balance, installments: await this.installments(id) };
   }

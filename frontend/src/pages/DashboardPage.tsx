@@ -41,7 +41,7 @@ export const DashboardPage: React.FC = () => {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-600"></div>
       </div>
     );
   }
@@ -55,15 +55,15 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-slate-900 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-700 via-stone-700 to-slate-900 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center space-x-2 bg-emerald-500/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-emerald-200 mb-3 hidden md:inline-flex border border-emerald-400/30">
+          <div className="inline-flex items-center space-x-2 bg-amber-500/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-amber-200 mb-3 hidden md:inline-flex border border-amber-400/30">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>{t("Integrated and Secure School Management")}</span>
           </div>
           <h2 className="text-xl md:text-2xl font-bold tracking-tight">
-            {t("Welcome to the As Sakina School portal")}</h2>
-          <p className="hidden md:block text-emerald-100 text-sm mt-1">
+            Bienvenue sur le portail de l’Institut Oumouna Khadija</h2>
+          <p className="hidden md:block text-amber-100 text-sm mt-1">
             {t("Current school year:")}<span className="font-semibold text-white">{data?.academicYear}</span>{t(". Track enrollment, billing, grades, and attendance in real time.")}</p>
         </div>
       </div>
@@ -76,7 +76,7 @@ export const DashboardPage: React.FC = () => {
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t("Total Students")}</span>
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <Users className="w-5 h-5" />
             </div>
           </div>
@@ -94,7 +94,7 @@ export const DashboardPage: React.FC = () => {
         <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-xs hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t("Actual receipts")}</span>
-            <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-stone-50 text-stone-600 flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
             </div>
           </div>
@@ -102,7 +102,7 @@ export const DashboardPage: React.FC = () => {
             <div className="text-3xl font-bold text-slate-800">
               {(data?.collection?.total || 0).toLocaleString(locale())} <span className="text-sm font-normal text-slate-400">{t("FCFA")}</span>
             </div>
-            <div className="flex items-center space-x-1.5 text-xs text-emerald-600 font-medium mt-1">
+            <div className="flex items-center space-x-1.5 text-xs text-amber-600 font-medium mt-1">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>{t("Taux de recouvrement :")}{finances.recoveryRate || 0}%</span>
             </div>
@@ -137,7 +137,7 @@ export const DashboardPage: React.FC = () => {
           <div className="mt-3">
             <div className="text-3xl font-bold text-slate-800">{attendance.rate || 96}%</div>
             <div className="flex items-center space-x-1 text-xs text-slate-500 mt-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
               <span>{t("Today's attendance recorded")}</span>
             </div>
           </div>
@@ -163,12 +163,12 @@ export const DashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="text-slate-700 font-semibold">{c.name}</span>
                   <span className="text-slate-500">
-                    <span className="text-emerald-700 font-bold">{c.studentsCount}</span> / {c.capacity} {t("students (")}{c.occupancyRate}%)
+                    <span className="text-amber-700 font-bold">{c.studentsCount}</span> / {c.capacity} {t("students (")}{c.occupancyRate}%)
                   </span>
                 </div>
                 <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                   <div
-                    className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                    className="bg-amber-600 h-full rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(c.occupancyRate, 100)}%` }}
                   ></div>
                 </div>
@@ -191,7 +191,7 @@ export const DashboardPage: React.FC = () => {
               recentPayments.map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
                       {p.paymentMethod?.[0] || 'C'}
                     </div>
                     <div>
@@ -202,7 +202,7 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-emerald-600">+{p.amount.toLocaleString()} {t("F")}</p>
+                    <p className="text-xs font-bold text-amber-600">+{p.amount.toLocaleString()} {t("F")}</p>
                     <p className="text-[10px] text-slate-400">
                       {new Date(p.paymentDate).toLocaleDateString(locale())}
                     </p>

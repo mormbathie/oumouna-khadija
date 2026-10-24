@@ -1,5 +1,5 @@
 [Unit]
-Description=As Sakina daily encrypted offsite backup
+Description=Institut Oumouna Khadija daily encrypted offsite backup
 [Timer]
 OnCalendar=*-*-* 03:00:00 Africa/Tunis
 RandomizedDelaySec=600

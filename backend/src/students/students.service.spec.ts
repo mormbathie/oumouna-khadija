@@ -12,22 +12,22 @@ describe('Registration adjustments preserve recorded receipts', () => {
     const service = new StudentsService(prisma,{} as any);jest.spyOn(service,'findOne').mockResolvedValue({} as any);
     return {service,invoice,payments,current,tx};
   }
-  it('adds supplies to an historic custom amount without rewriting 80,000 already collected',async()=>{
+  it('adds transport to an historic custom amount without rewriting 80,000 already collected',async()=>{
     const {service,invoice,payments}=setup();const original=JSON.stringify(payments);
-    await service.update('child',{supplies:true},actor);
-    expect(invoice).toMatchObject({amount:137500,paidAmount:80000,balance:57500,status:'PARTIAL'});
+    await service.update('child',{transportZone:1},actor);
+    expect(invoice).toMatchObject({amount:112000,paidAmount:80000,balance:32000,status:'PARTIAL'});
     expect(JSON.stringify(payments)).toBe(original);
-    await service.update('child',{supplies:true},actor);
-    expect(invoice.amount).toBe(137500);
+    await service.update('child',{transportZone:1},actor);
+    expect(invoice.amount).toBe(112000);
   });
   it('does not reprice an unrelated profile edit',async()=>{
     const {service,tx}=setup();await service.update('child',{firstName:'Updated'},actor);expect(tx.invoice.update).not.toHaveBeenCalled();
   });
   it('rejects reducing a due amount below the amount already received',async()=>{
-    const {service,current,tx}=setup(77500,77500);current.supplies=true;const invoice=(await tx.invoice.findMany())[0];invoice.registrationOptions=JSON.stringify({supplies:true});
-    await expect(service.update('child',{supplies:false},actor)).rejects.toThrow('régularisation');expect(tx.student.update).not.toHaveBeenCalled();
+    const {service,current,tx}=setup(112000,112000);current.transportZone=1;const invoice=(await tx.invoice.findMany())[0];invoice.registrationOptions=JSON.stringify({transportZone:1});
+    await expect(service.update('child',{transportZone:null},actor)).rejects.toThrow('régularisation');expect(tx.student.update).not.toHaveBeenCalled();
   });
   it('refuses an ambiguous dossier with two registration invoices',async()=>{
-    const {service,tx}=setup();tx.invoice.findMany.mockResolvedValue([{id:'one'},{id:'two'}]);await expect(service.update('child',{supplies:true},actor)).rejects.toThrow('Plusieurs');expect(tx.student.update).not.toHaveBeenCalled();
+    const {service,tx}=setup();tx.invoice.findMany.mockResolvedValue([{id:'one'},{id:'two'}]);await expect(service.update('child',{transportZone:1},actor)).rejects.toThrow('Plusieurs');expect(tx.student.update).not.toHaveBeenCalled();
   });
 });

@@ -10,7 +10,7 @@ def snapshot():
         field='teacherId' if table=='StaffQrCard' else 'id'
         excluded=''.join(" - '"+key+"'" for key in NEW_COLUMNS)
         sql=f'''SELECT "{field}",md5((to_jsonb(t){excluded})::text) FROM "{table}" t ORDER BY "{field}";'''
-        cmd=['docker','exec','oumou_salamat_postgres','sh','-c','exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"','sh',sql]
+        cmd=['docker','exec','oumouna_khadija_postgres','sh','-c','exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"','sh',sql]
         out=subprocess.check_output(cmd,text=True).strip().splitlines()
         result[table]=dict(row.split('|',1) for row in out)
     return result

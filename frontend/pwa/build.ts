@@ -4,7 +4,7 @@ import type { Plugin } from 'vite';
 
 export function schoolPwa(): Plugin {
   return {
-    name: 'assakina-pwa',
+    name: 'oumouna-khadija-pwa',
     apply: 'build',
     generateBundle(_, bundle) {
       const offline = readFileSync(new URL('../public/offline.html', import.meta.url), 'utf8');

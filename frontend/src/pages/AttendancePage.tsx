@@ -118,12 +118,12 @@ export const AttendancePage: React.FC = () => {
         <div className="flex items-center space-x-3">
           <button
             onClick={handleMarkAllPresent}
-            className="px-3.5 py-2 border border-emerald-300 bg-emerald-50 text-emerald-800 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition"
+            className="px-3.5 py-2 border border-amber-300 bg-amber-50 text-amber-800 rounded-xl text-xs font-semibold hover:bg-amber-100 transition"
           >
             {t("Tout marquer Present")}</button>
           <button
             onClick={handleSaveAttendance}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition"
+            className="inline-flex items-center space-x-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition"
           >
             <Save className="w-3.5 h-3.5" />
             <span>{t("Save attendance")}</span>
@@ -132,8 +132,8 @@ export const AttendancePage: React.FC = () => {
       </div>
 
       {savedSuccess && (
-        <div className="bg-emerald-100 border border-emerald-300 text-emerald-800 p-3 rounded-xl text-xs flex items-center space-x-2">
-          <CheckCircle className="w-4 h-4 text-emerald-600" />
+        <div className="bg-amber-100 border border-amber-300 text-amber-800 p-3 rounded-xl text-xs flex items-center space-x-2">
+          <CheckCircle className="w-4 h-4 text-amber-600" />
           <span>{t("Attendance saved successfully.")}</span>
         </div>
       )}
@@ -147,7 +147,7 @@ export const AttendancePage: React.FC = () => {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-emerald-500"
+              className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-amber-500"
             >
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -163,7 +163,7 @@ export const AttendancePage: React.FC = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-emerald-500"
+              className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-amber-500"
             />
           </div>
         </div>
@@ -175,9 +175,9 @@ export const AttendancePage: React.FC = () => {
             <span className="text-2xl font-black text-slate-800">{total}</span>
           </div>
 
-          <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-            <span className="text-[10px] uppercase font-bold text-emerald-600 block">{t("Present")}</span>
-            <span className="text-2xl font-black text-emerald-700">{presentCount}</span>
+          <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
+            <span className="text-[10px] uppercase font-bold text-amber-600 block">{t("Present")}</span>
+            <span className="text-2xl font-black text-amber-700">{presentCount}</span>
           </div>
 
           <div className="bg-rose-50 p-3 rounded-lg border border-rose-100">
@@ -242,7 +242,7 @@ export const AttendancePage: React.FC = () => {
                           onClick={() => handleStatusChange(r.studentId, 'PRESENT')}
                           className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
                             r.status === 'PRESENT'
-                              ? 'bg-emerald-600 text-white shadow-xs'
+                              ? 'bg-amber-600 text-white shadow-xs'
                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                           }`}
                         >
@@ -285,7 +285,7 @@ export const AttendancePage: React.FC = () => {
                         placeholder={r.status === 'PRESENT' ? 'R.A.S.' : 'Motif d\'absence...'}
                         value={r.reason || ''}
                         onChange={(e) => handleReasonChange(r.studentId, e.target.value)}
-                        className="w-full text-xs p-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 bg-white"
+                        className="w-full text-xs p-1.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-amber-500 bg-white"
                       />
                     </td>
                     <td className="px-4 py-3.5 text-center">
@@ -294,7 +294,7 @@ export const AttendancePage: React.FC = () => {
                         checked={r.justified || false}
                         onChange={(e) => handleJustifiedChange(r.studentId, e.target.checked)}
                         disabled={r.status === 'PRESENT'}
-                        className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
+                        className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
                       />
                     </td>
                   </tr>

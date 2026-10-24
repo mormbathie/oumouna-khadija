@@ -268,10 +268,10 @@ export const FinancesPage: React.FC = () => {
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
             {t("Encaissements nets")}</span>
-          <div className="text-2xl font-bold text-emerald-600">
-            {(stats?.totalCollected || 0).toLocaleString()} <span className="text-xs text-emerald-700/60">{t("FCFA")}</span>
+          <div className="text-2xl font-bold text-amber-600">
+            {(stats?.totalCollected || 0).toLocaleString()} <span className="text-xs text-amber-700/60">{t("FCFA")}</span>
           </div>
-          <span className="text-[11px] text-emerald-600 font-medium">
+          <span className="text-[11px] text-amber-600 font-medium">
             {t("Taux de recouvrement :")}{stats?.recoveryRate || 0}%
           </span>
         </div>
@@ -289,7 +289,7 @@ export const FinancesPage: React.FC = () => {
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
             {t("Invoice Status")}</span>
           <div className="flex items-center space-x-2 text-xs mt-2">
-            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+            <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
               {stats?.byStatus?.PAID || 0} {t("Paids")}</span>
             <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">
               {stats?.byStatus?.PARTIAL || 0} {t("Partielles")}</span>
@@ -308,7 +308,7 @@ export const FinancesPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500"
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500"
             >
               <option value="">{t("All statuses")}</option>
               <option value="PAID">{t("Paid")}</option>
@@ -322,7 +322,7 @@ export const FinancesPage: React.FC = () => {
             <select
               value={classFilter}
               onChange={(e) => setClassFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500"
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500"
             >
               <option value="">{t("All classes")}</option>
               {classes.map((c) => (
@@ -344,17 +344,17 @@ export const FinancesPage: React.FC = () => {
           {t('Sélectionner toutes les factures impayées affichées')}
         </label>
         <span>{t('{0} factures sélectionnées · {1} FCFA', [chosenInvoices.length, chosenInvoices.reduce((sum, inv) => sum + inv.balance, 0).toLocaleString(locale())])}</span>
-        <button disabled={loading || !chosenInvoices.length} onClick={openSettlement} className="bg-emerald-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">{t('Régler la sélection')}</button>
+        <button disabled={loading || !chosenInvoices.length} onClick={openSettlement} className="bg-amber-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">{t('Régler la sélection')}</button>
       </div>
 
       <section aria-label={t('Factures sur mobile')} className="space-y-3 md:hidden">
         {loading ? <p className="py-8 text-center text-slate-500">{t('Loading invoices…')}</p> : invoices.length === 0 ? <p className="py-8 text-center text-slate-500">{t('No invoices found.')}</p> : invoices.map(inv => {
           const payment = inv.payments?.find((p: any) => !p.cancelledAt);
-          return <article key={inv.id} className={`rounded-2xl border bg-white p-4 shadow-xs ${selectedIds.includes(inv.id) ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-slate-200'}`}>
-            <div className="flex items-start justify-between gap-3"><label className="flex min-w-0 items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-emerald-600" aria-label={t('Sélectionner la facture {0}', [inv.invoiceNumber])} disabled={!!inv.cancelledAt || inv.balance <= 0} checked={inv.balance > 0 && selectedIds.includes(inv.id)} onChange={e => setSelectedIds(ids => e.target.checked ? [...ids, inv.id] : ids.filter(id => id !== inv.id))} /><span className="min-w-0"><strong className="block break-words text-sm text-slate-900">{inv.student?.firstName} {inv.student?.lastName}</strong><span className="text-xs text-slate-500">{inv.student?.enrollments?.[0]?.classroom?.name || '—'}</span></span></label><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${inv.status === 'PAID' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>{t(inv.status === 'PAID' ? 'Paid' : inv.status === 'PARTIAL' ? 'Partially paid' : 'Unpaid')}</span></div>
+          return <article key={inv.id} className={`rounded-2xl border bg-white p-4 shadow-xs ${selectedIds.includes(inv.id) ? 'border-amber-500 ring-1 ring-amber-500' : 'border-slate-200'}`}>
+            <div className="flex items-start justify-between gap-3"><label className="flex min-w-0 items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-amber-600" aria-label={t('Sélectionner la facture {0}', [inv.invoiceNumber])} disabled={!!inv.cancelledAt || inv.balance <= 0} checked={inv.balance > 0 && selectedIds.includes(inv.id)} onChange={e => setSelectedIds(ids => e.target.checked ? [...ids, inv.id] : ids.filter(id => id !== inv.id))} /><span className="min-w-0"><strong className="block break-words text-sm text-slate-900">{inv.student?.firstName} {inv.student?.lastName}</strong><span className="text-xs text-slate-500">{inv.student?.enrollments?.[0]?.classroom?.name || '—'}</span></span></label><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${inv.status === 'PAID' ? 'bg-amber-50 text-amber-800' : 'bg-amber-50 text-amber-800'}`}>{t(inv.status === 'PAID' ? 'Paid' : inv.status === 'PARTIAL' ? 'Partially paid' : 'Unpaid')}</span></div>
             <p className="mt-3 text-sm text-slate-700">{inv.title}</p><p className="mt-1 break-all text-[10px] text-slate-400">{inv.invoiceNumber} · {new Date(inv.createdAt).toLocaleDateString(locale())}</p>
-            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs"><div><span className="block text-slate-500">{t('Invoice amount')}</span><strong className="text-slate-800">{inv.amount.toLocaleString(locale())} FCFA</strong></div><div><span className="block text-slate-500">{t('Total paid')}</span><strong className="text-emerald-700">{inv.paidAmount.toLocaleString(locale())} FCFA</strong></div></div>
-            <div className="mt-3 flex items-center justify-between gap-2"><div><span className="block text-xs text-slate-500">{t('Balance due')}</span><strong className="text-lg text-slate-900">{inv.balance.toLocaleString(locale())} <span className="text-xs font-medium">FCFA</span></strong></div>{inv.balance > 0 ? <button onClick={() => handleOpenPayment(inv)} className="flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white"><CreditCard className="h-4 w-4" />{t('Pay')}</button> : payment && <button onClick={() => handleViewReceipt(inv, payment)} className="flex min-h-11 items-center gap-2 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-800"><Receipt className="h-4 w-4" />{t('Receipt')}</button>}</div>
+            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs"><div><span className="block text-slate-500">{t('Invoice amount')}</span><strong className="text-slate-800">{inv.amount.toLocaleString(locale())} FCFA</strong></div><div><span className="block text-slate-500">{t('Total paid')}</span><strong className="text-amber-700">{inv.paidAmount.toLocaleString(locale())} FCFA</strong></div></div>
+            <div className="mt-3 flex items-center justify-between gap-2"><div><span className="block text-xs text-slate-500">{t('Balance due')}</span><strong className="text-lg text-slate-900">{inv.balance.toLocaleString(locale())} <span className="text-xs font-medium">FCFA</span></strong></div>{inv.balance > 0 ? <button onClick={() => handleOpenPayment(inv)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white"><CreditCard className="h-4 w-4" />{t('Pay')}</button> : payment && <button onClick={() => handleViewReceipt(inv, payment)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-50 px-4 text-sm font-semibold text-amber-800"><Receipt className="h-4 w-4" />{t('Receipt')}</button>}</div>
             <details className="mt-3 border-t border-slate-100 pt-1"><summary className="flex min-h-11 cursor-pointer items-center text-xs font-semibold text-slate-600">{t('Autres actions')}</summary><div className="flex flex-wrap gap-2"><button onClick={() => printInvoice(inv)} className="rounded-xl border px-3 py-2 text-xs">{t('Print invoice')}</button>{payment && inv.balance > 0 && <button onClick={() => handleViewReceipt(inv, payment)} className="rounded-xl border px-3 py-2 text-xs">{t('Receipt')}</button>}{hasRole(['ADMIN']) && payment && <button onClick={() => void openCorrection(inv)} className="rounded-xl border border-amber-200 px-3 py-2 text-xs text-amber-800">{t('Corriger le paiement')}</button>}</div>{inv.createdByName && <p className="mt-2 text-xs text-slate-500">{t('Created by')} {inv.createdByName} · {roleLabel(inv.createdByRole)}</p>}</details>
           </article>;
         })}
@@ -411,13 +411,13 @@ export const FinancesPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3.5 font-medium text-slate-700">{inv.title}</td>
                       <td className="px-4 py-3.5 font-bold text-slate-800">{inv.amount.toLocaleString()} {t("F")}</td>
-                      <td className="px-4 py-3.5 text-emerald-600 font-semibold">{inv.paidAmount.toLocaleString()} {t("F")}</td>
+                      <td className="px-4 py-3.5 text-amber-600 font-semibold">{inv.paidAmount.toLocaleString()} {t("F")}</td>
                       <td className="px-4 py-3.5 text-amber-600 font-bold">{inv.balance.toLocaleString()} {t("F")}</td>
                       <td className="px-4 py-3.5">
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                             inv.status === 'PAID'
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-amber-100 text-amber-800'
                               : inv.status === 'PARTIAL'
                               ? 'bg-indigo-100 text-indigo-800'
                               : 'bg-rose-100 text-rose-800'
@@ -433,13 +433,13 @@ export const FinancesPage: React.FC = () => {
                         {inv.balance > 0 && (
                           <button
                             onClick={() => handleOpenPayment(inv)}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-medium transition"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-medium transition"
                           >
                             <CreditCard className="w-3 h-3" />
                             <span>{t("Pay")}</span>
                           </button>
                         )}
-                          <button onClick={() => printInvoice(inv)} className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50" title={t('Print invoice')}><Printer className="h-4 w-4" /></button>
+                          <button onClick={() => printInvoice(inv)} className="rounded-lg p-2 text-amber-700 hover:bg-amber-50" title={t('Print invoice')}><Printer className="h-4 w-4" /></button>
                         {inv.payments?.some((payment: any) => !payment.cancelledAt) && (
                           <button
                             onClick={() => handleViewReceipt(inv, inv.payments.find((payment: any) => !payment.cancelledAt))}
@@ -479,7 +479,7 @@ export const FinancesPage: React.FC = () => {
             <label className="block">{t('Motif de la correction (10 caractères minimum)')}<textarea required minLength={10} maxLength={1000} value={correctionReason} disabled={correctionBusy} onChange={e => setCorrectionReason(e.target.value)} className="block w-full border rounded-lg p-2" /></label>
             {correctionHistory.length > 0 && <section><h4 className="font-semibold">{t('Historique des corrections')}</h4>{correctionHistory.map(entry => { const details = JSON.parse(entry.details); return <p key={entry.id} className="text-xs border-t py-2">{new Date(entry.createdAt).toLocaleString(locale())} · {entry.actorName} · {roleLabel(entry.actorRole)}<br />{details.originalAmount.toLocaleString(locale())} → {details.correctedAmount.toLocaleString(locale())} FCFA · {entry.reason}</p>; })}</section>}
             {correctionError && <p role="alert" className="text-red-700">{correctionError}</p>}
-            <div className="flex justify-end gap-3"><button type="button" disabled={correctionBusy} onClick={() => setCorrectionInvoice(null)} className="border rounded-lg px-4 py-2">{t('Cancel')}</button><button disabled={correctionBusy || !correctionPayment || Number(correctionAmount) === correctionPayment?.amount} className="bg-emerald-600 text-white rounded-lg px-4 py-2 disabled:opacity-50">{t(correctionBusy ? 'Enregistrement…' : 'Confirmer la correction')}</button></div>
+            <div className="flex justify-end gap-3"><button type="button" disabled={correctionBusy} onClick={() => setCorrectionInvoice(null)} className="border rounded-lg px-4 py-2">{t('Cancel')}</button><button disabled={correctionBusy || !correctionPayment || Number(correctionAmount) === correctionPayment?.amount} className="bg-amber-600 text-white rounded-lg px-4 py-2 disabled:opacity-50">{t(correctionBusy ? 'Enregistrement…' : 'Confirmer la correction')}</button></div>
           </form>
         </div>
       )}
@@ -498,7 +498,7 @@ export const FinancesPage: React.FC = () => {
             </select></label>
             <label className="block text-sm">{t('Référence')}<input maxLength={1000} disabled={settling} value={paymentRef} onChange={event => setPaymentRef(event.target.value)} className="block w-full border rounded-lg p-2" /></label>
             <label className="block text-sm">{t('Notes')}<textarea maxLength={1000} disabled={settling} value={paymentNotes} onChange={event => setPaymentNotes(event.target.value)} className="block w-full border rounded-lg p-2" /></label>
-            <div className="flex justify-end gap-3"><button type="button" disabled={settling} onClick={() => setSettlementInvoices([])} className="border rounded-lg px-4 py-2">{t('Cancel')}</button><button disabled={settling} className="bg-emerald-600 text-white rounded-lg px-4 py-2 disabled:opacity-50">{t(settling ? 'Enregistrement…' : 'Confirmer le règlement')}</button></div>
+            <div className="flex justify-end gap-3"><button type="button" disabled={settling} onClick={() => setSettlementInvoices([])} className="border rounded-lg px-4 py-2">{t('Cancel')}</button><button disabled={settling} className="bg-amber-600 text-white rounded-lg px-4 py-2 disabled:opacity-50">{t(settling ? 'Enregistrement…' : 'Confirmer le règlement')}</button></div>
           </form>
         </div>
       )}
@@ -543,7 +543,7 @@ export const FinancesPage: React.FC = () => {
                   required
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                  className="w-full text-sm font-bold p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full text-sm font-bold p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -552,7 +552,7 @@ export const FinancesPage: React.FC = () => {
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 >
                   <option value="CASH">{t("Cash (school office)")}</option>
                   <option value="WAVE">{t("Wave Mobile Money")}</option>
@@ -569,7 +569,7 @@ export const FinancesPage: React.FC = () => {
                   placeholder={t("Example: WAVE-9923842 or check number")}
                   value={paymentRef}
                   onChange={(e) => setPaymentRef(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -580,7 +580,7 @@ export const FinancesPage: React.FC = () => {
                   placeholder={t("Example: October payment")}
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -593,7 +593,7 @@ export const FinancesPage: React.FC = () => {
                   {t("Cancel")}</button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium shadow-md"
                 >
                   {t("Confirmer l'encaissement")}</button>
               </div>
@@ -623,7 +623,7 @@ export const FinancesPage: React.FC = () => {
                   required
                   value={batchClassId}
                   onChange={(e) => setBatchClassId(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 >
                   {classes.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -640,7 +640,7 @@ export const FinancesPage: React.FC = () => {
                   value={batchMonth}
                   onChange={(e) => setBatchMonth(e.target.value)}
                   placeholder="Ex: Novembre 2026"
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -651,7 +651,7 @@ export const FinancesPage: React.FC = () => {
                   required
                   value={batchDueDate}
                   onChange={(e) => setBatchDueDate(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -708,7 +708,7 @@ export const FinancesPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">{t("Matricule :")}</span>
-                  <span className="font-mono text-emerald-700">
+                  <span className="font-mono text-amber-700">
                     {currentReceiptPayment.invoice.student?.matricule}
                   </span>
                 </div>
@@ -725,7 +725,7 @@ export const FinancesPage: React.FC = () => {
               </div>
 
               {/* Amount Highlight */}
-              <div className="bg-emerald-600 text-white p-4 rounded-xl flex items-center justify-between shadow-md">
+              <div className="bg-amber-600 text-white p-4 rounded-xl flex items-center justify-between shadow-md">
                 <span className="text-xs font-semibold uppercase tracking-wider">{t("Montant Collected :")}</span>
                 <span className="text-xl font-black">
                   {currentReceiptPayment.payment.amount.toLocaleString()} {t("FCFA")}</span>
@@ -733,7 +733,7 @@ export const FinancesPage: React.FC = () => {
 
               <div className="flex justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
                 <span>{t("Balance due :")}<strong className="text-slate-800">{currentReceiptPayment.invoice.balance.toLocaleString()} {t("FCFA")}</strong></span>
-                <span>{t("Invoice status:")}<strong className="text-emerald-700">{currentReceiptPayment.invoice.status}</strong></span>
+                <span>{t("Invoice status:")}<strong className="text-amber-700">{currentReceiptPayment.invoice.status}</strong></span>
               </div>
 
               {/* Signatures */}
@@ -744,7 +744,7 @@ export const FinancesPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[11px] text-slate-400 mb-10">{t("Cachet & Signature Caisse")}</p>
-                  <p className="text-xs font-semibold text-emerald-700">{currentReceiptPayment.payment.receivedBy || 'Service comptable'}{currentReceiptPayment.payment.receivedByRole ? ` · ${roleLabel(currentReceiptPayment.payment.receivedByRole)}` : ''}</p>
+                  <p className="text-xs font-semibold text-amber-700">{currentReceiptPayment.payment.receivedBy || 'Service comptable'}{currentReceiptPayment.payment.receivedByRole ? ` · ${roleLabel(currentReceiptPayment.payment.receivedByRole)}` : ''}</p>
                 </div>
               </div>
             </div>

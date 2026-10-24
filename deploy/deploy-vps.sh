@@ -33,7 +33,7 @@ config = json.load(sys.stdin)
 sha = os.environ["APP_VERSION"]
 services = config["services"]
 for name in ("backend", "frontend"):
-    expected = f"mormbathie/oumou-salamat-{name}:{sha}"
+    expected = f"mormbathie/oumouna-khadija-{name}:{sha}"
     actual = services[name].get("image")
     if actual != expected or services[name].get("build"):
         raise SystemExit(f"Unexpected build or image for {name}: {actual}")
@@ -51,12 +51,12 @@ for service in postgres keycloak-postgres keycloak backend frontend caddy; do
   fi
 done
 
-backup_root=/var/backups/oumou-salamat/daily
+backup_root=/var/backups/oumouna-khadija/daily
 marker=$(mktemp)
 trap 'rm -f -- "$marker"' EXIT
 printf 'Starting mandatory backup before changing application containers.\n'
-systemctl start oumou-salamat-backup.service
-journalctl -u oumou-salamat-backup.service --no-pager -n 30
+systemctl start oumouna-khadija-backup.service
+journalctl -u oumouna-khadija-backup.service --no-pager -n 30
 if ! find "$backup_root" -mindepth 2 -maxdepth 2 -name .complete -type f -newer "$marker" -print -quit | grep -q .; then
   printf 'No newly completed backup was found; deployment stopped.\n' >&2
   exit 1
@@ -67,7 +67,7 @@ gzip -t "$backup_path/postgres.sql.gz" "$backup_path/keycloak.sql.gz"
 tar -tzf "$backup_path/school-documents.tar.gz" >/dev/null
 
 for name in backend frontend; do
-  image="mormbathie/oumou-salamat-$name:$APP_VERSION"
+  image="mormbathie/oumouna-khadija-$name:$APP_VERSION"
   docker pull "$image"
   revision=$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")
   if [[ "$revision" != "$APP_VERSION" ]]; then
@@ -83,7 +83,7 @@ from pathlib import Path
 images = {}
 versions = []
 for name in ('backend', 'frontend'):
-    info = json.loads(subprocess.check_output(['docker', 'inspect', 'oumou_salamat_' + name]))[0]
+    info = json.loads(subprocess.check_output(['docker', 'inspect', 'oumouna_khadija_' + name]))[0]
     images[name] = info['Image']
     revision = subprocess.check_output(['docker', 'image', 'inspect', '-f', '{{index .Config.Labels "org.opencontainers.image.revision"}}', info['Image']], text=True).strip()
     if not re.fullmatch('[0-9a-f]{40}', revision):
@@ -132,14 +132,14 @@ done
 for name in backend frontend; do
   container_id=$("${compose[@]}" ps -q "$name")
   actual=$(docker inspect -f '{{.Image}}' "$container_id")
-  expected=$(docker image inspect -f '{{.Id}}' "mormbathie/oumou-salamat-$name:$APP_VERSION")
+  expected=$(docker image inspect -f '{{.Id}}' "mormbathie/oumouna-khadija-$name:$APP_VERSION")
   if [[ "$actual" != "$expected" ]]; then
     printf 'Running %s image differs from the selected tag.\n' "$name" >&2
     exit 1
   fi
 done
 
-app_url=https://assakina-school.com
+app_url=https://gestion.oumounakhadidja-academie.com
 curl --fail --silent --show-error --retry 5 --retry-delay 2 "$app_url/api/health" > /dev/null
 frontend_id=$("${compose[@]}" ps -q frontend)
 served_html=$(mktemp)

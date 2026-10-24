@@ -11,7 +11,7 @@ from pathlib import Path
 
 def output(*args):
     return subprocess.check_output(['docker', *args], text=True)
-state = json.loads(Path('/opt/oumou-salamat/deploy/last-release.json').read_text())
+state = json.loads(Path('/opt/oumouna-khadija/deploy/last-release.json').read_text())
 protected = set(state['images'].values())
 for image in protected:
     output('image','inspect',image)
@@ -21,7 +21,7 @@ if containers:
 refs = output('images','--format','{{.Repository}}:{{.Tag}}').splitlines()
 remove=[]
 for ref in refs:
-    if not re.fullmatch(r'mormbathie/oumou-salamat-(backend|frontend):[a-f0-9]{40}|oumou-salamat-(backend|frontend):latest',ref):
+    if not re.fullmatch(r'mormbathie/oumouna-khadija-(backend|frontend):[a-f0-9]{40}|oumouna-khadija-(backend|frontend):latest',ref):
         continue
     image = json.loads(output('image','inspect',ref))[0]['Id']
     if image not in protected:

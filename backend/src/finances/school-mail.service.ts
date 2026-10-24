@@ -19,7 +19,7 @@ export class SchoolMailService {
       tls: { rejectUnauthorized: true }, logger: false, debug: false,
     });
     try {
-      const result = await transport.sendMail({ from: { name: smtp.fromDisplayName || 'École As Sakina', address: smtp.from }, to, subject, text });
+      const result = await transport.sendMail({ from: { name: smtp.fromDisplayName || 'Institut Oumouna Khadija', address: smtp.from }, to, subject, text });
       if (!result.accepted.length) throw new ServiceUnavailableException('Message non accepté.');
       return { accepted: true };
     } finally { transport.close(); }

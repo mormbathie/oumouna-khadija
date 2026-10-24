@@ -60,7 +60,7 @@ export function AccountDossier({ isTeacher }: { isTeacher: boolean }) {
     <h3 className="text-lg font-bold">{t('My personal file')}</h3>
     <p className="mt-2 text-sm text-slate-600">{t('These details are optional. Your role and permissions cannot be changed here.')}</p>
     <div className="my-5 flex flex-wrap items-center gap-4">
-      <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-emerald-50 text-2xl text-emerald-800"><ProfileAvatar fallback={<UserRound className="h-10 w-10" aria-hidden="true" />} /></div>
+      <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-amber-50 text-2xl text-amber-800"><ProfileAvatar fallback={<UserRound className="h-10 w-10" aria-hidden="true" />} /></div>
       <div className="space-y-2"><label className="block text-sm font-semibold" htmlFor="profile-photo">{t('Profile photo')}</label>
         <input ref={input} id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy || !loaded} onChange={e => upload(e.target.files?.[0])} className="block max-w-full text-sm" />
         <p className="text-xs text-slate-500">{t('JPEG, PNG or WebP. Photos are resized automatically.')}</p>
@@ -70,8 +70,8 @@ export function AccountDossier({ isTeacher }: { isTeacher: boolean }) {
     <form onSubmit={e => { e.preventDefault(); void action(() => usersApi.updateDossier(details)); }} className="grid gap-4 sm:grid-cols-2">
       {fields.map(([key, label, max]) => <label key={key} className="text-sm font-medium">{t(label)}<input maxLength={max} type={key.toLowerCase().includes('phone') ? 'tel' : 'text'} value={details[key] || ''} onChange={e => setDetails({ ...details, [key]: e.target.value })} className="mt-1 w-full rounded-lg border p-3" /></label>)}
       {isTeacher && <><h4 className="mt-3 font-bold sm:col-span-2">{t('My teaching background')}</h4>{professional.map(([key, label, max]) => <label key={key} className="text-sm font-medium sm:col-span-2">{t(label)}<textarea rows={3} maxLength={max} value={details[key] || ''} onChange={e => setDetails({ ...details, [key]: e.target.value })} className="mt-1 w-full rounded-lg border p-3" /></label>)}</>}
-      <div className="sm:col-span-2"><button disabled={busy || !loaded} className="rounded-lg bg-emerald-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{busy ? t('Saving…') : t('Save personal file')}</button></div>
+      <div className="sm:col-span-2"><button disabled={busy || !loaded} className="rounded-lg bg-amber-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{busy ? t('Saving…') : t('Save personal file')}</button></div>
     </form>
-    {error && <p role="alert" className="mt-4 text-sm text-rose-700">{error}</p>}{message && <p role="status" className="mt-4 text-sm text-emerald-700">{message}</p>}
+    {error && <p role="alert" className="mt-4 text-sm text-rose-700">{error}</p>}{message && <p role="status" className="mt-4 text-sm text-amber-700">{message}</p>}
   </section>;
 }

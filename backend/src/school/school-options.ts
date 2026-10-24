@@ -1,11 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 export const PROGRAMS = ['PRESCHOOL','ELEMENTARY','FULL_DAY','DAARA_DAY','DAARA_BOARDING','FRANCO_ARAB_BOARDING'];
-export const LEVELS = ['TPS','PS','MS','GS','CI','CP','CE1','CE2','CM1','CM2','DAARA'];
-const ITEMS = ['BIRTH_CERTIFICATE','IDJI_BOOK','QURAN_JUZZ','MATTRESS_SHEETS','BOARDING_KIT','SCHOOL_SUPPLIES','DIAPERS'];
+export const LEVELS = ['PS','MS','GS','TAHFIZ','CI','CP','CE1','CE2','CM1','CM2'];
+const ITEMS = ['BIRTH_CERTIFICATE','STUDENT_PHOTOS','VACCINATION_BOOK','BOARDING_KIT','SCHOOL_SUPPLIES'];
 export function schoolOptions(data: Record<string, unknown>) {
   const result: Record<string, any> = {};
   if (data.transportZone !== undefined) {
-    if (data.transportZone !== null && ![1,2,3].includes(data.transportZone as number)) throw new BadRequestException('Zone de transport invalide.');
+    if (data.transportZone !== null && ![1].includes(data.transportZone as number)) throw new BadRequestException('Option de transport invalide.');
     result.transportZone = data.transportZone;
   }
   for (const key of ['karate','eveningClasses','fullDay','supplies']) if (data[key] !== undefined) {
@@ -25,7 +25,7 @@ export function validateProgramAge(_program: string | null | undefined, birth: s
   const date = new Date(birth);
   if (!Number.isFinite(date.getTime()) || date > new Date()) throw new BadRequestException('Date de naissance invalide.');
 }
-export const optionTariffs = { elementaryRegistration: 40000, supplies: 37500, karateRegistration: 2000, karateMonthly: 2000, kimono: 6000, fullDayRegistration: 65000, elementaryFullDaySupplement: 25000, fullDayMonthly: 35000, transport: { 1: 10000, 2: 15000, 3: 20000 } };
+export const optionTariffs = { elementaryRegistration: 160000, supplies: 0, karateRegistration: 0, karateMonthly: 4000, kimono: 10000, fullDayRegistration: 43000, elementaryFullDaySupplement: 0, fullDayMonthly: 12000, transport: { 1: 12000 } };
 export type FeeOptions = { fullDay?: boolean; supplies?: boolean; karate?: boolean; transportZone?: number | null };
 export type FeeClass = { level?: string; program?: string | null; registrationFee: number; monthlyTuition: number };
 export const elementaryClass = (classroom: FeeClass) => classroom.program === 'ELEMENTARY' || ['CI','CP','CE1','CE2','CM1','CM2'].includes(classroom.level || '');
@@ -34,21 +34,17 @@ export function validateOptionsForClass(student: FeeOptions, classroom?: FeeClas
     if (student.karate || student.supplies || student.fullDay) throw new BadRequestException('Choisissez une classe pour ces options.');
     return;
   }
-  if (student.karate && ['TPS', 'PS'].includes(classroom.level || '')) throw new BadRequestException('Karaté interdit en TPS et PS.');
-  if (student.supplies && !elementaryClass(classroom)) throw new BadRequestException('Fournitures réservées à l’élémentaire.');
-  if (student.fullDay && !(classroom.program === 'PRESCHOOL' || ['TPS','PS','MS','GS','CI','CP','CE1'].includes(classroom.level || ''))) throw new BadRequestException('Journée continue réservée à la maternelle, au CI, au CP et au CE1.');
+  if (student.karate && classroom.program === 'PRESCHOOL') throw new BadRequestException('Le taekwondo concerne l’internat.');
+  if (student.supplies && classroom.program !== 'PRESCHOOL') throw new BadRequestException('L’option cantine concerne le préscolaire.');
+  if (student.fullDay) throw new BadRequestException('L’option journée continue n’est pas proposée.');
 }
 export function schoolFees(student: FeeOptions, classroom: FeeClass) {
-  const preschool = classroom.program === 'PRESCHOOL' || ['TPS','PS','MS','GS'].includes(classroom.level || '');
-  const fullDay = student.fullDay && (preschool || ['CI','CP','CE1'].includes(classroom.level || ''));
-  // Correct the former standard CI tariff prospectively; preserve custom class tariffs.
-  const base = classroom.level === 'CI' && classroom.registrationFee === 40500 ? optionTariffs.elementaryRegistration : classroom.registrationFee;
-  const registrationBase = fullDay ? (preschool ? optionTariffs.fullDayRegistration : base + optionTariffs.elementaryFullDaySupplement) : base;
+  const registrationBase = classroom.registrationFee;
   const transport = optionTariffs.transport[student.transportZone || 0] || 0;
-  const karate = student.karate ? optionTariffs.karateRegistration : 0;
+  const karate = 0;
   const supplies = student.supplies && elementaryClass(classroom) ? optionTariffs.supplies : 0;
   return { registrationFee: registrationBase + transport + karate + supplies,
-    monthlyTuition: fullDay ? optionTariffs.fullDayMonthly : classroom.monthlyTuition };
+    monthlyTuition: classroom.monthlyTuition };
 }
 
 // Keep a billing snapshot: legacy transport/karate flags were never charged automatically.

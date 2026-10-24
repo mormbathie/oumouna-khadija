@@ -10,7 +10,7 @@
   ],
   "spec": {
     "display": {
-      "name": "As Sakina — Requêtes et erreurs API",
+      "name": "Institut Oumouna Khadija — Requêtes et erreurs API",
       "description": "Statuts HTTP, erreurs et latence. Refresh 60 s ; aucun regroupement par utilisateur ou IP."
     },
     "variables": [],

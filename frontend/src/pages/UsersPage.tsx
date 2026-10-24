@@ -146,17 +146,17 @@ export const UsersPage: React.FC = () => {
         <div className="flex gap-2">
           <button onClick={() => void loadUsers()} disabled={loading} className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-3 py-2.5 rounded-xl text-sm hover:bg-slate-50 disabled:opacity-50">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> {t("Refresh")}</button>
-          <button onClick={() => { setError(''); setModalOpen(true); }} className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium">
+          <button onClick={() => { setError(''); setModalOpen(true); }} className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium">
             <Plus className="w-4 h-4" /> {t("Create a user")}</button>
         </div>
       </div>
 
       {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
-      {success && <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
+      {success && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{success}</div>}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-sm text-slate-800"><UserCog className="w-4 h-4 text-emerald-700" /> {t("User accounts")}</div>
+          <div className="flex items-center gap-2 font-bold text-sm text-slate-800"><UserCog className="w-4 h-4 text-amber-700" /> {t("User accounts")}</div>
           <span className="text-xs text-slate-500">{users.length} {t("user(s)")}</span>
         </div>
         <div className="overflow-x-auto">
@@ -177,12 +177,12 @@ export const UsersPage: React.FC = () => {
                       <div className="font-semibold text-slate-800">{managedUser.firstName} {managedUser.lastName}</div>
                       <div className="text-xs text-slate-500">{managedUser.username}{isCurrentUser ? t(" · You") : ''}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{managedUser.email || '—'}<span className={`mt-1 block text-[11px] font-medium ${managedUser.emailVerified ? 'text-emerald-700' : 'text-amber-700'}`}>{managedUser.emailVerified ? t("Verified email") : t("Unverified email")}</span></td>
+                    <td className="px-4 py-3 text-slate-600">{managedUser.email || '—'}<span className={`mt-1 block text-[11px] font-medium ${managedUser.emailVerified ? 'text-amber-700' : 'text-amber-700'}`}>{managedUser.emailVerified ? t("Verified email") : t("Unverified email")}</span></td>
                     <td className="px-4 py-3"><div className="flex flex-wrap gap-1">
                       {managedUser.roles.length ? managedUser.roles.map((role) => <span key={role} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">{roleLabel(role)}</span>) : <span className="text-xs text-slate-400">{t("No application role")}</span>}
                     </div></td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${managedUser.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-700'}`}>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${managedUser.enabled ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-700'}`}>
                         {managedUser.enabled ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldOff className="w-3.5 h-3.5" />}
                         {managedUser.enabled ? t("Active") : t("Disabled")}
                       </span>
@@ -216,7 +216,7 @@ export const UsersPage: React.FC = () => {
           <p className="mt-1 text-sm text-slate-500">{t("Give the new password to the user and ask them to change it after signing in.")}</p>
           <label className="mt-4 block text-sm font-medium text-slate-700">{t("Temporary password")}<input required minLength={8} type="password" autoComplete="new-password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 p-3" /></label>
           {error && <p role="alert" className="mt-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setResetUser(null)} className="rounded-lg border px-4 py-2 text-sm">{t("Cancel")}</button><button disabled={saving} className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? t("Saving…") : t("Save")}</button></div>
+          <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setResetUser(null)} className="rounded-lg border px-4 py-2 text-sm">{t("Cancel")}</button><button disabled={saving} className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? t("Saving…") : t("Save")}</button></div>
         </form>
       </div>}
 
@@ -228,7 +228,7 @@ export const UsersPage: React.FC = () => {
           <label className="block text-sm font-medium text-slate-700">{t("E-mail")}<input required type="email" value={editForm.email} onChange={(event) => setEditForm({ ...editForm, email: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 p-3" /></label>
           <label className="block text-sm font-medium text-slate-700">{t("Role")}<select value={editForm.role} onChange={(event) => setEditForm({ ...editForm, role: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-3">{roleOptions.filter((option) => editingUser.id !== currentUser?.userId || option.value === 'ADMIN').map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           {error && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-          <div className="flex justify-end gap-2"><button type="button" onClick={() => setEditingUser(null)} className="rounded-lg border px-4 py-2 text-sm">{t("Cancel")}</button><button disabled={saving} className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? t("Saving…") : t("Save")}</button></div>
+          <div className="flex justify-end gap-2"><button type="button" onClick={() => setEditingUser(null)} className="rounded-lg border px-4 py-2 text-sm">{t("Cancel")}</button><button disabled={saving} className="rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? t("Saving…") : t("Save")}</button></div>
         </form>
       </div>}
 
@@ -251,7 +251,7 @@ export const UsersPage: React.FC = () => {
               {error && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</div>}
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
                 <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600">{t("Cancel")}</button>
-                <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"><Plus className="w-4 h-4" />{saving ? t("Creating…") : t("Create account")}</button>
+                <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"><Plus className="w-4 h-4" />{saving ? t("Creating…") : t("Create account")}</button>
               </div>
             </form>
           </div>

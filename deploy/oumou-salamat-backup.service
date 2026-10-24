@@ -1,9 +1,0 @@
-[Unit]
-Description=Sauvegarde des bases et documents Oumou Salamat
-Requires=docker.service
-After=docker.service
-
-[Service]
-Type=oneshot
-User=root
-ExecStart=/opt/oumou-salamat/deploy/backup.sh

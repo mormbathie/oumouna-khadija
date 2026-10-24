@@ -1,4 +1,4 @@
-# 🏫 École As Sakina
+# 🏫 École Institut Oumouna Khadija
 
 Système de gestion scolaire complet pour une école primaire, construit avec **NestJS**, **React**, **PostgreSQL** et **Keycloak**.
 
@@ -58,7 +58,7 @@ docker-compose up -d
 
 Vérifiez que les conteneurs tournent :
 ```bash
-docker ps | grep oumou_salamat
+docker ps | grep oumouna_khadija
 ```
 
 ### 2. Backend (NestJS)
@@ -97,7 +97,7 @@ L'application s'ouvre sur **http://localhost:5173**
 ### Interface web
 Ouvrez **http://localhost:5173** dans votre navigateur.
 
-Connectez-vous avec un utilisateur du realm Keycloak `oumou-salamat`. Les comptes du tableau ci-dessous sont importés lors de la première initialisation de ce realm.
+Connectez-vous avec un utilisateur du realm Keycloak `oumouna-khadija`. Les comptes du tableau ci-dessous sont importés lors de la première initialisation de ce realm.
 
 ### Comptes Keycloak (Keycloak sur http://localhost:8080)
 
@@ -111,7 +111,7 @@ Connectez-vous avec un utilisateur du realm Keycloak `oumou-salamat`. Les compte
 ### Console d'administration Keycloak
 - URL : http://localhost:8080
 - Login : `admin` / `admin`
-- Realm de l'application : `oumou-salamat` (le realm `master` contient les comptes d'administration Keycloak)
+- Realm de l'application : `oumouna-khadija` (le realm `master` contient les comptes d'administration Keycloak)
 - Pour ajouter `mormbathie98` ou un autre utilisateur, connectez-vous comme `admin`, puis créez-le dans **Utilisateurs** dans l'application.
 
 ---
@@ -119,7 +119,7 @@ Connectez-vous avec un utilisateur du realm Keycloak `oumou-salamat`. Les compte
 ## 📁 Structure du Projet
 
 ```
-Oumou Salamat 2027/
+Oumouna Khadija 2027/
 ├── docker-compose.yml          # PostgreSQL + Keycloak
 ├── keycloak/
 │   └── realm-export.json       # Config Keycloak auto-importée
@@ -151,11 +151,11 @@ Oumou Salamat 2027/
 
 ### Backend — `backend/.env`
 ```env
-DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5434/oumou_salamat_db?schema=public"
+DATABASE_URL="postgresql://postgres:postgrespassword@localhost:5434/oumouna_khadija_db?schema=public"
 KEYCLOAK_AUTH_SERVER_URL="http://localhost:8080"
 KEYCLOAK_INTERNAL_URL="http://localhost:8080"
-KEYCLOAK_REALM="oumou-salamat"
-KEYCLOAK_CLIENT_ID="oumou-salamat-app"
+KEYCLOAK_REALM="oumouna-khadija"
+KEYCLOAK_CLIENT_ID="oumouna-khadija-app"
 NODE_ENV="development"
 PORT=3001
 ```
@@ -238,7 +238,7 @@ cd backend && npx prisma studio
 ### Erreur de connexion BDD
 ```bash
 # Vérifier que PostgreSQL tourne
-docker ps | grep oumou_salamat_postgres
+docker ps | grep oumouna_khadija_postgres
 
 # Relancer si nécessaire
 docker-compose up -d postgres
@@ -252,7 +252,7 @@ docker-compose up -d keycloak
 
 ### Persistance et sauvegardes
 
-PostgreSQL réutilise le volume externe `oumousalamat2027_postgres_data`, créé avant le changement de nom du projet Compose. Les utilisateurs Keycloak sont maintenant stockés dans un volume PostgreSQL persistant distinct. Un redémarrage avec `docker compose up -d` conserve les deux bases. Sur un nouvel hôte, créez le volume externe avant le premier démarrage : `docker volume create ${POSTGRES_VOLUME_NAME:-oumousalamat2027_postgres_data}`.
+PostgreSQL réutilise le volume externe `oumounakhadija2027_postgres_data`, créé avant le changement de nom du projet Compose. Les utilisateurs Keycloak sont maintenant stockés dans un volume PostgreSQL persistant distinct. Un redémarrage avec `docker compose up -d` conserve les deux bases. Sur un nouvel hôte, créez le volume externe avant le premier démarrage : `docker volume create ${POSTGRES_VOLUME_NAME:-oumounakhadija2027_postgres_data}`.
 
 Ne lancez pas `docker compose down -v` : l'option `-v` supprime les volumes et les données. Avant une mise en production, configurez `POSTGRES_VOLUME_NAME`, `POSTGRES_PASSWORD`, `KEYCLOAK_DB_PASSWORD` et `KEYCLOAK_ADMIN_PASSWORD` dans un fichier `.env` protégé, utilisez des mots de passe uniques, et placez l'application derrière HTTPS. Préparez et vérifiez des sauvegardes régulières des deux bases.
 

@@ -184,7 +184,8 @@ export class AttendanceService {
     }
 
     let code = qrCode.trim();
-    if (code.startsWith('OSATT1:')) code = code.slice('OSATT1:'.length);
+    if (code.startsWith('OKATT1:')) code = code.slice('OKATT1:'.length);
+    else if (code.startsWith('OSATT1:')) code = code.slice('OSATT1:'.length); // anciens badges du clone, pendant la transition locale
     const isMatricule = /^OS-\d{4}-\d{4,}$/i.test(code);
     const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(code);
     if (!isMatricule && !isId) {

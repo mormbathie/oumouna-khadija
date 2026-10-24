@@ -82,7 +82,7 @@ export const ParentsPage: React.FC = () => {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-md transition"
+          className="inline-flex items-center space-x-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-md transition"
         >
           <UserPlus className="w-4 h-4" />
           <span>{t("Add a Parent")}</span>
@@ -97,7 +97,7 @@ export const ParentsPage: React.FC = () => {
             placeholder={t("Search by name, phone, or email…")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </form>
@@ -128,7 +128,7 @@ export const ParentsPage: React.FC = () => {
                       <h3 className="font-bold text-sm text-slate-800">
                         {p.firstName} {p.lastName}
                       </h3>
-                      <span className="text-[11px] bg-emerald-50 text-emerald-700 font-medium px-2 py-0.5 rounded-full inline-block">
+                      <span className="text-[11px] bg-amber-50 text-amber-700 font-medium px-2 py-0.5 rounded-full inline-block">
                         {t(p.relation || 'Parent')}
                       </span>
                     </div>
@@ -138,7 +138,7 @@ export const ParentsPage: React.FC = () => {
                 {/* Details */}
                 <div className="mt-4 space-y-2 text-xs text-slate-600">
                   <div className="flex items-center space-x-2">
-                    <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <Phone className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span className="font-medium text-slate-800">{p.phone}</span>
                   </div>
                   {p.email && (
@@ -215,7 +215,7 @@ export const ParentsPage: React.FC = () => {
                     required
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -225,7 +225,7 @@ export const ParentsPage: React.FC = () => {
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -238,7 +238,7 @@ export const ParentsPage: React.FC = () => {
                   placeholder="+221 77 000 00 00"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -249,7 +249,7 @@ export const ParentsPage: React.FC = () => {
                   placeholder="parent@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -259,7 +259,7 @@ export const ParentsPage: React.FC = () => {
                   <select
                     value={formData.relation}
                     onChange={(e) => setFormData({ ...formData, relation: e.target.value })}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   >
                     <option value="Father">{t("Father")}</option>
                     <option value="Mother">{t("Mother")}</option>
@@ -273,7 +273,7 @@ export const ParentsPage: React.FC = () => {
                     placeholder={t("Ex: Enseignant")}
                     value={formData.profession}
                     onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -285,7 +285,7 @@ export const ParentsPage: React.FC = () => {
                   placeholder="Quartier, Ville"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -298,7 +298,7 @@ export const ParentsPage: React.FC = () => {
                   {t("Cancel")}</button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium shadow-md"
                 >
                   {t("Save")}</button>
               </div>

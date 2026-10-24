@@ -4,12 +4,12 @@ import { ForbiddenException } from '@nestjs/common';
 import { AccountSecurityService } from './account-security.service';
 
 describe('Account security', () => {
-  const config = { get: (key: string) => ({ CORS_ORIGINS: 'https://assakina-school.com', KEYCLOAK_CLIENT_ID: 'oumou-salamat-app' }[key]) } as unknown as ConfigService;
+  const config = { get: (key: string) => ({ CORS_ORIGINS: 'https://oumounakhadidja-academie.com', KEYCLOAK_CLIENT_ID: 'oumouna-khadija-app' }[key]) } as unknown as ConfigService;
   it('sends a short-lived password action only to an exact enabled account', async () => {
     const service = new AccountSecurityService(config);
     const request = jest.spyOn(service as any, 'request').mockResolvedValueOnce([{ id: 'u1', enabled: true, email: 'awa@example.com' }]).mockResolvedValue(undefined);
     await service.forgotPassword('awa@example.com', 'test-ip');
-    expect(request).toHaveBeenLastCalledWith('/users/u1/execute-actions-email?lifespan=900&client_id=oumou-salamat-app&redirect_uri=https%3A%2F%2Fassakina-school.com%2Flogin', ['UPDATE_PASSWORD']);
+    expect(request).toHaveBeenLastCalledWith('/users/u1/execute-actions-email?lifespan=900&client_id=oumouna-khadija-app&redirect_uri=https%3A%2F%2Foumounakhadidja-academie.com%2Flogin', ['UPDATE_PASSWORD']);
   });
   it('returns the same message for unknown and disabled accounts and throttles repeated requests', async () => {
     const service = new AccountSecurityService(config);

@@ -13,7 +13,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-MAILBOX = 'contact@assakina-school.com'
+MAILBOX = 'contact@oumounakhadidja-academie.com'
 SMTP_HOST = 'smtp.mail.ovh.net'
 
 
@@ -31,7 +31,7 @@ def main():
     with urllib.request.urlopen(urllib.request.Request(
             base + '/realms/master/protocol/openid-connect/token', data=data), timeout=30) as response:
         admin_token = json.load(response)['access_token']
-    realm_url = base + '/admin/realms/oumou-salamat'
+    realm_url = base + '/admin/realms/oumouna-khadija'
     headers = {'Authorization': 'Bearer ' + admin_token, 'Content-Type': 'application/json'}
     with urllib.request.urlopen(urllib.request.Request(realm_url, headers=headers), timeout=30) as response:
         previous = json.load(response).get('smtpServer', {})
@@ -40,10 +40,10 @@ def main():
     if not password:
         raise SystemExit('Mot de passe absent ; aucune configuration modifiée.')
     message = EmailMessage()
-    message['From'] = 'École As Sakina <' + MAILBOX + '>'
+    message['From'] = 'Institut Oumouna Khadija <' + MAILBOX + '>'
     message['To'] = MAILBOX
-    message['Subject'] = 'École As Sakina — test de l’envoi des e-mails'
-    message.set_content('Bonjour,\n\nCe message confirme que le serveur de l’application peut envoyer des e-mails avec la boîte de l’école.\n\nÉcole As Sakina\nhttps://assakina-school.com\n')
+    message['Subject'] = 'Institut Oumouna Khadija — test de l’envoi des e-mails'
+    message.set_content('Bonjour,\n\nCe message confirme que le serveur de l’application peut envoyer des e-mails avec la boîte de l’école.\n\nInstitut Oumouna Khadija\nhttps://oumounakhadidja-academie.com\n')
     try:
         with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=30, context=ssl.create_default_context()) as smtp:
             smtp.login(MAILBOX, password)
@@ -52,7 +52,7 @@ def main():
                 raise RuntimeError('Envoi refusé.')
     except (smtplib.SMTPException, OSError, RuntimeError):
         raise SystemExit('Connexion ou envoi SMTP refusé. Vérifiez le mot de passe et l’activation de la boîte. Aucune configuration modifiée.')
-    backup = Path('/var/backups/oumou-salamat/config') / ('email-' + datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
+    backup = Path('/var/backups/oumouna-khadija/config') / ('email-' + datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
     backup.mkdir(parents=True, mode=0o700)
     target = backup / 'previous-smtp.json'
     descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -61,7 +61,7 @@ def main():
     smtp_settings = {
         'host': SMTP_HOST, 'port': '465', 'ssl': 'true', 'starttls': 'false',
         'auth': 'true', 'user': MAILBOX, 'password': password,
-        'from': MAILBOX, 'fromDisplayName': 'École As Sakina', 'replyTo': MAILBOX,
+        'from': MAILBOX, 'fromDisplayName': 'Institut Oumouna Khadija', 'replyTo': MAILBOX,
         'envelopeFrom': MAILBOX,
     }
     # Refresh the admin token after the interactive prompt, which can take several minutes.

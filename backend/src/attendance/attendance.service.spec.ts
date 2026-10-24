@@ -37,7 +37,7 @@ describe('AttendanceService QR check-in', () => {
   it('records the first scan as present with an arrival timestamp', async () => {
     const { prisma, service } = setup();
 
-    const result = await service.scanStudent('OSATT1:' + studentId);
+    const result = await service.scanStudent('OKATT1:' + studentId);
 
     expect(prisma.attendance.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({

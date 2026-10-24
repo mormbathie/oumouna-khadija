@@ -1,7 +1,7 @@
 {
-  "realm": "oumou-salamat",
+  "realm": "oumouna-khadija",
   "enabled": true,
-  "displayName": "École As Sakina",
+  "displayName": "Institut Oumouna Khadija",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
@@ -42,11 +42,13 @@
   },
   "clients": [
     {
-      "clientId": "oumou-salamat-app",
-      "name": "As Sakina School Client",
+      "clientId": "oumouna-khadija-app",
+      "name": "Application Institut Oumouna Khadija",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
+        "http://localhost:5174/*",
+        "http://127.0.0.1:5174/*",
         "http://localhost:5173/*",
         "http://localhost:3000/*",
         "http://localhost:3001/*"
@@ -66,7 +68,7 @@
     {
       "username": "admin",
       "enabled": true,
-      "email": "admin@oumou-salamat.sn",
+      "email": "admin@oumouna-khadija.sn",
       "firstName": "Mamadou",
       "lastName": "Diallo",
       "credentials": [
@@ -84,7 +86,7 @@
     {
       "username": "comptable",
       "enabled": true,
-      "email": "comptable@oumou-salamat.sn",
+      "email": "comptable@oumouna-khadija.sn",
       "firstName": "Fatou",
       "lastName": "Ndiaye",
       "credentials": [
@@ -101,7 +103,7 @@
     {
       "username": "enseignant",
       "enabled": true,
-      "email": "enseignant@oumou-salamat.sn",
+      "email": "enseignant@oumouna-khadija.sn",
       "firstName": "Ibrahima",
       "lastName": "Sow",
       "credentials": [
@@ -118,7 +120,7 @@
     {
       "username": "parent",
       "enabled": true,
-      "email": "parent@oumou-salamat.sn",
+      "email": "parent@oumouna-khadija.sn",
       "firstName": "Aissatou",
       "lastName": "Ba",
       "credentials": [

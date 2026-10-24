@@ -4,7 +4,7 @@ import json, pathlib, subprocess
 root = pathlib.Path('/opt/assakina-observability')
 receivers = {'hostmetrics': {'root_path': '/hostfs', 'collection_interval': '30s', 'scrapers': {'cpu': {}, 'memory': {}, 'disk': {}, 'filesystem': {}, 'network': {}, 'load': {}}}}
 for name in ['backend', 'frontend', 'keycloak', 'caddy', 'postgres', 'keycloak_postgres']:
-    path = subprocess.check_output(['docker', 'inspect', 'oumou_salamat_' + name, '--format', '{{.LogPath}}'], text=True).strip()
+    path = subprocess.check_output(['docker', 'inspect', 'oumouna_khadija_' + name, '--format', '{{.LogPath}}'], text=True).strip()
     if not path.startswith('/var/lib/docker/containers/'):
         raise SystemExit('Unexpected Docker log path')
     receivers['filelog/' + name] = {'include': [path], 'start_at': 'beginning', 'storage': 'file_storage', 'operators': [{'type': 'json_parser', 'timestamp': {'parse_from': 'attributes.time', 'layout_type': 'gotime', 'layout': '2006-01-02T15:04:05.999999999Z07:00'}}, {'type': 'move', 'from': 'attributes.log', 'to': 'body'}], 'resource': {'service.name': 'as-sakina-' + name, 'deployment.environment': 'production'}}

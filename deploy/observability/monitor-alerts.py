@@ -5,7 +5,7 @@ from email.message import EmailMessage
 from pathlib import Path
 
 RECIPIENT='mormbathie98@gmail.com'
-ROOT=Path('/opt/oumou-salamat')
+ROOT=Path('/opt/oumouna-khadija')
 STATE=Path('/var/lib/assakina-monitor/state.json')
 
 def request(base,path,data=None,token=None):
@@ -46,15 +46,15 @@ def check():
     names=['backend','frontend','postgres','keycloak','keycloak_postgres','caddy']
     for name in names:
         try:
-            data=json.loads(subprocess.check_output(['docker','inspect','oumou_salamat_'+name],stderr=subprocess.DEVNULL,timeout=10))[0]['State']
+            data=json.loads(subprocess.check_output(['docker','inspect','oumouna_khadija_'+name],stderr=subprocess.DEVNULL,timeout=10))[0]['State']
             if not data['Running'] or data.get('Health',{}).get('Status','healthy')!='healthy':issues.append('Service dégradé : '+name)
         except Exception:issues.append('Service absent : '+name)
-    backups=list(Path('/var/backups/oumou-salamat/daily').glob('*/.complete'))
+    backups=list(Path('/var/backups/oumouna-khadija/daily').glob('*/.complete'))
     if not backups or time.time()-max(p.stat().st_mtime for p in backups)>30*3600:issues.append('Sauvegarde locale absente ou trop ancienne (>30 heures)')
     if Path('/etc/assakina-backup/rclone.conf').is_file():
-        marker=Path('/var/backups/oumou-salamat/.offsite-last-success')
+        marker=Path('/var/backups/oumouna-khadija/.offsite-last-success')
         if not marker.exists() or time.time()-marker.stat().st_mtime>30*3600:issues.append('Sauvegarde Google Drive non confirmée depuis plus de 30 heures')
-    for unit in ['oumou-salamat-backup.service','assakina-offsite-backup.service']:
+    for unit in ['oumouna-khadija-backup.service','assakina-offsite-backup.service']:
         result=subprocess.run(['systemctl','is-failed',unit],capture_output=True,text=True,timeout=10)
         if result.stdout.strip()=='failed':issues.append('Échec du service de sauvegarde : '+unit)
     disk=shutil.disk_usage('/')
@@ -84,9 +84,9 @@ def main():
     changed=issues!=previous.get('issues',[])
     should_send=(bool(issues) and (changed or now-previous.get('last_sent',0)>3600)) or (not issues and bool(previous.get('issues')))
     if should_send:
-        subject='As Sakina — '+('alerte de supervision' if issues else 'services rétablis')
+        subject='Institut Oumouna Khadija — '+('alerte de supervision' if issues else 'services rétablis')
         text=('Problèmes détectés :\n'+'\n'.join('- '+issue for issue in issues)) if issues else 'Les contrôles de disponibilité, de sauvegarde et de supervision sont revenus à la normale.'
-        email(subject,text+'\n\nhttps://assakina-school.com\nHorodatage UTC : '+datetime.datetime.now(datetime.timezone.utc).isoformat())
+        email(subject,text+'\n\nhttps://oumounakhadidja-academie.com\nHorodatage UTC : '+datetime.datetime.now(datetime.timezone.utc).isoformat())
         previous['last_sent']=now
     previous['issues']=issues
     tmp=Path(str(STATE)+'.tmp');fd=os.open(tmp,os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)

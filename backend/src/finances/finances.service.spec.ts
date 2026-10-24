@@ -38,8 +38,8 @@ describe('Financial action attribution', () => {
   });
 });
 
-describe('Individual full-day tuition', () => {
-  it('bills different fees within one class without modifying existing invoices', async () => {
+describe('Oumouna Khadija tuition', () => {
+  it('uses the class tuition and never reuses the former full-day tariff', async () => {
     const prisma: any = {
       classroom: { findUnique: jest.fn().mockResolvedValue({id:'class',level:'MS',program:'PRESCHOOL',monthlyTuition:15000,registrationFee:50000,academicYearId:'year',enrollments:[{studentId:'full',student:{fullDay:true}},{studentId:'ordinary',student:{fullDay:false}},{studentId:'existing',student:{fullDay:true}}]}) },
       invoice: { findFirst: jest.fn().mockImplementation(({where}:any)=>Promise.resolve(where.studentId==='existing'?{id:'old',amount:15000}:null)),count:jest.fn().mockResolvedValue(0),create:jest.fn().mockResolvedValue({}) },
@@ -50,7 +50,7 @@ describe('Individual full-day tuition', () => {
     prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
     const service = new FinancesService(prisma);
     const result = await service.generateTuitionInvoicesForClass({classroomId:'class',monthName:'Novembre',dueDate:'2026-11-01'}, {userId:'agent',username:'agent',roles:['ADMIN']});
-    expect(prisma.invoice.create.mock.calls.map(([args]:any[])=>[args.data.studentId,args.data.amount,args.data.balance])).toEqual([['full',35000,35000],['ordinary',15000,15000]]);
+    expect(prisma.invoice.create.mock.calls.map(([args]:any[])=>[args.data.studentId,args.data.amount,args.data.balance])).toEqual([['full',15000,15000],['ordinary',15000,15000]]);
     expect(result.createdCount).toBe(2);
   });
 });

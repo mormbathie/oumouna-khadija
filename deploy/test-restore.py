@@ -35,13 +35,13 @@ def restore(container, archive):
 
 def main():
     if os.geteuid()!=0: raise SystemExit('Run as root on the VPS.')
-    root=Path('/var/backups/oumou-salamat/daily')
+    root=Path('/var/backups/oumouna-khadija/daily')
     backups=sorted(p for p in root.iterdir() if p.is_dir() and not p.is_symlink() and (p/'.complete').is_file())
     if not backups: raise SystemExit('No completed backup exists.')
     backup=Path(sys.argv[1]).resolve() if len(sys.argv)>1 else backups[-1]
     if not backup.is_relative_to(root.parent) or not (backup/'.complete').is_file(): raise RuntimeError('A completed backup under the private backup root is required.')
     counts={name:restore(container,backup/file) for name,container,file in [
-        ('school','oumou_salamat_postgres','postgres.sql.gz'),('accounts','oumou_salamat_keycloak_postgres','keycloak.sql.gz')]}
+        ('school','oumouna_khadija_postgres','postgres.sql.gz'),('accounts','oumouna_khadija_keycloak_postgres','keycloak.sql.gz')]}
     count=0
     with tarfile.open(backup/'school-documents.tar.gz','r:gz') as archive:
         for member in archive:
@@ -63,7 +63,7 @@ def main():
                         while stream.read(1024*1024): pass
             if not {'.env','deployment-access.txt','deploy/realm.production.json','deploy/production.env'}.issubset(names):raise RuntimeError('Configuration archive incomplete.')
     report={'backup':backup.name,'database_tables':counts,'documents':count,'configuration_files':config_count,'successful':True}
-    target=Path('/var/backups/oumou-salamat/restore-test.json')
+    target=Path('/var/backups/oumouna-khadija/restore-test.json')
     fd=os.open(str(target)+'.tmp',os.O_CREAT|os.O_TRUNC|os.O_WRONLY,0o600)
     with os.fdopen(fd,'w') as f: json.dump(report,f)
     os.replace(str(target)+'.tmp',target)

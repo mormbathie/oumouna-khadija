@@ -28,7 +28,7 @@ else
   # Existing installations can still run backups before their first image promotion.
   export APP_VERSION="${APP_VERSION:-0000000000000000000000000000000000000000}"
 fi
-backup_root=/var/backups/oumou-salamat/daily
+backup_root=/var/backups/oumouna-khadija/daily
 install -d -m 0700 -- "$backup_root"
 
 # Holding this descriptor prevents cron/manual runs from overlapping.

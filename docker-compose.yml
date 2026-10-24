@@ -1,4 +1,4 @@
-name: oumou-salamat
+name: oumouna-khadija
 
 # ─────────────────────────────────────────────────────────────
 #  RÉSEAU INTERNE
@@ -12,10 +12,8 @@ networks:
 # ─────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
-    # Reuse the volume created before this Compose project was explicitly named.
-    # Override POSTGRES_VOLUME_NAME when deploying to another host.
-    external: true
-    name: ${POSTGRES_VOLUME_NAME:-oumousalamat2027_postgres_data}
+    # Volume propre à cette application; aucun partage avec le projet source.
+    name: ${POSTGRES_VOLUME_NAME:-oumounakhadija2027_postgres_data}
   keycloak_postgres_data:
   school_documents:
 
@@ -27,20 +25,20 @@ services:
   # ── 1. BASE DE DONNÉES PostgreSQL ─────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: oumou_salamat_postgres
+    container_name: oumouna_khadija_postgres
     restart: unless-stopped
     networks:
       - oumou_net
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
-      POSTGRES_DB: ${POSTGRES_DB:-oumou_salamat_db}
+      POSTGRES_DB: ${POSTGRES_DB:-oumouna_khadija_db}
     ports:
-      - "${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5434}:5432"
+      - "${POSTGRES_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-oumou_salamat_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-oumouna_khadija_db}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -49,7 +47,7 @@ services:
   # ── 2. KEYCLOAK DATABASE ───────────────────────────────────
   keycloak-postgres:
     image: postgres:16-alpine
-    container_name: oumou_salamat_keycloak_postgres
+    container_name: oumouna_khadija_keycloak_postgres
     restart: unless-stopped
     networks:
       - oumou_net
@@ -69,7 +67,7 @@ services:
   # ── 3. KEYCLOAK (auth) ─────────────────────────────────────
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.5
-    container_name: oumou_salamat_keycloak
+    container_name: oumouna_khadija_keycloak
     restart: unless-stopped
     networks:
       - oumou_net
@@ -87,11 +85,11 @@ services:
       KC_HTTP_RELATIVE_PATH: "/"
       # Keep this hostname aligned with KEYCLOAK_PUBLIC_URL used by the backend.
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
-      KC_HOSTNAME_PORT: ${KEYCLOAK_HOSTNAME_PORT:-8080}
+      KC_HOSTNAME_PORT: ${KEYCLOAK_HOSTNAME_PORT:-8081}
       KC_HOSTNAME_STRICT: ${KEYCLOAK_HOSTNAME_STRICT:-false}
       KC_HOSTNAME_STRICT_HTTPS: "false"
     ports:
-      - "${KEYCLOAK_BIND_ADDRESS:-127.0.0.1}:${KEYCLOAK_PORT:-8080}:8080"
+      - "${KEYCLOAK_BIND_ADDRESS:-127.0.0.1}:${KEYCLOAK_PORT:-8081}:8080"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     healthcheck:
@@ -111,8 +109,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: oumou-salamat-backend:latest
-    container_name: oumou_salamat_backend
+    image: oumouna-khadija-backend:latest
+    container_name: oumouna_khadija_backend
     restart: unless-stopped
     networks:
       - oumou_net
@@ -122,15 +120,15 @@ services:
       DOCUMENTS_STORAGE_PATH: /app/uploads
       NODE_ENV: production
       PORT: 3001
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost,http://127.0.0.1:5173}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://localhost}
 
       # Base de données — utilise le nom du service Docker (postgres:5432)
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgrespassword}@postgres:5432/${POSTGRES_DB:-oumou_salamat_db}?schema=public}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgrespassword}@postgres:5432/${POSTGRES_DB:-oumouna_khadija_db}?schema=public}
 
       # URL publique Keycloak; it must match KC_HOSTNAME and the token issuer.
-      KEYCLOAK_AUTH_SERVER_URL: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}"
-      KEYCLOAK_REALM: "oumou-salamat"
-      KEYCLOAK_CLIENT_ID: "oumou-salamat-app"
+      KEYCLOAK_AUTH_SERVER_URL: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}"
+      KEYCLOAK_REALM: "oumouna-khadija"
+      KEYCLOAK_CLIENT_ID: "oumouna-khadija-app"
       KEYCLOAK_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
 
@@ -139,12 +137,12 @@ services:
       KEYCLOAK_INTERNAL_URL: "http://keycloak:8080"
 
       # Informations école
-      SCHOOL_NAME: "École As Sakina"
-      SCHOOL_PHONE: "+221 33 800 00 00"
-      SCHOOL_EMAIL: ${SCHOOL_EMAIL:-}
-      SCHOOL_ADDRESS: "Dakar, Sénégal"
+      SCHOOL_NAME: "Institut Oumouna Khadija"
+      SCHOOL_PHONE: "+221 77 433 05 08"
+      SCHOOL_EMAIL: ${SCHOOL_EMAIL:-oumounakhadidja21@gmail.com}
+      SCHOOL_ADDRESS: "Parcelles Assainies, Unité 25, Dakar"
     ports:
-      - "${BACKEND_BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-3001}:3001"
+      - "${BACKEND_BIND_ADDRESS:-127.0.0.1}:${BACKEND_PORT:-3002}:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -164,16 +162,16 @@ services:
       dockerfile: Dockerfile
       args:
         # Keycloak accessible depuis le browser → toujours localhost:8080
-        VITE_KEYCLOAK_URL: "http://localhost:8080"
-        VITE_KEYCLOAK_REALM: "oumou-salamat"
-        VITE_KEYCLOAK_CLIENT_ID: "oumou-salamat-app"
-    image: oumou-salamat-frontend:latest
-    container_name: oumou_salamat_frontend
+        VITE_KEYCLOAK_URL: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8081}"
+        VITE_KEYCLOAK_REALM: "oumouna-khadija"
+        VITE_KEYCLOAK_CLIENT_ID: "oumouna-khadija-app"
+    image: oumouna-khadija-frontend:latest
+    container_name: oumouna_khadija_frontend
     restart: unless-stopped
     networks:
       - oumou_net
     ports:
-      - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:80"
+      - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5174}:80"
     depends_on:
       backend:
         condition: service_healthy

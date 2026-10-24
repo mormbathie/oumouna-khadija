@@ -30,7 +30,7 @@ export class UsersService {
   }
 
   private get realm() {
-    return this.config.get<string>('KEYCLOAK_REALM') || 'oumou-salamat';
+    return this.config.get<string>('KEYCLOAK_REALM') || 'oumouna-khadija';
   }
 
   private async adminToken(): Promise<string> {

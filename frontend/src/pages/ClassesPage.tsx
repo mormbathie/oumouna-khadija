@@ -14,6 +14,14 @@ import {
 import { classesApi } from '../services/api';
 import { useAuth } from '../auth/AuthContext';
 
+const defaultProgram = programs[0];
+const emptyClassForm = () => ({
+  name: '', level: defaultProgram.levels[0], capacity: 25,
+  monthlyTuition: defaultProgram.monthlyTuition,
+  registrationFee: defaultProgram.registrationFee,
+  teacherId: '', program: defaultProgram.id,
+});
+
 export const ClassesPage: React.FC = () => {
   const { hasRole } = useAuth();
   const canManage = hasRole(['ADMIN', 'DIRECTEUR']);
@@ -24,15 +32,7 @@ export const ClassesPage: React.FC = () => {
   const [showClassModal, setShowClassModal] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [savingClass, setSavingClass] = useState(false);
-  const [classForm, setClassForm] = useState({
-    name: '',
-    level: 'CI',
-    capacity: 30,
-    monthlyTuition: 15000,
-    registrationFee: programs.find(p=>p.id==='ELEMENTARY')!.registrationFee,
-    teacherId: '',
-    program: 'ELEMENTARY',
-  });
+  const [classForm, setClassForm] = useState(emptyClassForm);
 
   // Subject Modal
   const [showSubjectModal, setShowSubjectModal] = useState(false);
@@ -107,15 +107,7 @@ export const ClassesPage: React.FC = () => {
       else await classesApi.create(payload);
       setShowClassModal(false);
       setEditingClassId(null);
-      setClassForm({
-        name: '',
-        level: 'CI',
-        capacity: 30,
-        monthlyTuition: 15000,
-        registrationFee: programs.find(p=>p.id==='ELEMENTARY')!.registrationFee,
-        teacherId: '',
-        program: 'ELEMENTARY',
-      });
+      setClassForm(emptyClassForm());
       await loadData();
     } catch (err: any) {
       alert(t("Error creating the class: ") + (err.response?.data?.message || err.message));
@@ -145,19 +137,19 @@ export const ClassesPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-800">{t("Classes & Subjects Taught")}</h2>
           <p className="text-xs text-slate-500">
-            {t("Primary school structure (CI, CP, CE1, CE2, CM1, CM2)")}</p>
+            Préscolaire, Tahfiz et enseignement franco-arabe</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {canManage && <button
-            onClick={() => { setEditingClassId(null); setClassForm({ name: '', level: 'CI', capacity: 30, monthlyTuition: 15000, registrationFee: programs.find(p=>p.id==='ELEMENTARY')!.registrationFee, teacherId: '', program: 'ELEMENTARY' }); setShowClassModal(true); }}
-            className="inline-flex items-center space-x-2 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-xl font-medium text-sm transition"
+            onClick={() => { setEditingClassId(null); setClassForm(emptyClassForm()); setShowClassModal(true); }}
+            className="inline-flex items-center space-x-2 bg-white hover:bg-amber-50 text-amber-700 border border-amber-200 px-4 py-2.5 rounded-xl font-medium text-sm transition"
           >
             <School className="w-4 h-4" />
             <span>{t("Create a class")}</span>
           </button>}
           {canManage && <button
             onClick={() => { setEditingSubjectId(null); setSubName(''); setSubCode(''); setSubCoeff(1); setShowSubjectModal(true); }}
-            className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-md transition"
+            className="inline-flex items-center space-x-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-md transition"
           >
             <Plus className="w-4 h-4" />
             <span>{t("Add a Subject")}</span>
@@ -168,17 +160,17 @@ export const ClassesPage: React.FC = () => {
       {/* Primary Classes Cards */}
       <div>
         <h3 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">
-          {t("Primary School Classes")}</h3>
+          Classes et groupes de l’institut</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {classes.length === 0 ? (
-            <div className="md:col-span-2 lg:col-span-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 p-8 text-center">
-              <School className="w-8 h-8 text-emerald-600 mx-auto mb-3" />
+            <div className="md:col-span-2 lg:col-span-3 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 p-8 text-center">
+              <School className="w-8 h-8 text-amber-600 mx-auto mb-3" />
               <p className="font-semibold text-slate-800">{t("No classes have been created yet.")}</p>
               <p className="text-xs text-slate-500 mt-1">{t("Create a class before assigning students.")}</p>
               {canManage && <button
                 type="button"
                 onClick={() => setShowClassModal(true)}
-                className="mt-4 inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold"
+                className="mt-4 inline-flex items-center space-x-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-semibold"
               >
                 <Plus className="w-4 h-4" />
                 <span>{t("Create the first class")}</span>
@@ -190,7 +182,7 @@ export const ClassesPage: React.FC = () => {
               className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition space-y-4"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded">
+                <span className="text-xs font-mono font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded">
                   {t("Niveau")}{c.level}
                 </span>
                 <span className="text-xs text-slate-500 font-medium">
@@ -203,7 +195,7 @@ export const ClassesPage: React.FC = () => {
                   {t("Class teacher:")}{c.teacher ? `${c.teacher.firstName} ${c.teacher.lastName}` : t("No teacher assigned")}
                 </p>
               </div>
-              {canManage && <button type="button" onClick={() => editClass(c)} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-50"><Pencil className="h-3.5 w-3.5" />{t("Edit class")}</button>}
+              {canManage && <button type="button" onClick={() => editClass(c)} className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-50"><Pencil className="h-3.5 w-3.5" />{t("Edit class")}</button>}
 
               {canManage && <label className="block text-xs font-medium text-slate-600">{t("Assign a teacher")}<select value={c.teacherId || ''} onChange={(event) => void handleAssignTeacher(c.id, event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs"><option value="">{t("No teacher")}</option>{teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.firstName} {teacher.lastName} · {teacher.email}</option>)}</select></label>}
 
@@ -214,7 +206,7 @@ export const ClassesPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">{t("Monthly tuition:")}</span>
-                  <span className="font-bold text-emerald-700">{c.monthlyTuition.toLocaleString()} {t("FCFA / mois")}</span>
+                  <span className="font-bold text-amber-700">{c.monthlyTuition.toLocaleString()} {t("FCFA / mois")}</span>
                 </div>
               </div>
             </div>
@@ -240,11 +232,11 @@ export const ClassesPage: React.FC = () => {
           <tbody className="divide-y divide-slate-100">
             {subjects.map((sub) => (
               <tr key={sub.id} className="hover:bg-slate-50">
-                <td className="px-5 py-3 font-mono font-bold text-emerald-800">{sub.code}</td>
+                <td className="px-5 py-3 font-mono font-bold text-amber-800">{sub.code}</td>
                 <td className="px-4 py-3 font-semibold text-slate-800">{sub.name}</td>
                 <td className="px-4 py-3 text-center font-bold text-slate-700">{sub.coefficient}</td>
                 <td className="px-5 py-3 text-right">
-                  {canManage ? <button type="button" onClick={() => editSubject(sub)} className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-emerald-800 hover:bg-emerald-50"><Pencil className="h-3 w-3" />{t("Edit")}</button> : <span className="inline-flex items-center gap-1 text-emerald-800"><CheckCircle2 className="h-3 w-3" />{t("Active")}</span>}
+                  {canManage ? <button type="button" onClick={() => editSubject(sub)} className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-amber-800 hover:bg-amber-50"><Pencil className="h-3 w-3" />{t("Edit")}</button> : <span className="inline-flex items-center gap-1 text-amber-800"><CheckCircle2 className="h-3 w-3" />{t("Active")}</span>}
                 </td>
               </tr>
             ))}
@@ -282,7 +274,7 @@ export const ClassesPage: React.FC = () => {
                     placeholder="Ex : CI A"
                     value={classForm.name}
                     onChange={(e) => setClassForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
@@ -293,15 +285,9 @@ export const ClassesPage: React.FC = () => {
                     required
                     value={classForm.level}
                     onChange={(e) => setClassForm((prev) => ({ ...prev, level: e.target.value }))}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                   >
-                    <option value="TPS">{t('Très petite section')}</option><option value="PS">{t('Petite section')}</option><option value="MS">{t('Moyenne section')}</option><option value="GS">{t('Grande section')}</option><option value="DAARA">{t('Daara')}</option>
-                    <option value="CI">{t("CI")}</option>
-                    <option value="CP">{t("CP")}</option>
-                    <option value="CE1">{t("CE1")}</option>
-                    <option value="CE2">{t("CE2")}</option>
-                    <option value="CM1">{t("CM1")}</option>
-                    <option value="CM2">{t("CM2")}</option>
+                    {programs.find(program => program.id === classForm.program)?.levels.map(level => <option key={level} value={level}>{level}</option>)}
                   </select>
                 </div>
 
@@ -313,13 +299,13 @@ export const ClassesPage: React.FC = () => {
                     min="1"
                     value={classForm.capacity}
                     onChange={(e) => setClassForm((prev) => ({ ...prev, capacity: Number(e.target.value) }))}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
                   <label className="font-medium text-slate-700 block mb-1">{t("Enseignant responsable")}</label>
-                  <select value={classForm.teacherId} onChange={(e) => setClassForm((prev) => ({ ...prev, teacherId: e.target.value }))} className="w-full rounded-lg border border-slate-200 bg-white p-2.5 focus:ring-2 focus:ring-emerald-500">
+                  <select value={classForm.teacherId} onChange={(e) => setClassForm((prev) => ({ ...prev, teacherId: e.target.value }))} className="w-full rounded-lg border border-slate-200 bg-white p-2.5 focus:ring-2 focus:ring-amber-500">
                     <option value="">{t("Affecter plus tard")}</option>
                     {teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.firstName} {teacher.lastName} · {teacher.email}</option>)}
                   </select>
@@ -333,7 +319,7 @@ export const ClassesPage: React.FC = () => {
                     min="0"
                     value={classForm.registrationFee}
                     onChange={(e) => setClassForm((prev) => ({ ...prev, registrationFee: Number(e.target.value) }))}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
@@ -344,7 +330,7 @@ export const ClassesPage: React.FC = () => {
                     min="0"
                     value={classForm.monthlyTuition}
                     onChange={(e) => setClassForm((prev) => ({ ...prev, monthlyTuition: Number(e.target.value) }))}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -362,7 +348,7 @@ export const ClassesPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={savingClass}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md disabled:opacity-50"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium shadow-md disabled:opacity-50"
                 >
                   {savingClass ? t("Saving…") : editingClassId ? t("Save") : t("Create class")}
                 </button>
@@ -392,7 +378,7 @@ export const ClassesPage: React.FC = () => {
                   placeholder={t("Example: Science")}
                   value={subName}
                   onChange={(e) => setSubName(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -404,7 +390,7 @@ export const ClassesPage: React.FC = () => {
                   placeholder="Ex: EVEIL"
                   value={subCode}
                   onChange={(e) => setSubCode(e.target.value)}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -418,7 +404,7 @@ export const ClassesPage: React.FC = () => {
                   required
                   value={subCoeff}
                   onChange={(e) => setSubCoeff(Number(e.target.value))}
-                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
@@ -431,7 +417,7 @@ export const ClassesPage: React.FC = () => {
                   {t("Cancel")}</button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-md"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium shadow-md"
                 >
                   {editingSubjectId ? t("Save") : t("Add")}
                 </button>

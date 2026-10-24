@@ -4,7 +4,7 @@ networks:
     name: assakina-monitoring-network
   school:
     external: true
-    name: oumou-salamat_oumou_net
+    name: oumouna-khadija_oumou_net
 services:
   assakina-monitoring-metastore-postgres-0:
     container_name: assakina-monitoring-metastore-postgres-0

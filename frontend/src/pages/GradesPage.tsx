@@ -190,14 +190,14 @@ export const GradesPage: React.FC = () => {
           <button
             onClick={() => setActiveTab('entry')}
             className={`px-3 py-1.5 rounded-lg transition ${
-              activeTab === 'entry' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'entry' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             {t("Enter Grades")}</button>
           <button
             onClick={() => setActiveTab('report_cards')}
             className={`px-3 py-1.5 rounded-lg transition ${
-              activeTab === 'report_cards' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              activeTab === 'report_cards' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             {t("Bulletins Trimestriels (")}{classReportCards.length})
@@ -212,7 +212,7 @@ export const GradesPage: React.FC = () => {
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-emerald-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-amber-500"
           >
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
@@ -227,7 +227,7 @@ export const GradesPage: React.FC = () => {
           <select
             value={selectedTerm}
             onChange={(e) => setSelectedTerm(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-emerald-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-amber-500"
           >
             <option value="TRIMESTRE_1">{t("1er Trimestre")}</option>
             <option value="TRIMESTRE_2">{t("Second term")}</option>
@@ -242,7 +242,7 @@ export const GradesPage: React.FC = () => {
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-amber-500"
               >
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -257,7 +257,7 @@ export const GradesPage: React.FC = () => {
               <select
                 value={examType}
                 onChange={(e) => setExamType(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-emerald-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium focus:ring-2 focus:ring-amber-500"
               >
                 <option value="COMPOSITION">{t("Composition Trimestrielle")}</option>
                 <option value="DEVOIR_1">{t("Devoir N°1")}</option>
@@ -282,7 +282,7 @@ export const GradesPage: React.FC = () => {
             </div>
             <button
               onClick={handleSaveGrades}
-              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition"
+              className="inline-flex items-center space-x-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{t("Save Grades")}</span>
@@ -330,7 +330,7 @@ export const GradesPage: React.FC = () => {
                               placeholder="-- / 20"
                               value={gradeVal}
                               onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                              className="w-24 p-2 font-bold text-center border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white"
+                              className="w-24 p-2 font-bold text-center border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white"
                             />
                             <span className="text-slate-400 font-bold">/ 20</span>
                           </div>
@@ -341,7 +341,7 @@ export const GradesPage: React.FC = () => {
                             placeholder={t("Example: Careful work, good reasoning…")}
                             value={remarksVal}
                             onChange={(e) => handleRemarksChange(student.id, e.target.value)}
-                            className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-xs"
+                            className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 bg-white text-xs"
                           />
                         </td>
                       </tr>
@@ -407,7 +407,7 @@ export const GradesPage: React.FC = () => {
                       <td className="px-4 py-3 font-semibold text-slate-800">
                         {rc.student?.firstName} {rc.student?.lastName}
                       </td>
-                      <td className="px-4 py-3 font-bold text-sm text-emerald-700">
+                      <td className="px-4 py-3 font-bold text-sm text-amber-700">
                         {rc.overallAverage} / 20
                       </td>
                       <td className="px-4 py-3 text-slate-500">
@@ -421,7 +421,7 @@ export const GradesPage: React.FC = () => {
                           onClick={() => handleViewBulletin(rc.studentId)}
                           className="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition"
                         >
-                          <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                          <FileText className="w-3.5 h-3.5 text-amber-400" />
                           <span>{t("View Report Card")}</span>
                         </button>
                       </td>
@@ -453,7 +453,7 @@ export const GradesPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t("Matricule :")}</span>
-                  <span className="font-mono text-emerald-700 font-bold">{selectedReportCard.student?.matricule}</span>
+                  <span className="font-mono text-amber-700 font-bold">{selectedReportCard.student?.matricule}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold block">{t("Class:")}</span>
@@ -484,7 +484,7 @@ export const GradesPage: React.FC = () => {
                       <tr key={i} className="hover:bg-slate-50">
                         <td className="px-4 py-2.5 font-semibold text-slate-800">{sub.subjectName}</td>
                         <td className="px-3 py-2.5 text-center font-mono">{sub.coefficient}</td>
-                        <td className="px-3 py-2.5 text-center font-bold text-emerald-700">{sub.average}</td>
+                        <td className="px-3 py-2.5 text-center font-bold text-amber-700">{sub.average}</td>
                         <td className="px-3 py-2.5 text-center font-mono font-bold text-slate-800">{sub.totalPoints}</td>
                         <td className="px-4 py-2.5 text-slate-600 italic text-[11px]">{sub.appreciation}</td>
                       </tr>
@@ -495,11 +495,11 @@ export const GradesPage: React.FC = () => {
                     <tr>
                       <td className="px-4 py-2.5 uppercase">{t("OVERALL TOTAL")}</td>
                       <td className="px-3 py-2.5 text-center">{selectedReportCard.totalCoeff || 8}</td>
-                      <td className="px-3 py-2.5 text-center text-sm text-emerald-800 font-black">
+                      <td className="px-3 py-2.5 text-center text-sm text-amber-800 font-black">
                         {selectedReportCard.overallAverage} / 20
                       </td>
                       <td className="px-3 py-2.5 text-center font-mono">{selectedReportCard.totalScore}</td>
-                      <td className="px-4 py-2.5 text-emerald-700 font-semibold">{selectedReportCard.appreciation}</td>
+                      <td className="px-4 py-2.5 text-amber-700 font-semibold">{selectedReportCard.appreciation}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -509,7 +509,7 @@ export const GradesPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-center">
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("Student Rank")}</span>
-                  <span className="text-xl font-black text-emerald-700">
+                  <span className="text-xl font-black text-amber-700">
                     {selectedReportCard.rank ? `${selectedReportCard.rank}e` : '-'}
                   </span>
                 </div>
@@ -519,7 +519,7 @@ export const GradesPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("Plus Forte Moyenne")}</span>
-                  <span className="text-base font-bold text-emerald-600">{selectedReportCard.maxAverage || '-'}</span>
+                  <span className="text-base font-bold text-amber-600">{selectedReportCard.maxAverage || '-'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-bold block">{t("Plus Faible Moyenne")}</span>
@@ -555,7 +555,7 @@ export const GradesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => printSchoolDocument(t("Print Report Card"), `<h3>${escapeHtml(selectedReportCard.student?.firstName)} ${escapeHtml(selectedReportCard.student?.lastName)}</h3><p>${escapeHtml(t("Matricule"))}: ${escapeHtml(selectedReportCard.student?.matricule)} · ${escapeHtml(t("Class"))}: ${escapeHtml(selectedReportCard.classroom?.name)}</p><table><thead><tr><th>${escapeHtml(t("Subject"))}</th><th>${escapeHtml(t("Coefficient"))}</th><th>${escapeHtml(t("Average"))}</th><th>${escapeHtml(t("Appreciation"))}</th></tr></thead><tbody>${(selectedReportCard.subjectBreakdown || []).map((s:any)=>`<tr><td>${escapeHtml(s.subjectName)}</td><td>${escapeHtml(s.coefficient)}</td><td>${escapeHtml(s.average)}</td><td>${escapeHtml(s.appreciation)}</td></tr>`).join('')}</tbody></table><p>${escapeHtml(t("Average"))}: ${escapeHtml(selectedReportCard.overallAverage)} / 20</p><p>${escapeHtml(t("Student Rank"))}: ${escapeHtml(selectedReportCard.rank ?? '-')}</p><p>${escapeHtml(t("Class Average"))}: ${escapeHtml(selectedReportCard.classAverage ?? '—')}</p><p>${escapeHtml(selectedReportCard.appreciation)}</p><div class="signatures"><span>${escapeHtml(t("Teacher"))}</span><span>${escapeHtml(t("Principal’s Approval"))}</span><span>${escapeHtml(t("Parent’s Signature"))}</span></div>`, selectedReportCard.academicYear?.name || '2026/2027') }
-                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-md"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold shadow-md"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>{t("Print Report Card")}</span>

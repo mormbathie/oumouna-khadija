@@ -12,12 +12,12 @@ export class AuthService {
   private get tokenUrl() {
     const keycloakUrl = this.configService.get<string>('KEYCLOAK_INTERNAL_URL') ||
       this.configService.get<string>('KEYCLOAK_AUTH_SERVER_URL') || 'http://localhost:8080';
-    const realm = this.configService.get<string>('KEYCLOAK_REALM') || 'oumou-salamat';
+    const realm = this.configService.get<string>('KEYCLOAK_REALM') || 'oumouna-khadija';
     return `${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`;
   }
 
   private get clientId() {
-    return this.configService.get<string>('KEYCLOAK_CLIENT_ID') || 'oumou-salamat-app';
+    return this.configService.get<string>('KEYCLOAK_CLIENT_ID') || 'oumouna-khadija-app';
   }
 
   private async exchangeToken(params: Record<string, string>) {

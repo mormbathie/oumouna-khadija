@@ -4,9 +4,9 @@ import json, os, subprocess
 from pathlib import Path
 if os.geteuid() != 0:
     raise SystemExit('Run as root on VPS.')
-root = Path('/opt/oumou-salamat')
-sql = "SELECT COALESCE(json_object_agg(c.name,c.value),'{}'::json) FROM realm_smtp_config c JOIN realm r ON r.id=c.realm_id WHERE r.name='oumou-salamat';"
-command = ['docker','exec','oumou_salamat_keycloak_postgres','sh','-c','exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"','sh',sql]
+root = Path('/opt/oumouna-khadija')
+sql = "SELECT COALESCE(json_object_agg(c.name,c.value),'{}'::json) FROM realm_smtp_config c JOIN realm r ON r.id=c.realm_id WHERE r.name='oumouna-khadija';"
+command = ['docker','exec','oumouna_khadija_keycloak_postgres','sh','-c','exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"','sh',sql]
 result = subprocess.run(command, capture_output=True, text=True)
 if result.returncode:
     raise SystemExit('Cannot read SMTP configuration; no credentials were displayed.')

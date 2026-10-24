@@ -1,11 +1,11 @@
 [Unit]
-Description=As Sakina monitoring email alerts
+Description=Institut Oumouna Khadija monitoring email alerts
 After=network-online.target docker.service
 Wants=network-online.target
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/oumou-salamat
-ExecStart=/usr/bin/python3 /opt/oumou-salamat/deploy/observability/monitor-alerts.py
+WorkingDirectory=/opt/oumouna-khadija
+ExecStart=/usr/bin/python3 /opt/oumouna-khadija/deploy/observability/monitor-alerts.py
 UMask=0077
 Nice=15
 MemoryMax=96M

@@ -18,7 +18,7 @@ def main():
     with urllib.request.urlopen(urllib.request.Request(base + '/realms/master/protocol/openid-connect/token', data=credentials), timeout=30) as response:
         token = json.load(response)['access_token']
     settings = {'internationalizationEnabled': True, 'supportedLocales': ['fr', 'en', 'ar'], 'defaultLocale': 'fr'}
-    request = urllib.request.Request(base + '/admin/realms/oumou-salamat', data=json.dumps(settings).encode(), method='PUT',
+    request = urllib.request.Request(base + '/admin/realms/oumouna-khadija', data=json.dumps(settings).encode(), method='PUT',
         headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
     with urllib.request.urlopen(request, timeout=30):
         pass

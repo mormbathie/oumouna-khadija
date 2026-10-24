@@ -20,8 +20,8 @@ services:
       - ./deploy/realm.production.json:/opt/keycloak/data/import/realm-export.json:ro
 
   backend:
+    image: mormbathie/oumouna-khadija-backend:${APP_VERSION:-latest}
     build: !reset null
-    image: mormbathie/oumou-salamat-backend:${APP_VERSION:?Set APP_VERSION from deploy/production.env}
 
     volumes:
       - ./deploy/smtp.private.json:/run/secrets/school-smtp.json:ro
@@ -32,12 +32,12 @@ services:
       OTEL_TRACES_SAMPLER_ARG: "0.25"
 
   frontend:
+    image: mormbathie/oumouna-khadija-frontend:${APP_VERSION:-latest}
     build: !reset null
-    image: mormbathie/oumou-salamat-frontend:${APP_VERSION:?Set APP_VERSION from deploy/production.env}
 
   caddy:
     image: caddy:2-alpine
-    container_name: oumou_salamat_caddy
+    container_name: oumouna_khadija_caddy
     restart: unless-stopped
     networks:
       - oumou_net

@@ -16,7 +16,7 @@ export class AccountSecurityService {
     });
     if (!tokenResponse.ok) throw new ServiceUnavailableException('Service de sécurité indisponible.');
     const token = (await tokenResponse.json()).access_token;
-    const realm = this.config.get<string>('KEYCLOAK_REALM') || 'oumou-salamat';
+    const realm = this.config.get<string>('KEYCLOAK_REALM') || 'oumouna-khadija';
     const response = await fetch(`${base}/admin/realms/${encodeURIComponent(realm)}${path}`, {
       signal: AbortSignal.timeout(15000), method: body === undefined ? 'GET' : 'PUT',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -42,7 +42,7 @@ export class AccountSecurityService {
 
   private async sendActions(id: string, actions: string[]) {
     const origin = (this.config.get<string>('CORS_ORIGINS') || 'http://localhost:5173').split(',')[0].trim();
-    const query = new URLSearchParams({ lifespan: '900', client_id: this.config.get<string>('KEYCLOAK_CLIENT_ID') || 'oumou-salamat-app', redirect_uri: origin.replace(/\/$/, '') + '/login' });
+    const query = new URLSearchParams({ lifespan: '900', client_id: this.config.get<string>('KEYCLOAK_CLIENT_ID') || 'oumouna-khadija-app', redirect_uri: origin.replace(/\/$/, '') + '/login' });
     await this.request(`/users/${encodeURIComponent(id)}/execute-actions-email?${query}`, actions);
   }
 

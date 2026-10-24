@@ -37,15 +37,15 @@ def main():
     def request(path, data=None):
         headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
         body = None if data is None else json.dumps(data).encode()
-        req = urllib.request.Request(base + '/admin/realms/oumou-salamat' + path, data=body, headers=headers, method='GET' if data is None else 'PUT')
+        req = urllib.request.Request(base + '/admin/realms/oumouna-khadija' + path, data=body, headers=headers, method='GET' if data is None else 'PUT')
         with urllib.request.urlopen(req, timeout=30) as response:
             content = response.read()
             return json.loads(content) if content else None
 
     realm = request('')
-    clients = request('/clients?clientId=oumou-salamat-app')
-    client = next(item for item in clients if item['clientId'] == 'oumou-salamat-app')
-    backup = Path('/var/backups/oumou-salamat/config') / ('domain-' + datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
+    clients = request('/clients?clientId=oumouna-khadija-app')
+    client = next(item for item in clients if item['clientId'] == 'oumouna-khadija-app')
+    backup = Path('/var/backups/oumouna-khadija/config') / ('domain-' + datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
     backup.mkdir(parents=True, mode=0o700)
     shutil.copy2(env_path, backup / 'environment')
     shutil.copy2(realm_path, backup / 'realm.production.json')
@@ -57,7 +57,7 @@ def main():
     auth_url = 'https://' + args.auth_host
     realm_attributes = {**realm.get('attributes', {}), 'frontendUrl': auth_url}
     client_attributes = {**client.get('attributes', {}), 'post.logout.redirect.uris': origin + '/*'}
-    request('', {'displayName': 'École As Sakina', 'attributes': realm_attributes,
+    request('', {'displayName': 'Institut Oumouna Khadija', 'attributes': realm_attributes,
                  'ssoSessionIdleTimeout': 93600, 'ssoSessionMaxLifespan': 604800,
                  'clientSessionIdleTimeout': 93600, 'clientSessionMaxLifespan': 604800})
     request('/clients/' + client['id'], {'redirectUris': [origin + '/*'], 'webOrigins': [origin], 'attributes': client_attributes})
@@ -82,10 +82,10 @@ def main():
 
     replace_private(env_path, '\n'.join(lines) + '\n')
     private_realm = json.loads(realm_path.read_text())
-    private_realm['displayName'] = 'École As Sakina'
+    private_realm['displayName'] = 'Institut Oumouna Khadija'
     private_realm['attributes'] = {**private_realm.get('attributes', {}), 'frontendUrl': auth_url}
     for entry in private_realm.get('clients', []):
-        if entry['clientId'] == 'oumou-salamat-app':
+        if entry['clientId'] == 'oumouna-khadija-app':
             entry.update(redirectUris=[origin + '/*'], webOrigins=[origin])
             entry['attributes'] = {**entry.get('attributes', {}), 'post.logout.redirect.uris': origin + '/*'}
     replace_private(realm_path, json.dumps(private_realm, ensure_ascii=False, indent=2) + '\n')

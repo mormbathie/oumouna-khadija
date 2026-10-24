@@ -26,7 +26,7 @@ if args[:2]==['image','inspect']:
  print((old if image in ids.values() else new) if 'revision' in fmt else newids[name]);sys.exit(0)
 if args[0]=='inspect':
  if '-f' not in args:
-  name=args[-1].removeprefix('oumou_salamat_');print(json.dumps([{'Image':ids[name]}]));sys.exit(0)
+  name=args[-1].removeprefix('oumouna_khadija_');print(json.dumps([{'Image':ids[name]}]));sys.exit(0)
  fmt=args[args.index('-f')+1];name=args[-1]
  if 'Running' in fmt:print('true')
  elif 'Health' in fmt:print('unhealthy' if state['running']=='new' and os.environ['QA_MODE']=='health' else 'healthy')
@@ -34,7 +34,7 @@ if args[0]=='inspect':
  sys.exit(0)
 if args[0]=='pull':sys.exit(0)
 if 'config' in args:
- if '--format' in args:print(json.dumps({'services':{name:{'image':f'mormbathie/oumou-salamat-{name}:{new}'} for name in ids},'volumes':{v:{} for v in ['postgres_data','keycloak_postgres_data','school_documents','caddy_data','caddy_config']}}))
+ if '--format' in args:print(json.dumps({'services':{name:{'image':f'mormbathie/oumouna-khadija-{name}:{new}'} for name in ids},'volumes':{v:{} for v in ['postgres_data','keycloak_postgres_data','school_documents','caddy_data','caddy_config']}}))
  sys.exit(0)
 if 'ps' in args:
  if '-q' in args:print(args[-1])
@@ -66,7 +66,7 @@ class RollbackTests(unittest.TestCase):
                 # The test copy alone bypasses root; real deployment retains its root check.
                 text = text.replace('if (( EUID != 0 )); then', 'if false; then')
                 text = text.replace('(( EUID == 0 )) ||', 'true ||')
-                text = text.replace('backup_root=/var/backups/oumou-salamat/daily', f'backup_root={root}/backups')
+                text = text.replace('backup_root=/var/backups/oumouna-khadija/daily', f'backup_root={root}/backups')
                 text = text.replace('[[ -f /opt/assakina-observability/agent.compose.yaml ]]', 'false')
                 (root / 'deploy' / name).write_text(text)
             for name in ('.env', 'deployment-access.txt', 'deploy/realm.production.json', 'deploy/smtp.private.json'):

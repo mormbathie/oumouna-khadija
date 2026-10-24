@@ -1,11 +1,11 @@
 [Unit]
-Description=As Sakina encrypted Google Drive backup
-After=network-online.target oumou-salamat-backup.service
+Description=Institut Oumouna Khadija encrypted Google Drive backup
+After=network-online.target oumouna-khadija-backup.service
 Wants=network-online.target
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/oumou-salamat
-ExecStart=/bin/bash /opt/oumou-salamat/deploy/offsite-backup.sh
+WorkingDirectory=/opt/oumouna-khadija
+ExecStart=/bin/bash /opt/oumouna-khadija/deploy/offsite-backup.sh
 UMask=0077
 Nice=15
 IOSchedulingClass=idle

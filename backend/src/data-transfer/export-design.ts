@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const EXPORT_MARKER = 'AS_SAKINA_EXPORT_V2';
+export const EXPORT_MARKER = 'OUMOUNA_KHADIJA_EXPORT_V1';
 export const READ_ONLY_MODELS = ['Refund','StudentDeparture','CashClosing','PaymentInstallment','PaymentReminder','BusinessAudit'] as const;
 export const TABLE_LABELS: Record<string,string> = {
   AcademicYear:'Années scolaires',Parent:'Parents et tuteurs',Subject:'Matières',Student:'Élèves',Classroom:'Classes',Enrollment:'Inscriptions',Grade:'Notes',ReportCard:'Bulletins',Invoice:'Factures',Payment:'Paiements',Attendance:'Présences élèves',StaffAttendance:'Pointage professeurs',SchoolHoliday:'Jours fériés',SchoolCalendarSettings:'Calendrier scolaire',StudentDocument:'Documents élèves',ParentDocument:'Documents parents',Refund:'Remboursements',StudentDeparture:'Départs élèves',CashClosing:'Clôtures de caisse',PaymentInstallment:'Échéanciers',PaymentReminder:'Relances',BusinessAudit:'Journal des actions',
@@ -25,11 +25,11 @@ const technical=(f:ExportField)=>f.isId||f.name.endsWith('Id')||['billingKey','r
 const styleHeader={font:{name:'Calibri',size:11,bold:true,color:{argb:'FFFFFFFF'}},fill:{type:'pattern' as const,pattern:'solid' as const,fgColor:{argb:green}},alignment:{vertical:'middle' as const,wrapText:true}};
 function banner(sheet:ExcelJS.Worksheet,end:number,title:string,subtitle:string,imageId:number){
  sheet.addImage(imageId,{tl:{col:.1,row:.1},ext:{width:76,height:76}});
- for(const [row,text,height] of [[1,'GROUPE SCOLAIRE ISLAMIQUE ABOU OUBAYDA AS SAKINA',30],[2,'Cité extension Léopold Sédar Senghor, villa 185 — Dakar',22],[3,'77 363 08 56 / 70 339 68 02 / 70 464 78 73 · contact@assakina-school.com',22],[4,title,30]] as const){sheet.mergeCells(row,2,row,end);const cell=sheet.getCell(row,2);cell.value=text;cell.font={name:'Calibri',size:row===1?15:row===4?17:10,bold:row===1||row===4,color:{argb:row===4?emerald:row===1?green:muted}};cell.alignment={vertical:'middle',wrapText:true};sheet.getRow(row).height=height;}
+ for(const [row,text,height] of [[1,'INSTITUT OUMOUNA KHADIJA',30],[2,'Parcelles Assainies, Unité 25 — Dakar',22],[3,'77 433 05 08 / 70 707 43 64 · oumounakhadidja21@gmail.com',22],[4,title,30]] as const){sheet.mergeCells(row,2,row,end);const cell=sheet.getCell(row,2);cell.value=text;cell.font={name:'Calibri',size:row===1?15:row===4?17:10,bold:row===1||row===4,color:{argb:row===4?emerald:row===1?green:muted}};cell.alignment={vertical:'middle',wrapText:true};sheet.getRow(row).height=height;}
  sheet.mergeCells(5,1,5,end);sheet.getCell('A5').value=subtitle;sheet.getCell('A5').font={name:'Calibri',size:10,color:{argb:muted},italic:true};sheet.getRow(5).height=28;sheet.getCell('A5').alignment={wrapText:true,vertical:'middle'};
  sheet.properties.defaultRowHeight=22;
  sheet.pageSetup={paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:.3,right:.3,top:.4,bottom:.4,header:.15,footer:.15}};
- sheet.headerFooter={oddHeader:'&RAs Sakina · Export confidentiel',oddFooter:'&Lassakina-school.com&CUsage administratif&RPage &P / &N'};
+ sheet.headerFooter={oddHeader:'&RInstitut Oumouna Khadija · Export confidentiel',oddFooter:'&Loumounakhadidja-academie.com&CUsage administratif&RPage &P / &N'};
 }
 function excelValue(field:ExportField,value:any){
  if(value===null||value===undefined)return null;
@@ -38,7 +38,7 @@ function excelValue(field:ExportField,value:any){
  return value;
 }
 export async function styledWorkbook(tables:ExportTable[],when=new Date()){
- const wb=new ExcelJS.Workbook();wb.creator='École As Sakina';wb.title='Données scolaires — As Sakina';wb.subject='Export administratif';wb.company='Groupe scolaire Abou Oubayda As Sakina';wb.created=when;wb.modified=when;
+ const wb=new ExcelJS.Workbook();wb.creator='Institut Oumouna Khadija';wb.title='Données scolaires — Institut Oumouna Khadija';wb.subject='Export administratif';wb.company='Institut Oumouna Khadija';wb.created=when;wb.modified=when;
  const logo=wb.addImage({buffer:readFileSync(join(__dirname,'assets','school-logo.png')) as any,extension:'png'});
  const exported=new Intl.DateTimeFormat('fr-FR',{timeZone:'Africa/Dakar',dateStyle:'long',timeStyle:'short'}).format(when)+' — heure de Dakar';
  const cover=wb.addWorksheet('Sommaire',{properties:{tabColor:{argb:emerald}},views:[{showGridLines:false}]});

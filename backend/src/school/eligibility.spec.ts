@@ -1,6 +1,14 @@
-import {validateOptionsForClass} from './school-options';
-describe('School option eligibility',()=>{
-  it.each(['TPS','PS'])('rejects karate for %s',level=>expect(()=>validateOptionsForClass({karate:true},{level,registrationFee:50000,monthlyTuition:15000})).toThrow('interdit'));
-  it('rejects supplies outside elementary',()=>expect(()=>validateOptionsForClass({supplies:true},{level:'MS',registrationFee:50000,monthlyTuition:15000})).toThrow('élémentaire'));
-  it('keeps karate independent from kimono',()=>expect(()=>validateOptionsForClass({karate:true},{level:'MS',registrationFee:50000,monthlyTuition:15000})).not.toThrow());
+import { validateOptionsForClass } from './school-options';
+
+describe('Eligibilité des options Oumouna Khadija', () => {
+  const preschool = { level: 'PS', program: 'PRESCHOOL', registrationFee: 43000, monthlyTuition: 12000 };
+  const boarding = { level: 'TAHFIZ', program: 'DAARA_BOARDING', registrationFee: 160000, monthlyTuition: 91000 };
+  it('réserve le taekwondo à l’internat', () => {
+    expect(() => validateOptionsForClass({ karate: true }, preschool)).toThrow('internat');
+    expect(() => validateOptionsForClass({ karate: true }, boarding)).not.toThrow();
+  });
+  it('réserve la cantine au préscolaire', () => {
+    expect(() => validateOptionsForClass({ supplies: true }, boarding)).toThrow('préscolaire');
+    expect(() => validateOptionsForClass({ supplies: true }, preschool)).not.toThrow();
+  });
 });
