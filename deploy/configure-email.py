@@ -14,7 +14,7 @@ import urllib.parse
 import urllib.request
 
 MAILBOX = 'contact@oumounakhadidja-academie.com'
-DEFAULT_SMTP_HOST = 'mail.oumounakhadidja-academie.com'
+DEFAULT_SMTP_HOST = 'mail96.lwspanel.com'
 
 
 def main():
