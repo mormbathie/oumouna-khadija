@@ -154,6 +154,7 @@ export class UsersService {
         lastName: input.lastName.trim(),
         enabled: true,
         emailVerified: false,
+        attributes: { locale: ['fr'] },
         requiredActions: ['VERIFY_EMAIL', 'UPDATE_PASSWORD'],
       }),
     });
