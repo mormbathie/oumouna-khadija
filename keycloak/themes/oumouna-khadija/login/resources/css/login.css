@@ -1,0 +1,111 @@
+:root {
+  --oumouna-ink: #252817;
+  --oumouna-olive: #59612f;
+  --oumouna-gold: #c98522;
+  --oumouna-cream: #f7f3e8;
+}
+
+html, body, .login-pf, .login-pf body {
+  min-height: 100%;
+  background: var(--oumouna-cream) !important;
+  color: var(--oumouna-ink);
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+.login-pf body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(201, 133, 34, .18), transparent 28rem),
+    radial-gradient(circle at 90% 80%, rgba(89, 97, 47, .18), transparent 30rem),
+    linear-gradient(135deg, #fbfaf5 0%, #f1ecdb 100%);
+}
+
+.login-pf-page {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 18px;
+}
+
+#kc-header {
+  width: min(520px, 100%);
+  margin: 0 0 20px;
+  color: var(--oumouna-ink);
+  text-align: center;
+}
+
+#kc-header-wrapper {
+  padding: 104px 0 0;
+  background: url("../img/logo.png") center top / 88px 88px no-repeat;
+  color: var(--oumouna-olive);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+
+.card-pf, #kc-content-wrapper {
+  width: min(520px, calc(100vw - 36px));
+  margin: 0 auto;
+}
+
+.card-pf {
+  border: 1px solid rgba(89, 97, 47, .15);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 24px 70px rgba(37, 40, 23, .14);
+  padding: 34px 38px;
+}
+
+#kc-page-title {
+  color: var(--oumouna-ink);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+#kc-info-wrapper, #kc-form-options, #kc-registration {
+  background: transparent;
+}
+
+a { color: var(--oumouna-olive) !important; font-weight: 700; }
+a:hover { color: var(--oumouna-gold) !important; }
+
+.btn-primary, input[type="submit"].btn-primary {
+  min-height: 46px;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--oumouna-gold) !important;
+  box-shadow: 0 8px 20px rgba(201, 133, 34, .2);
+  font-weight: 800;
+}
+
+.form-control {
+  min-height: 46px;
+  border: 1px solid #d8dacb;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.form-control:focus {
+  border-color: var(--oumouna-olive);
+  box-shadow: 0 0 0 3px rgba(89, 97, 47, .12);
+}
+
+.alert { border-radius: 12px; }
+.instruction, #kc-info, #kc-content { line-height: 1.65; }
+
+@media (max-width: 560px) {
+  .login-pf-page { justify-content: flex-start; padding-top: 28px; }
+  #kc-header-wrapper { padding-top: 88px; background-size: 74px 74px; font-size: 18px; }
+  .card-pf { padding: 26px 22px; border-radius: 18px; }
+  #kc-page-title { font-size: 21px; }
+}
+

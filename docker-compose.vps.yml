@@ -18,6 +18,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
     volumes:
       - ./deploy/realm.production.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
+      - ./frontend/public/oumouna-khadija-logo.png:/opt/keycloak/themes/oumouna-khadija/login/resources/img/logo.png:ro
 
   backend:
     image: mormbathie/oumouna-khadija-backend:${APP_VERSION:-latest}

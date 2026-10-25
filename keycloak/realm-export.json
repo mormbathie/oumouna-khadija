@@ -2,6 +2,7 @@
   "realm": "oumouna-khadija",
   "enabled": true,
   "displayName": "Institut Oumouna Khadija",
+  "loginTheme": "oumouna-khadija",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,

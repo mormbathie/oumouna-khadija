@@ -69,6 +69,7 @@ class RollbackTests(unittest.TestCase):
                 text = text.replace('backup_root=/var/backups/oumouna-khadija/daily', f'backup_root={root}/backups')
                 text = text.replace('[[ -f /opt/assakina-observability/agent.compose.yaml ]]', 'false')
                 (root / 'deploy' / name).write_text(text)
+            (root / 'deploy/apply-keycloak-theme.py').write_text("print('Oumouna Khadija login theme is active.')\n")
             for name in ('.env', 'deployment-access.txt', 'deploy/realm.production.json', 'deploy/smtp.private.json'):
                 (root / name).write_text('private fixture')
             (root / 'deploy/production.env').write_text('APP_VERSION=' + NEW + '\n')

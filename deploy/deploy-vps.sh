@@ -112,7 +112,12 @@ finish_deployment() {
 }
 trap finish_deployment EXIT
 
-# Only application containers are eligible for recreation; databases, auth and Caddy stay in place.
+# The authentication service keeps Keycloak security while presenting the
+# school's own end-user pages for activation and password actions.
+"${compose[@]}" up -d --no-build --no-deps --wait --wait-timeout 180 keycloak
+python3 deploy/apply-keycloak-theme.py
+
+# Only stateless application containers are recreated below; databases and Caddy stay in place.
 if ! "${compose[@]}" up -d --no-build --no-deps --wait --wait-timeout 300 backend frontend; then
   # Capture startup diagnostics from the new containers even when healthchecks fail.
   if [[ -f /opt/assakina-observability/agent.compose.yaml ]]; then
