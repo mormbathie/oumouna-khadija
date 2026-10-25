@@ -51,7 +51,6 @@ export const Layout: React.FC = () => {
     { to: '/data-transfer', label: t("Import / Export"), icon: navigationVisuals['/data-transfer'].icon, roles: ['ADMIN'] },
     { to: '/school-information', label: t('School information and fees'), icon: navigationVisuals['/school-information'].icon, roles: roleNames },
     { to: '/profile', label: t("My Profile"), icon: navigationVisuals['/profile'].icon, roles: roleNames },
-    { to: '/password', label: t("My Password"), icon: navigationVisuals['/password'].icon, roles: roleNames },
   ].filter((item) => hasRole(item.roles));
 
   const groups = navigationCategories.map(category => ({ ...category, items: category.routes.map(route => navItems.find(item => item.to === route)).filter((item): item is typeof navItems[number] => Boolean(item)) })).filter(category => category.items.length);

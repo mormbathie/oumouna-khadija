@@ -40,5 +40,5 @@ export const navigationCategories = [
   { id: 'activities', label: 'Activités & équipements', routes: ['/karate', '/kimono'] },
   { id: 'attendance', label: 'Présences & personnel', routes: ['/attendance', '/attendance/scan', '/staff-attendance', '/teacher-badge'] },
   { id: 'administration', label: 'Administration', routes: ['/users', '/data-transfer', '/school-information'] },
-  { id: 'account', label: 'Mon compte', routes: ['/profile', '/password'] },
+  { id: 'account', label: 'Mon compte', routes: ['/profile'] },
 ];

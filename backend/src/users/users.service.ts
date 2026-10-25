@@ -174,7 +174,7 @@ export class UsersService {
       });
       const safeUser = this.publicUser(user, [role]);
       await this.syncLocalUser(safeUser);
-      await this.prisma.user.updateMany({ where: { keycloakId: user.id }, data: { mustChangePassword: true } });
+      await this.prisma.user.updateMany({ where: { keycloakId: user.id }, data: { mustChangePassword: false } });
       await this.sendAccountActions(user.id, ['VERIFY_EMAIL', 'UPDATE_PASSWORD']);
       return { ...safeUser, invitationSent: true };
     } catch (error) {

@@ -28,10 +28,9 @@ import { DataTransferPage } from './pages/DataTransferPage';
 const AttendanceScanPage = lazy(() => import('./pages/AttendanceScanPage').then((module) => ({ default: module.AttendanceScanPage })));
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { authenticated, initializing, user } = useAuth();
+  const { authenticated, initializing } = useAuth();
   const location = useLocation();
   if (initializing) return <div className="grid min-h-screen place-items-center text-slate-500">{t("Checking your session…")}</div>;
-  if (authenticated && user?.mustChangePassword && location.pathname !== '/password') return <Navigate to="/password" replace />;
   return authenticated ? <>{children}</> : <Navigate to="/login" replace state={location.pathname === '/teacher-badge' ? { returnTo: location.pathname + location.hash } : undefined} />;
 };
 
