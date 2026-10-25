@@ -13,9 +13,12 @@ import urllib.request
 
 
 def main():
-    if os.geteuid() != 0 or len(sys.argv) != 2 or not re.fullmatch(r'[0-9a-f]{40}', sys.argv[1]):
+    command = os.environ.get('SSH_ORIGINAL_COMMAND', '').strip()
+    if not command and len(sys.argv) == 2:
+        command = sys.argv[1]
+    if os.geteuid() != 0 or not re.fullmatch(r'[0-9a-f]{40}', command):
         raise SystemExit('A full release SHA is required.')
-    sha = sys.argv[1]
+    sha = command
     repository = 'mormbathie/oumouna-khadija'
     request = urllib.request.Request(f'https://api.github.com/repos/{repository}/git/ref/heads/main', headers={'User-Agent': 'Oumouna-Khadija-deployer'})
     with urllib.request.urlopen(request, timeout=30) as response:

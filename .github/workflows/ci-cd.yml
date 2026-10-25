@@ -145,48 +145,4 @@ jobs:
           umask 077
           printf '%s\n' "$VPS_SSH_KEY" > "$key_file"
           printf '%s\n' "$VPS_KNOWN_HOSTS" > "$hosts_file"
-          ssh -T -i "$key_file" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$hosts_file" ubuntu@57.129.187.36 "$GITHUB_SHA"
-
-  deploy:
-    name: Deploy frontend to Vercel
-    needs: [frontend, backend]
-    if: >-
-      vars.VERCEL_DEPLOY_ENABLED == 'true' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Verify deployment credentials
-        run: |
-          for key in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
-            if [ -z "${!key}" ]; then
-              echo "::error::Missing GitHub secret: $key"
-              exit 1
-            fi
-          done
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-      - name: Build and deploy
-        shell: bash
-        run: |
-          set -euo pipefail
-          target=preview
-          flags=()
-          if [ "$GITHUB_REF" = 'refs/heads/main' ]; then
-            target=production
-            flags=(--prod)
-          fi
-          vercel pull --yes --environment="$target" --token="$VERCEL_TOKEN"
-          vercel build "${flags[@]}" --token="$VERCEL_TOKEN"
-          vercel deploy --prebuilt "${flags[@]}" --token="$VERCEL_TOKEN" > /tmp/vercel-url.txt
-          printf 'Deployment: %s\n' "$(cat /tmp/vercel-url.txt)" >> "$GITHUB_STEP_SUMMARY"
+          ssh -T -i "$key_file" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$hosts_file" root@57.129.187.36 "$GITHUB_SHA"
