@@ -30,14 +30,21 @@ def main():
     headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}
     with urllib.request.urlopen(urllib.request.Request(realm_url, headers=headers), timeout=30) as response:
         realm = json.load(response)
-    if realm.get('loginTheme') != THEME:
-        update = urllib.request.Request(realm_url, data=json.dumps({'loginTheme': THEME}).encode(), headers=headers, method='PUT')
+    desired = {
+        'loginTheme': THEME,
+        'emailTheme': THEME,
+        'internationalizationEnabled': False,
+        'defaultLocale': 'fr',
+    }
+    if any(realm.get(key) != value for key, value in desired.items()):
+        update = urllib.request.Request(realm_url, data=json.dumps(desired).encode(), headers=headers, method='PUT')
         with urllib.request.urlopen(update, timeout=30):
             pass
     with urllib.request.urlopen(urllib.request.Request(realm_url, headers=headers), timeout=30) as response:
-        if json.load(response).get('loginTheme') != THEME:
-            raise SystemExit('Keycloak did not save the school login theme.')
-    print('Oumouna Khadija login theme is active.')
+        saved = json.load(response)
+        if any(saved.get(key) != value for key, value in desired.items()):
+            raise SystemExit('Keycloak did not save the school themes and French locale.')
+    print('Oumouna Khadija login/email themes and French locale are active.')
 
 
 if __name__ == '__main__':

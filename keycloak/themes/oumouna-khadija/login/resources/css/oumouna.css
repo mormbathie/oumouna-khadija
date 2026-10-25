@@ -5,6 +5,9 @@
   --oumouna-cream: #f7f3e8;
 }
 
+/* French is the platform language; never interrupt account activation with a locale menu. */
+#kc-locale, #kc-locale-wrapper { display: none !important; }
+
 html, body, .login-pf, .login-pf body {
   min-height: 100%;
   background: var(--oumouna-cream) !important;
