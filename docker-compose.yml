@@ -93,7 +93,6 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
       - ./keycloak/themes:/opt/keycloak/themes:ro
-      - ./frontend/public/oumouna-khadija-logo.png:/opt/keycloak/themes/oumouna-khadija/login/resources/img/logo.png:ro
     healthcheck:
       test: ["CMD", "/usr/bin/bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && IFS= read -r status <&3 && [[ $$status == *' 200 '* ]]"]
       interval: 10s
