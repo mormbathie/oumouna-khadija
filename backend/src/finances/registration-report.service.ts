@@ -21,7 +21,7 @@ export class RegistrationReportService {
           ...(query.classroomId ? { enrollments: { some: { academicYearId: year.id, classroomId: query.classroomId } } } : { OR: [{ enrollments: { some: { academicYearId: year.id } } }, { invoices: { some: { academicYearId: year.id, type: 'REGISTRATION', cancelledAt: null } } }] }),
           ...(query.karate ? { karate: query.karate === 'true' } : {}), ...(query.fullDay ? { fullDay: query.fullDay === 'true' } : {}),
         },
-        select: { id: true, firstName: true, lastName: true, matricule: true, karate: true, fullDay: true, supplies: true, transportZone: true,
+        select: { id: true, firstName: true, lastName: true, matricule: true, karate: true, fullDay: true, supplies: true, eveningClasses: true, transportZone: true,
           enrollments: { where: { academicYearId: year.id }, take: 1, select: { classroom: { select: { name: true, level: true, program: true, registrationFee: true, monthlyTuition: true } } } },
           invoices: { where: { academicYearId: year.id, type: 'REGISTRATION', cancelledAt: null }, select: { id: true, invoiceNumber: true, amount: true, paidAmount: true, balance: true, payments: { select: { refunds: { select: { amount: true } } } } } },
         }, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }, { id: 'asc' }],

@@ -25,8 +25,8 @@ export function validateProgramAge(_program: string | null | undefined, birth: s
   const date = new Date(birth);
   if (!Number.isFinite(date.getTime()) || date > new Date()) throw new BadRequestException('Date de naissance invalide.');
 }
-export const optionTariffs = { elementaryRegistration: 160000, supplies: 0, karateRegistration: 0, karateMonthly: 4000, kimono: 10000, fullDayRegistration: 43000, elementaryFullDaySupplement: 0, fullDayMonthly: 12000, transport: { 1: 12000 } };
-export type FeeOptions = { fullDay?: boolean; supplies?: boolean; karate?: boolean; transportZone?: number | null };
+export const optionTariffs = { elementaryRegistration: 160000, supplies: 0, karateRegistration: 0, karateMonthly: 4000, snack: 10000, kimono: 10000, fullDayRegistration: 43000, elementaryFullDaySupplement: 0, fullDayMonthly: 12000, transport: { 1: 12000 } };
+export type FeeOptions = { fullDay?: boolean; supplies?: boolean; karate?: boolean; eveningClasses?: boolean; transportZone?: number | null };
 export type FeeClass = { level?: string; program?: string | null; registrationFee: number; monthlyTuition: number };
 export const elementaryClass = (classroom: FeeClass) => classroom.program === 'ELEMENTARY' || ['CI','CP','CE1','CE2','CM1','CM2'].includes(classroom.level || '');
 export function validateOptionsForClass(student: FeeOptions, classroom?: FeeClass | null) {
@@ -41,10 +41,11 @@ export function validateOptionsForClass(student: FeeOptions, classroom?: FeeClas
 export function schoolFees(student: FeeOptions, classroom: FeeClass) {
   const registrationBase = classroom.registrationFee;
   const transport = optionTariffs.transport[student.transportZone || 0] || 0;
-  const karate = 0;
-  const supplies = student.supplies && elementaryClass(classroom) ? optionTariffs.supplies : 0;
-  return { registrationFee: registrationBase + transport + karate + supplies,
-    monthlyTuition: classroom.monthlyTuition };
+  const snack = student.eveningClasses && classroom.program === 'PRESCHOOL' ? optionTariffs.snack : 0;
+  const monthlyKarate = student.karate ? optionTariffs.karateMonthly : 0;
+  const monthlyCanteen = student.supplies && classroom.program === 'PRESCHOOL' ? 12000 : 0;
+  return { registrationFee: registrationBase + snack,
+    monthlyTuition: classroom.monthlyTuition + transport + snack + monthlyKarate + monthlyCanteen };
 }
 
 // Keep a billing snapshot: legacy transport/karate flags were never charged automatically.
@@ -60,12 +61,12 @@ export function registrationAdjustment(current: FeeOptions, next: FeeOptions, pr
     billed = { fullDay: Boolean(current.fullDay && invoice.amount === optionTariffs.fullDayRegistration), supplies: false, karate: false, transportZone: null };
   }
   const after = { ...billed };
-  for (const key of ['fullDay','supplies','karate','transportZone'] as const) {
+  for (const key of ['fullDay','supplies','karate','eveningClasses','transportZone'] as const) {
     if ((current[key] || false) !== (next[key] || false)) (after as any)[key] = next[key] ?? (key === 'transportZone' ? null : false);
   }
   return { delta: schoolFees(after, nextClass).registrationFee - schoolFees(billed, previousClass).registrationFee,
     registrationOptions: JSON.stringify(after) };
 }
 export function registrationSnapshot(student: FeeOptions) {
-  return JSON.stringify({ fullDay: !!student.fullDay, supplies: !!student.supplies, karate: !!student.karate, transportZone: student.transportZone ?? null });
+  return JSON.stringify({ fullDay: !!student.fullDay, supplies: !!student.supplies, karate: !!student.karate, eveningClasses: !!student.eveningClasses, transportZone: student.transportZone ?? null });
 }

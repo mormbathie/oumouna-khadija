@@ -21,12 +21,14 @@ describe('Options Oumouna Khadija', () => {
     expect(() => validateProgramAge('PRESCHOOL', '2027-01-01')).toThrow();
     jest.useRealTimers();
   });
-  it('calcule les forfaits officiels sans intégrer les options mensuelles', () => {
+  it('sépare les frais d’inscription et les options mensuelles', () => {
     const preschool = { level: 'MS', program: 'PRESCHOOL', registrationFee: 43000, monthlyTuition: 12000 };
     const boarding = { level: 'TAHFIZ', program: 'DAARA_BOARDING', registrationFee: 160000, monthlyTuition: 91000 };
     expect(schoolFees({}, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 12000 });
-    expect(schoolFees({ transportZone: 1 }, preschool)).toEqual({ registrationFee: 55000, monthlyTuition: 12000 });
-    expect(schoolFees({ karate: true }, boarding)).toEqual({ registrationFee: 160000, monthlyTuition: 91000 });
+    expect(schoolFees({ transportZone: 1 }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 24000 });
+    expect(schoolFees({ eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 22000 });
+    expect(schoolFees({ transportZone: 1, eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 34000 });
+    expect(schoolFees({ karate: true }, boarding)).toEqual({ registrationFee: 160000, monthlyTuition: 95000 });
   });
   it('applique les options uniquement au programme concerné', () => {
     const preschool = { level: 'MS', program: 'PRESCHOOL', registrationFee: 43000, monthlyTuition: 12000 };

@@ -42,10 +42,21 @@ html[dir="rtl"] aside { left: auto; right: 0; }
 @media (max-width: 767px) {
   html[dir="rtl"] aside.-translate-x-full { translate: 100% 0; transform: none; }
 }
-html[dir="rtl"] input[type="email"],
-html[dir="rtl"] input[type="tel"],
-html[dir="rtl"] input[type="date"],
-html[dir="rtl"] input[type="time"] { direction: ltr; }
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"],
+input[inputmode="numeric"],
+input[inputmode="decimal"],
+input[data-latin-digits="true"] {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: isolate;
+  font-variant-numeric: lining-nums tabular-nums;
+}
 
 /* Dedicated phone layout; desktop styles above are unchanged. */
 @media (max-width: 767px) {

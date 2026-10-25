@@ -30,6 +30,7 @@ export class StudentsService {
         { firstName: { contains: search, mode: 'insensitive' } },
         { lastName: { contains: search, mode: 'insensitive' } },
         { matricule: { contains: search, mode: 'insensitive' } },
+        { schoolMatricule: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -38,7 +39,11 @@ export class StudentsService {
     const isTeacher = roles.includes('ENSEIGNANT') && !isManager;
     if (!isManager && roles.includes('PARENT') && !isTeacher) {
       if (!requester.email || !requester.emailVerified) throw new ForbiddenException('Vérifiez votre adresse e-mail pour accéder aux dossiers de vos enfants.');
-      where.parent = { is: { email: { equals: requester.email, mode: 'insensitive' } } };
+      const ownership = { OR: [
+        { parent: { is: { email: { equals: requester.email, mode: 'insensitive' } } } },
+        { guardians: { some: { parent: { email: { equals: requester.email, mode: 'insensitive' } } } } },
+      ] };
+      where.AND = [...(where.AND || []), ownership];
     } else if (isTeacher) {
       if (!requester.email) return [];
       const assigned = await this.prisma.classroom.findMany({
@@ -61,6 +66,7 @@ export class StudentsService {
         parent: isTeacher
           ? { select: { id: true, firstName: true, lastName: true, phone: true, relation: true } }
           : true,
+        guardians: { include: { parent: true }, orderBy: [{ isPrimary: 'desc' as const }, { createdAt: 'asc' as const }] },
         enrollments: {
           where: { academicYear: { isCurrent: true } },
           include: {
@@ -94,6 +100,7 @@ export class StudentsService {
         parent: isTeacher
           ? { select: { id: true, firstName: true, lastName: true, phone: true, relation: true } }
           : { include: { ...((isManager || isParent) ? { documents: { orderBy: { createdAt: 'desc' as const } } } : {}) } },
+        guardians: { include: { parent: true }, orderBy: [{ isPrimary: 'desc' as const }, { createdAt: 'asc' as const }] },
         ...((isManager || isParent) ? { documents: { orderBy: { createdAt: 'desc' as const } } } : {}),
         enrollments: {
           include: { classroom: { include: { teacher: { select: { email: true } } } }, academicYear: true },
@@ -122,7 +129,9 @@ export class StudentsService {
       throw new NotFoundException(`Élève avec l'ID ${id} non trouvé`);
     }
 
-    if (!isManager && roles.includes('PARENT') && String((student.parent as any)?.email || '').toLowerCase() !== String(requester.email || '').toLowerCase()) {
+    const parentEmails = [student.parent, ...(student.guardians || []).map((item: any) => item.parent)]
+      .map((parent: any) => String(parent?.email || '').toLowerCase());
+    if (!isManager && roles.includes('PARENT') && !parentEmails.includes(String(requester.email || '').toLowerCase())) {
       throw new NotFoundException(`Élève avec l'ID ${id} non trouvé`);
     }
     if (!isManager && roles.includes('ENSEIGNANT') &&
@@ -207,6 +216,7 @@ export class StudentsService {
     address?: string;
     bloodGroup?: string;
     photoUrl?: string;
+    schoolMatricule?: string;
     classroomId?: string;
     academicYearId?: string;
     parentId?: string;
@@ -219,6 +229,7 @@ export class StudentsService {
       address?: string;
       profession?: string;
     };
+    guardians?: Array<{ parentId?: string; relation?: string; data?: { firstName: string; lastName?: string; phone: string; email?: string; relation?: string; address?: string; profession?: string } }>;
     generateInvoice?: boolean;
     supplies?: boolean;
     fullDay?: boolean;
@@ -232,6 +243,8 @@ export class StudentsService {
     duplicateOverrideReason?: string;
   }, actor: ActingUser) {
     const author = actorStamp(actor);
+    const schoolMatricule = String(data.schoolMatricule || '').trim() || null;
+    if (schoolMatricule && schoolMatricule.length > 100) throw new BadRequestException('Le matricule école ne peut pas dépasser 100 caractères.');
     const options = schoolOptions(data as any);
     const selectedClass = data.classroomId ? await this.prisma.classroom.findUnique({ where: { id: data.classroomId }, }) : null;
     if (data.classroomId && !selectedClass) throw new BadRequestException('Classe sélectionnée introuvable.');
@@ -241,6 +254,9 @@ export class StudentsService {
     // Generate matricule
     // Serialize registration numbering; deletion must never reuse a matricule.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(20261007)`;
+    if (schoolMatricule && await tx.student.findFirst({ where: { schoolMatricule: { equals: schoolMatricule, mode: 'insensitive' } }, select: { id: true } })) {
+      throw new ConflictException('Ce matricule historique est déjà attribué à un autre élève.');
+    }
     const duplicates = await this.findDuplicates(tx, data);
     const reason = data.duplicateOverrideReason?.trim();
     if (duplicates.length && (!reason || reason.length < 10 || reason.length > 1000)) {
@@ -255,18 +271,37 @@ export class StudentsService {
     const matricule = `OK-${currentYear}-${String(nextNumber).padStart(4, '0')}`;
 
     let parentId = data.parentId;
+    const guardianRows: Array<{ parentId: string; relation: string }> = [];
+
+    for (const guardian of data.guardians || []) {
+      let guardianParentId = guardian.parentId;
+      if (!guardianParentId && guardian.data?.firstName?.trim() && guardian.data?.phone?.trim()) {
+        const relation = guardian.relation || guardian.data.relation || 'Guardian';
+        const parent = await findOrCreateParent(tx, { ...guardian.data, lastName: guardian.data.lastName?.trim() || data.lastName.trim(), relation, email: normalizeEmail(guardian.data.email) } as any);
+        guardianParentId = parent.id;
+      }
+      if (guardianParentId && !guardianRows.some(row => row.parentId === guardianParentId)) {
+        guardianRows.push({ parentId: guardianParentId, relation: guardian.relation || guardian.data?.relation || 'Guardian' });
+      }
+    }
 
     // Create parent if new parent data provided
     if (!parentId && data.parentData && data.parentData.firstName && data.parentData.phone) {
       const parent = await findOrCreateParent(tx, { ...data.parentData, email: normalizeEmail(data.parentData.email) });
       parentId = parent.id;
     }
+    if (parentId && !guardianRows.some(row => row.parentId === parentId)) {
+      guardianRows.unshift({ parentId, relation: data.parentData?.relation || 'Parent' });
+    }
+    if (!parentId && guardianRows.length) parentId = guardianRows[0].parentId;
+    if (!parentId) throw new BadRequestException('Renseignez au moins un père, une mère ou un tuteur légal.');
 
     // Create student
     const student = await tx.student.create({
       data: {
         ...options,
         matricule,
+        schoolMatricule,
         duplicateOverrideReason: duplicates.length ? reason : null,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -283,6 +318,7 @@ export class StudentsService {
       },
       include: { parent: true },
     });
+    if (guardianRows.length) await tx.studentGuardian.createMany({ data: guardianRows.map((guardian, index) => ({ studentId: student.id, parentId: guardian.parentId, relation: guardian.relation, isPrimary: index === 0 })) });
 
     // Handle Enrollment if classroomId provided
     if (data.classroomId) {
@@ -319,7 +355,7 @@ export class StudentsService {
                 invoiceNumber: `FAC-${currentYear}-${randomUUID().toUpperCase()}`,
                 studentId: student.id,
                 academicYearId,
-                title: `${!student.fullDay && ['PRESCHOOL', 'ELEMENTARY'].includes(classroom.program || '') ? 'Forfait initial (une mensualité incluse)' : 'Inscription'} - ${classroom.name}`,
+                title: `Inscription - ${classroom.name}`,
                 type: InvoiceType.REGISTRATION,
                 registrationOptions: registrationSnapshot(student),
                 amount: schoolFees(student, classroom).registrationFee,
@@ -363,7 +399,7 @@ export class StudentsService {
     const invoices = enrollment ? await this.prisma.invoice.findMany({ where: { studentId: current.id, academicYearId: enrollment.academicYearId, type: InvoiceType.REGISTRATION, cancelledAt: null } }) : [];
     if (invoices.length > 1) throw new BadRequestException('Plusieurs factures d’inscription existent : faites vérifier le dossier.');
     const invoice = invoices[0];
-    const changed = ['fullDay', 'supplies', 'karate', 'transportZone'].some(key => data[key] !== undefined && (current[key] || false) !== (options[key] || false));
+    const changed = ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (options[key] || false));
     const delta = changed && enrollment && invoice ? registrationAdjustment(current, { ...current, ...options }, enrollment.classroom, classroom, invoice).delta : 0;
     return { ...fees, projectedAmount: invoice ? invoice.amount + delta : null, paidAmount: invoice?.paidAmount ?? null,
       projectedBalance: invoice ? invoice.amount + delta - invoice.paidAmount : null };
@@ -383,6 +419,14 @@ export class StudentsService {
     for (const field of ['firstName', 'lastName', 'gender', 'placeOfBirth', 'address', 'bloodGroup', 'status', 'photoUrl']) {
       if (data[field] !== undefined) studentData[field] = data[field];
     }
+    if (data.schoolMatricule !== undefined) {
+      const value = String(data.schoolMatricule || '').trim();
+      if (value.length > 100) throw new BadRequestException('Le matricule école ne peut pas dépasser 100 caractères.');
+      if (value && await this.prisma.student.findFirst({ where: { id: { not: id }, schoolMatricule: { equals: value, mode: 'insensitive' } }, select: { id: true } })) {
+        throw new ConflictException('Ce matricule historique est déjà attribué à un autre élève.');
+      }
+      studentData.schoolMatricule = value || null;
+    }
     if (data.dateOfBirth !== undefined) studentData.dateOfBirth = new Date(data.dateOfBirth);
 
     if (Object.keys(studentData).length > 0) {
@@ -394,7 +438,7 @@ export class StudentsService {
         const enrollment = current.enrollments[0];
         const classroom = data.classroomId ? await tx.classroom.findUnique({ where: { id: data.classroomId } }) : enrollment?.classroom;
         const next = { ...current, ...studentData };
-        const billingChanged = ['fullDay', 'supplies', 'karate', 'transportZone'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
+        const billingChanged = ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
         if (billingChanged || (data.classroomId && data.classroomId !== enrollment?.classroomId)) validateOptionsForClass(next, classroom);
         if (billingChanged && enrollment && classroom) {
           // Lock invoices before reading their paid amounts: simultaneous cash receipts remain safe.
@@ -428,6 +472,23 @@ export class StudentsService {
             const parent = await findOrCreateParent(tx, parentData);
             studentData.parentId = parent.id;
           }
+        }
+        if (Array.isArray(data.guardians)) {
+          const primaryParentId = studentData.parentId || current.parentId;
+          const guardianRows: Array<{ parentId: string; relation: string; isPrimary: boolean }> = [];
+          if (primaryParentId) guardianRows.push({ parentId: primaryParentId, relation: data.parentData?.relation || 'Parent', isPrimary: true });
+          for (const guardian of data.guardians) {
+            let guardianParentId = guardian.parentId;
+            if (!guardianParentId && guardian.data?.firstName?.trim() && guardian.data?.phone?.trim()) {
+              const relation = guardian.relation || guardian.data.relation || 'Guardian';
+              const parent = await findOrCreateParent(tx, { ...guardian.data, lastName: guardian.data.lastName?.trim() || next.lastName, relation, email: normalizeEmail(guardian.data.email) } as any);
+              guardianParentId = parent.id;
+            }
+            if (guardianParentId && !guardianRows.some(row => row.parentId === guardianParentId)) guardianRows.push({ parentId: guardianParentId, relation: guardian.relation || guardian.data?.relation || 'Guardian', isPrimary: false });
+          }
+          if (!guardianRows.length) throw new BadRequestException('Renseignez au moins un père, une mère ou un tuteur légal.');
+          await tx.studentGuardian.deleteMany({ where: { studentId: id } });
+          await tx.studentGuardian.createMany({ data: guardianRows.map(row => ({ ...row, studentId: id })) });
         }
 
         await tx.student.update({ where: { id }, data: studentData });

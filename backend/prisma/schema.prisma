@@ -183,6 +183,7 @@ model Parent {
   updatedAt   DateTime  @updatedAt
 
   students    Student[]
+  guardianships StudentGuardian[]
   documents   ParentDocument[]
 }
 
@@ -191,6 +192,7 @@ model Student {
   id            String        @id @default(uuid())
   duplicateOverrideReason String?
   matricule     String        @unique // e.g. "OS-2026-0001"
+  schoolMatricule String?     // Matricule historique attribué par l'école
   firstName     String
   lastName      String
   dateOfBirth   DateTime
@@ -211,6 +213,7 @@ model Student {
   status        StudentStatus @default(ACTIVE)
   parentId      String?
   parent        Parent?       @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  guardians     StudentGuardian[]
   createdById   String?
   createdByName String?
   createdByRole String?
@@ -225,6 +228,22 @@ model Student {
   reportCards   ReportCard[]
   attendances   Attendance[]
   documents     StudentDocument[]
+
+  @@index([schoolMatricule])
+}
+
+model StudentGuardian {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentId  String
+  parent    Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  relation  String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, parentId])
+  @@index([parentId])
 }
 
 model Enrollment {
