@@ -43,6 +43,16 @@ if not required.issubset(config["volumes"]):
 '
 
 # Never bootstrap, seed, remove volumes, or replace the existing private files.
+# A previously failed stateless theme recreation may leave Keycloak stopped;
+# recover that existing container, then apply the same mandatory running gate.
+keycloak_id=$("${compose[@]}" ps -aq keycloak)
+if [[ -z "$keycloak_id" ]]; then
+  printf 'Existing Keycloak container is missing; deployment stopped.\n' >&2
+  exit 1
+fi
+if [[ "$(docker inspect -f '{{.State.Running}}' "$keycloak_id")" != true ]]; then
+  "${compose[@]}" up -d --no-build --no-deps --wait --wait-timeout 180 keycloak
+fi
 for service in postgres keycloak-postgres keycloak backend frontend caddy; do
   container_id=$("${compose[@]}" ps -q "$service")
   if [[ -z "$container_id" || "$(docker inspect -f '{{.State.Running}}' "$container_id")" != true ]]; then

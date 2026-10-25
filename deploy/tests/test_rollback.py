@@ -37,7 +37,7 @@ if 'config' in args:
  if '--format' in args:print(json.dumps({'services':{name:{'image':f'mormbathie/oumouna-khadija-{name}:{new}'} for name in ids},'volumes':{v:{} for v in ['postgres_data','keycloak_postgres_data','school_documents','caddy_data','caddy_config']}}))
  sys.exit(0)
 if 'ps' in args:
- if '-q' in args:print(args[-1])
+ if '-q' in args or '-aq' in args:print(args[-1])
  sys.exit(0)
 if 'up' in args:
  if '--pull' in args:
