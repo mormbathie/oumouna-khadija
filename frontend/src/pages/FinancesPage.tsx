@@ -17,7 +17,8 @@ import {
   X,
   Building,
   School,
-  Sparkles
+  Sparkles,
+  Mail,
 } from 'lucide-react';
 import { financesApi, classesApi, studentsApi } from '../services/api';
 import { printPaymentReceipt } from '../utils/receipt';
@@ -233,6 +234,16 @@ export const FinancesPage: React.FC = () => {
     if (currentReceiptPayment) printPaymentReceipt(currentReceiptPayment);
   };
 
+  const emailInvoice = async (invoice: any) => {
+    try { const result = await financesApi.emailInvoice(invoice.id); alert(result.sent ? `Facture envoyée à ${result.recipient}.` : 'Aucun e-mail parent enregistré.'); }
+    catch (error: any) { alert(error.response?.data?.message || error.message); }
+  };
+
+  const emailReceipt = async (payment: any) => {
+    try { const result = await financesApi.emailReceipt(payment.id); alert(result.sent ? `Reçu envoyé à ${result.recipient}.` : 'Aucun e-mail parent enregistré.'); }
+    catch (error: any) { alert(error.response?.data?.message || error.message); }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Header */}
@@ -355,7 +366,7 @@ export const FinancesPage: React.FC = () => {
             <p className="mt-3 text-sm text-slate-700">{inv.title}</p><p className="mt-1 break-all text-[10px] text-slate-400">{inv.invoiceNumber} · {new Date(inv.createdAt).toLocaleDateString(locale())}</p>
             <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs"><div><span className="block text-slate-500">{t('Invoice amount')}</span><strong className="text-slate-800">{inv.amount.toLocaleString(locale())} FCFA</strong></div><div><span className="block text-slate-500">{t('Total paid')}</span><strong className="text-amber-700">{inv.paidAmount.toLocaleString(locale())} FCFA</strong></div></div>
             <div className="mt-3 flex items-center justify-between gap-2"><div><span className="block text-xs text-slate-500">{t('Balance due')}</span><strong className="text-lg text-slate-900">{inv.balance.toLocaleString(locale())} <span className="text-xs font-medium">FCFA</span></strong></div>{inv.balance > 0 ? <button onClick={() => handleOpenPayment(inv)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white"><CreditCard className="h-4 w-4" />{t('Pay')}</button> : payment && <button onClick={() => handleViewReceipt(inv, payment)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-50 px-4 text-sm font-semibold text-amber-800"><Receipt className="h-4 w-4" />{t('Receipt')}</button>}</div>
-            <details className="mt-3 border-t border-slate-100 pt-1"><summary className="flex min-h-11 cursor-pointer items-center text-xs font-semibold text-slate-600">{t('Autres actions')}</summary><div className="flex flex-wrap gap-2"><button onClick={() => printInvoice(inv)} className="rounded-xl border px-3 py-2 text-xs">{t('Print invoice')}</button>{payment && inv.balance > 0 && <button onClick={() => handleViewReceipt(inv, payment)} className="rounded-xl border px-3 py-2 text-xs">{t('Receipt')}</button>}{hasRole(['ADMIN']) && payment && <button onClick={() => void openCorrection(inv)} className="rounded-xl border border-amber-200 px-3 py-2 text-xs text-amber-800">{t('Corriger le paiement')}</button>}</div>{inv.createdByName && <p className="mt-2 text-xs text-slate-500">{t('Created by')} {inv.createdByName} · {roleLabel(inv.createdByRole)}</p>}</details>
+            <details className="mt-3 border-t border-slate-100 pt-1"><summary className="flex min-h-11 cursor-pointer items-center text-xs font-semibold text-slate-600">{t('Autres actions')}</summary><div className="flex flex-wrap gap-2"><button onClick={() => printInvoice(inv)} className="rounded-xl border px-3 py-2 text-xs">{t('Print invoice')}</button><button onClick={() => void emailInvoice(inv)} className="rounded-xl border px-3 py-2 text-xs">Envoyer la facture</button>{payment && <button onClick={() => void emailReceipt(payment)} className="rounded-xl border px-3 py-2 text-xs">Envoyer le reçu</button>}{payment && inv.balance > 0 && <button onClick={() => handleViewReceipt(inv, payment)} className="rounded-xl border px-3 py-2 text-xs">{t('Receipt')}</button>}{hasRole(['ADMIN']) && payment && <button onClick={() => void openCorrection(inv)} className="rounded-xl border border-amber-200 px-3 py-2 text-xs text-amber-800">{t('Corriger le paiement')}</button>}</div>{inv.createdByName && <p className="mt-2 text-xs text-slate-500">{t('Created by')} {inv.createdByName} · {roleLabel(inv.createdByRole)}</p>}</details>
           </article>;
         })}
       </section>
@@ -440,6 +451,7 @@ export const FinancesPage: React.FC = () => {
                           </button>
                         )}
                           <button onClick={() => printInvoice(inv)} className="rounded-lg p-2 text-amber-700 hover:bg-amber-50" title={t('Print invoice')}><Printer className="h-4 w-4" /></button>
+                          <button onClick={() => void emailInvoice(inv)} className="rounded-lg p-2 text-amber-700 hover:bg-amber-50" title="Envoyer la facture par e-mail"><Mail className="h-4 w-4" /></button>
                         {inv.payments?.some((payment: any) => !payment.cancelledAt) && (
                           <button
                             onClick={() => handleViewReceipt(inv, inv.payments.find((payment: any) => !payment.cancelledAt))}
@@ -450,6 +462,7 @@ export const FinancesPage: React.FC = () => {
                             <span>{t("Receipt")}</span>
                           </button>
                         )}
+                        {inv.payments?.some((payment: any) => !payment.cancelledAt) && <button onClick={() => void emailReceipt(inv.payments.find((payment: any) => !payment.cancelledAt))} className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px]" title="Envoyer le reçu par e-mail"><Mail className="h-3 w-3" />Reçu e-mail</button>}
                       </td>
                     </tr>
                   );

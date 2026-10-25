@@ -25,6 +25,53 @@ describe('Financial action attribution', () => {
     }));
   });
 
+  it('emails the generated receipt after a payment when the parent has an email', async () => {
+    const invoiceWithParent = {
+      id: 'invoice', balance: 0, paidAmount: 100, status: 'PAID',
+      student: { firstName: 'Awa', lastName: 'Diop', parent: { email: 'parent@example.com' }, enrollments: [] },
+      payments: [], academicYear: { name: '2026-2027' },
+    };
+    const tx: any = {
+      $executeRaw: jest.fn().mockResolvedValue(0),
+      cashClosing: { findUnique: jest.fn().mockResolvedValue(null) },
+      invoice: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        findUnique: jest.fn().mockResolvedValue(invoiceWithParent),
+        update: jest.fn().mockResolvedValue(invoiceWithParent),
+      },
+      payment: { create: jest.fn().mockResolvedValue({ id: 'payment', paymentNumber: 'REC-1', amount: 100 }) },
+    };
+    const prisma: any = {
+      invoice: { findUnique: jest.fn().mockResolvedValue({ id: 'invoice', balance: 100 }) },
+      $transaction: (callback: (client: any) => unknown) => callback(tx),
+    };
+    const mail = { send: jest.fn().mockResolvedValue({ accepted: true }) };
+    const pdf = { create: jest.fn().mockResolvedValue(Buffer.from('pdf')) };
+    const result = await new FinancesService(prisma, mail, pdf).recordPayment(
+      { invoiceId: 'invoice', amount: 100, paymentMethod: 'CASH' } as any, actor,
+    );
+    expect(mail.send).toHaveBeenCalledWith(
+      'parent@example.com', expect.stringContaining('Reçu REC-1'), expect.any(String),
+      [expect.objectContaining({ filename: 'reçu-REC-1.pdf', contentType: 'application/pdf' })],
+    );
+    expect(result.emailDelivery).toEqual({ sent: true, recipient: 'parent@example.com' });
+  });
+
+  it('keeps the recorded payment when delivery fails', async () => {
+    const invoiceWithParent = { id: 'invoice', balance: 0, paidAmount: 100, student: { parent: { email: 'parent@example.com' }, enrollments: [] }, payments: [] };
+    const tx: any = {
+      $executeRaw: jest.fn().mockResolvedValue(0), cashClosing: { findUnique: jest.fn().mockResolvedValue(null) },
+      invoice: { updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUnique: jest.fn().mockResolvedValue(invoiceWithParent), update: jest.fn().mockResolvedValue(invoiceWithParent) },
+      payment: { create: jest.fn().mockResolvedValue({ id: 'payment', paymentNumber: 'REC-1', amount: 100 }) },
+    };
+    const prisma: any = { invoice: { findUnique: jest.fn().mockResolvedValue({ id: 'invoice', balance: 100 }) }, $transaction: (callback: (client: any) => unknown) => callback(tx) };
+    const mail = { send: jest.fn().mockRejectedValue(new Error('SMTP down')) };
+    const pdf = { create: jest.fn().mockResolvedValue(Buffer.from('pdf')) };
+    const result = await new FinancesService(prisma, mail, pdf).recordPayment({ invoiceId: 'invoice', amount: 100, paymentMethod: 'CASH' } as any, actor);
+    expect(result.emailDelivery).toEqual({ sent: false, reason: 'DELIVERY_FAILED' });
+    expect(tx.payment.create).toHaveBeenCalledTimes(1);
+  });
+
   it('attributes invoices to the authenticated creator', async () => {
     const prisma: any = {
       academicYear: { findFirst: jest.fn().mockResolvedValue({ id: 'year' }) },

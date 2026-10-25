@@ -14,7 +14,7 @@ import urllib.parse
 import urllib.request
 
 MAILBOX = 'contact@oumounakhadidja-academie.com'
-SMTP_HOST = 'smtp.mail.ovh.net'
+DEFAULT_SMTP_HOST = 'mail.oumounakhadidja-academie.com'
 
 
 def main():
@@ -36,7 +36,10 @@ def main():
     with urllib.request.urlopen(urllib.request.Request(realm_url, headers=headers), timeout=30) as response:
         previous = json.load(response).get('smtpServer', {})
     print('Adresse d’envoi : ' + MAILBOX)
-    password = getpass.getpass('Mot de passe de la boîte Zimbra (saisie masquée) : ')
+    smtp_host = input(f'Serveur SMTP LWS [{DEFAULT_SMTP_HOST}] : ').strip() or DEFAULT_SMTP_HOST
+    if not smtp_host or any(character.isspace() for character in smtp_host):
+        raise SystemExit('Nom de serveur SMTP invalide ; aucune configuration modifiée.')
+    password = getpass.getpass('Mot de passe de la boîte LWS (saisie masquée) : ')
     if not password:
         raise SystemExit('Mot de passe absent ; aucune configuration modifiée.')
     message = EmailMessage()
@@ -45,7 +48,7 @@ def main():
     message['Subject'] = 'Institut Oumouna Khadija — test de l’envoi des e-mails'
     message.set_content('Bonjour,\n\nCe message confirme que le serveur de l’application peut envoyer des e-mails avec la boîte de l’école.\n\nInstitut Oumouna Khadija\nhttps://oumounakhadidja-academie.com\n')
     try:
-        with smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=30, context=ssl.create_default_context()) as smtp:
+        with smtplib.SMTP_SSL(smtp_host, 465, timeout=30, context=ssl.create_default_context()) as smtp:
             smtp.login(MAILBOX, password)
             refused = smtp.send_message(message)
             if refused:
@@ -59,7 +62,7 @@ def main():
     with os.fdopen(descriptor, 'w') as handle:
         json.dump(previous, handle)
     smtp_settings = {
-        'host': SMTP_HOST, 'port': '465', 'ssl': 'true', 'starttls': 'false',
+        'host': smtp_host, 'port': '465', 'ssl': 'true', 'starttls': 'false',
         'auth': 'true', 'user': MAILBOX, 'password': password,
         'from': MAILBOX, 'fromDisplayName': 'Institut Oumouna Khadija', 'replyTo': MAILBOX,
         'envelopeFrom': MAILBOX,
@@ -81,8 +84,8 @@ def main():
     with os.fdopen(descriptor, 'w') as handle:
         json.dump(smtp_settings, handle)
     os.replace(str(target) + '.tmp', target)
-    print('Configuration enregistrée et message de test accepté par OVH.')
-    print('Vérifiez sa réception dans Zimbra, puis testez « Envoyer un lien de vérification » dans Mon profil.')
+    print('Configuration enregistrée et message de test accepté par LWS.')
+    print('Vérifiez sa réception, puis testez « Mot de passe oublié » sur la page de connexion.')
     print('Aucun redémarrage requis. La vérification obligatoire et le double facteur ne sont pas activés par ce script.')
 
 

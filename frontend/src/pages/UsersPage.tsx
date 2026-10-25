@@ -15,7 +15,7 @@ interface ManagedUser {
   roles: string[];
 }
 
-const emptyForm = { username: '', email: '', firstName: '', lastName: '', password: '', role: 'ENSEIGNANT' };
+const emptyForm = { username: '', email: '', firstName: '', lastName: '', role: 'ENSEIGNANT' };
 const roleOptions = [
   { value: 'ADMIN', label: t("Administrateur") },
   { value: 'DIRECTEUR', label: t("Directeur") },
@@ -67,7 +67,7 @@ export const UsersPage: React.FC = () => {
       await usersApi.create(form);
       setModalOpen(false);
       setForm(emptyForm);
-      setSuccess(t("Account created. Ask the user to change the temporary password after signing in."));
+      setSuccess("Compte créé. Un lien d’activation et de création du mot de passe a été envoyé par e-mail.");
       await loadUsers();
     } catch (err) {
       setError(errorMessage(err));
@@ -114,6 +114,12 @@ export const UsersPage: React.FC = () => {
     } catch (err) {
       setError(errorMessage(err));
     } finally { setSaving(false); }
+  };
+
+  const sendPasswordLink = async (managedUser: ManagedUser) => {
+    setError(''); setSuccess('');
+    try { await usersApi.sendPasswordReset(managedUser.id); setSuccess(`Lien de changement de mot de passe envoyé à ${managedUser.email}.`); }
+    catch (err) { setError(errorMessage(err)); }
   };
 
   const openEdit = (managedUser: ManagedUser) => {
@@ -190,7 +196,7 @@ export const UsersPage: React.FC = () => {
                     <td className="px-5 py-3">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => openEdit(managedUser)} title={t("Edit account")} aria-label={t("Edit {0}", [managedUser.username])} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => { setResetUser(managedUser); setResetPassword(''); }} title={t("Set a temporary password")} aria-label={t("Reset password for {0}", [managedUser.username])} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"><KeyRound className="h-4 w-4" /></button>
+                        <button onClick={() => void sendPasswordLink(managedUser)} title="Envoyer un lien de changement de mot de passe" aria-label={t("Reset password for {0}", [managedUser.username])} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100"><KeyRound className="h-4 w-4" /></button>
                         <button onClick={() => void toggleUser(managedUser)} disabled={isCurrentUser && managedUser.enabled}
                           title={managedUser.enabled ? t("Disable") : t("Enable")}
                           className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-100 disabled:opacity-40" aria-label={`${managedUser.enabled ? t("Disable") : t("Enable")} ${managedUser.username}`}>
@@ -246,7 +252,7 @@ export const UsersPage: React.FC = () => {
                 <label className="text-xs font-medium text-slate-700">{t("First name *")}<input required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 p-2.5 text-sm" /></label>
                 <label className="text-xs font-medium text-slate-700">{t("Last name *")}<input required value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 p-2.5 text-sm" /></label>
                 <label className="text-xs font-medium text-slate-700">{t("Role *")}<select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm">{roleOptions.map((role) => <option key={role.value} value={role.value}>{role.label}</option>)}</select></label>
-                <label className="text-xs font-medium text-slate-700">{t("Password *")}<div className="relative mt-1"><KeyRound className="absolute left-3 top-3 w-4 h-4 text-slate-400" /><input required minLength={8} type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm" /></div><span className="mt-1 block font-normal text-slate-400">{t("At least 8 characters")}</span></label>
+                <p className="self-end rounded-lg bg-amber-50 p-3 text-xs text-amber-900">L’utilisateur recevra un lien sécurisé pour activer son compte et choisir son mot de passe.</p>
               </div>
               {error && <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</div>}
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">

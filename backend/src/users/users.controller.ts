@@ -62,6 +62,12 @@ export class UsersController {
     return this.usersService.resetPassword(id, body?.password);
   }
 
+  @Post(':id/send-activation')
+  sendActivation(@Param('id') id: string) { return this.usersService.sendActivation(id); }
+
+  @Post(':id/send-password-reset')
+  sendPasswordReset(@Param('id') id: string) { return this.usersService.sendPasswordReset(id); }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: { email: string; firstName: string; lastName: string; role: string }, @CurrentUser() actor: any) {
     return this.usersService.update(id, body, actor.userId);

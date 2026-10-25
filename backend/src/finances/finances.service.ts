@@ -1,14 +1,37 @@
 import { cashDay, openCashDay } from './cash-day';
 import { schoolFees, optionTariffs } from '../school/school-options';
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException, Optional, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, InvoiceStatus, InvoiceType, PaymentMethod } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { ActingUser, actorStamp } from '../audit/actor';
+import { FINANCIAL_PDF, SCHOOL_MAIL } from './mail.tokens';
+import type { MailSender, PdfCreator } from './mail.tokens';
 
 @Injectable()
 export class FinancesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, @Optional() @Inject(SCHOOL_MAIL) private readonly mail?: MailSender, @Optional() @Inject(FINANCIAL_PDF) private readonly pdf?: PdfCreator) {}
+
+  private async emailDocument(invoice: any, payment?: any) {
+    const email = invoice?.student?.parent?.email?.trim();
+    if (!email) return { sent: false, reason: 'NO_PARENT_EMAIL' };
+    if (!this.mail || !this.pdf) throw new ServiceUnavailableException('Service e-mail indisponible.');
+    const kind = payment ? 'reçu' : 'facture';
+    const reference = payment?.paymentNumber || invoice.invoiceNumber;
+    const content = await this.pdf.create(invoice, payment);
+    await this.mail.send(email, `${kind === 'reçu' ? 'Reçu' : 'Facture'} ${reference} — Institut Oumouna Khadija`,
+      `Bonjour,\n\nVeuillez trouver en pièce jointe ${kind} ${reference} concernant ${invoice.student.firstName} ${invoice.student.lastName}.\n\nInstitut Oumouna Khadija`,
+      [{ filename: `${kind}-${reference}.pdf`, content, contentType: 'application/pdf' }]);
+    return { sent: true, recipient: email };
+  }
+
+  async emailInvoice(id: string) { return this.emailDocument(await this.getInvoice(id)); }
+
+  async emailReceipt(paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId }, include: { invoice: { include: { student: { include: { parent: true, enrollments: { include: { classroom: true } } } }, academicYear: true, payments: { orderBy: { paymentDate: 'desc' } } } } } });
+    if (!payment || payment.cancelledAt || payment.invoice.cancelledAt) throw new NotFoundException('Reçu introuvable ou annulé.');
+    return this.emailDocument(payment.invoice, payment);
+  }
 
   async getInvoices(params: {
     studentId?: string;
@@ -159,7 +182,7 @@ export class FinancesService {
     const year = new Date().getFullYear();
     const paymentNumber = 'REC-' + year + '-' + randomUUID().slice(0, 8).toUpperCase();
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await openCashDay(tx, cashDay(data.paymentDate ? new Date(data.paymentDate) : new Date()));
       const updated = await tx.invoice.updateMany({
         where: { id: invoice.id, cancelledAt: null, balance: { gte: data.amount } },
@@ -214,6 +237,10 @@ export class FinancesService {
 
       return { ...invoiceWithStatus, createdPayment: payment };
     });
+    let emailDelivery: any = { sent: false, reason: 'NO_PARENT_EMAIL' };
+    try { emailDelivery = await this.emailDocument(result, result.createdPayment); }
+    catch { emailDelivery = { sent: false, reason: 'DELIVERY_FAILED' }; }
+    return { ...result, emailDelivery };
   }
 
   async settleBatch(data: {

@@ -60,6 +60,14 @@ export class FinancesController {
     return this.financesService.getInvoice(id);
   }
 
+  @Post('invoices/:id/email')
+  @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
+  emailInvoice(@Param('id') id: string) { return this.financesService.emailInvoice(id); }
+
+  @Post('payments/:id/email-receipt')
+  @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
+  emailReceipt(@Param('id') id: string) { return this.financesService.emailReceipt(id); }
+
   @Post('invoices')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
   @ApiOperation({ summary: 'Créer une facture pour un élève' })

@@ -43,12 +43,14 @@ export const usersApi = {
   twoFactorStatus: () => api.get('/users/me/two-factor').then(r => r.data),
   enableTwoFactor: () => api.post('/users/me/two-factor').then(r => r.data),
   getAll: () => api.get('/users').then((r) => r.data),
-  create: (data: { username: string; email: string; firstName: string; lastName: string; password: string; role: string }) =>
+  create: (data: { username: string; email: string; firstName: string; lastName: string; password?: string; role: string }) =>
     api.post('/users', data).then((r) => r.data),
   setEnabled: (id: string, enabled: boolean) =>
     api.patch(`/users/${id}/status`, { enabled }).then((r) => r.data),
   delete: (id: string) => api.delete(`/users/${id}`).then((r) => r.data),
   resetPassword: (id: string, password: string) => api.post(`/users/${id}/reset-password`, { password }).then((r) => r.data),
+  sendActivation: (id: string) => api.post(`/users/${id}/send-activation`).then((r) => r.data),
+  sendPasswordReset: (id: string) => api.post(`/users/${id}/send-password-reset`).then((r) => r.data),
   changeOwnPassword: (currentPassword: string, newPassword: string, totp?: string) => api.post('/users/me/password', { currentPassword, newPassword, totp }).then((r) => r.data),
   update: (id: string, data: { email: string; firstName: string; lastName: string; role: string }) => api.patch(`/users/${id}`, data).then((r) => r.data),
   getDossier: () => api.get('/users/me/dossier').then(r => r.data),
@@ -154,6 +156,8 @@ export const financesApi = {
   correctionHistory: (id: string) => api.get(`/finance-control/invoices/${id}/corrections`).then(r => r.data),
   settleBatch: (data: any) => api.post('/finances/payments/settle-batch', data).then((r) => r.data),
   recordPayment: (data: any) => api.post('/finances/payments', data).then((r) => r.data),
+  emailInvoice: (id: string) => api.post(`/finances/invoices/${id}/email`).then((r) => r.data),
+  emailReceipt: (id: string) => api.post(`/finances/payments/${id}/email-receipt`).then((r) => r.data),
 };
 
 export const gradesApi = {

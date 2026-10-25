@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role as LocalRole } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
+import { randomBytes } from 'node:crypto';
 
 const APP_ROLES = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE'];
 
@@ -130,7 +131,7 @@ export class UsersService {
     email: string;
     firstName: string;
     lastName: string;
-    password: string;
+    password?: string;
     role: string;
   }) {
     const username = input.username?.trim();
@@ -139,12 +140,10 @@ export class UsersService {
     if (!username || !email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !input.firstName?.trim() || !input.lastName?.trim()) {
       throw new BadRequestException('Le nom d’utilisateur, l’adresse e-mail, le prénom et le nom sont obligatoires.');
     }
-    if (!input.password || input.password.length < 8) {
-      throw new BadRequestException('Le mot de passe doit contenir au moins 8 caractères.');
-    }
     if (!APP_ROLES.includes(roleName)) {
       throw new BadRequestException('Le rôle sélectionné est invalide.');
     }
+    const initialPassword = input.password && input.password.length >= 8 ? input.password : randomBytes(24).toString('base64url');
 
     const created = await this.request('/users', {
       method: 'POST',
@@ -155,7 +154,7 @@ export class UsersService {
         lastName: input.lastName.trim(),
         enabled: true,
         emailVerified: false,
-        requiredActions: [],
+        requiredActions: ['VERIFY_EMAIL', 'UPDATE_PASSWORD'],
       }),
     });
     const user = created || (await this.request(`/users?username=${encodeURIComponent(username)}&exact=true`))?.[0];
@@ -166,7 +165,7 @@ export class UsersService {
     try {
       await this.request(`/users/${encodeURIComponent(user.id)}/reset-password`, {
         method: 'PUT',
-        body: JSON.stringify({ type: 'password', value: input.password, temporary: false }),
+        body: JSON.stringify({ type: 'password', value: initialPassword, temporary: true }),
       });
       const role = await this.ensureRealmRole(roleName);
       await this.request(`/users/${encodeURIComponent(user.id)}/role-mappings/realm`, {
@@ -176,7 +175,8 @@ export class UsersService {
       const safeUser = this.publicUser(user, [role]);
       await this.syncLocalUser(safeUser);
       await this.prisma.user.updateMany({ where: { keycloakId: user.id }, data: { mustChangePassword: true } });
-      return safeUser;
+      await this.sendAccountActions(user.id, ['VERIFY_EMAIL', 'UPDATE_PASSWORD']);
+      return { ...safeUser, invitationSent: true };
     } catch (error) {
       try {
         await this.request(`/users/${encodeURIComponent(user.id)}`, { method: 'DELETE' });
@@ -185,6 +185,26 @@ export class UsersService {
       }
       throw error;
     }
+  }
+
+  private async sendAccountActions(id: string, actions: string[]) {
+    const origin = (this.config.get<string>('CORS_ORIGINS') || 'http://localhost:5173').split(',')[0].trim().replace(/\/$/, '');
+    const query = new URLSearchParams({ lifespan: '86400', client_id: this.config.get<string>('KEYCLOAK_CLIENT_ID') || 'oumouna-khadija-app', redirect_uri: origin + '/login' });
+    await this.request(`/users/${encodeURIComponent(id)}/execute-actions-email?${query}`, { method: 'PUT', body: JSON.stringify(actions) });
+  }
+
+  async sendActivation(id: string) {
+    const user = await this.request(`/users/${encodeURIComponent(id)}`);
+    if (!user?.enabled || !user?.email) throw new BadRequestException('Ce compte actif doit avoir une adresse e-mail.');
+    await this.sendAccountActions(id, ['VERIFY_EMAIL', 'UPDATE_PASSWORD']);
+    return { sent: true };
+  }
+
+  async sendPasswordReset(id: string) {
+    const user = await this.request(`/users/${encodeURIComponent(id)}`);
+    if (!user?.enabled || !user?.email) throw new BadRequestException('Ce compte actif doit avoir une adresse e-mail.');
+    await this.sendAccountActions(id, ['UPDATE_PASSWORD']);
+    return { sent: true };
   }
 
   async resetPassword(id: string, password: string) {
