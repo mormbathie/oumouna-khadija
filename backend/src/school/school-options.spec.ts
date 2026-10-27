@@ -1,4 +1,4 @@
-import { schoolFees, schoolOptions, validateProgramAge, validateOptionsForClass } from './school-options';
+import { schoolFees, schoolOptions, validatePersonalOptions, validateProgramAge, validateOptionsForClass } from './school-options';
 
 describe('Options Oumouna Khadija', () => {
   it('accepte le transport unique et conserve les options décochées', () => {
@@ -29,6 +29,11 @@ describe('Options Oumouna Khadija', () => {
     expect(schoolFees({ eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 22000 });
     expect(schoolFees({ transportZone: 1, eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 34000 });
     expect(schoolFees({ karate: true }, boarding)).toEqual({ registrationFee: 160000, monthlyTuition: 95000 });
+    expect(schoolFees({ hairCare: true, pharmacyKit: true }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 17000 });
+  });
+  it('réserve les soins capillaires aux filles', () => {
+    expect(() => validatePersonalOptions({ gender: 'FEMALE', hairCare: true })).not.toThrow();
+    expect(() => validatePersonalOptions({ gender: 'MALE', hairCare: true })).toThrow('réservée aux filles');
   });
   it('applique les options uniquement au programme concerné', () => {
     const preschool = { level: 'MS', program: 'PRESCHOOL', registrationFee: 43000, monthlyTuition: 12000 };

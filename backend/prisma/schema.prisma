@@ -206,6 +206,8 @@ model Student {
   fullDay       Boolean       @default(false)
   karate        Boolean       @default(false)
   eveningClasses Boolean      @default(false)
+  hairCare      Boolean       @default(false)
+  pharmacyKit   Boolean       @default(false)
   emergencyContactName String?
   emergencyContactPhone String?
   healthNotes String?

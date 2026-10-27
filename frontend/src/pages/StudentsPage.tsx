@@ -74,7 +74,7 @@ export const StudentsPage: React.FC = () => {
     parentPhone: '', parentEmail: '', parentAddress: '', parentProfession: '',
     parentRelation: 'Father', generateInvoice: true,
     additionalGuardians: [] as ReturnType<typeof emptyGuardian>[],
-    supplies: false, fullDay: false, transportZone: null as number|null, karate:false, eveningClasses:false, emergencyContactName:'', emergencyContactPhone:'', healthNotes:'', schoolItemsProvided:'',
+    supplies: false, fullDay: false, transportZone: null as number|null, karate:false, eveningClasses:false, hairCare:false, pharmacyKit:false, emergencyContactName:'', emergencyContactPhone:'', healthNotes:'', schoolItemsProvided:'',
   });
 
   const loadData = async () => {
@@ -164,7 +164,7 @@ export const StudentsPage: React.FC = () => {
       originClass: selectedStudent.originClass || '',
       quranLevel: selectedStudent.quranLevel || '',
       classroomId: selectedStudent.enrollments?.[0]?.classroomId || '',
-      supplies: selectedStudent.supplies || false, fullDay: selectedStudent.fullDay || false, transportZone: selectedStudent.transportZone || null, karate: selectedStudent.karate || false, eveningClasses: selectedStudent.eveningClasses || false, emergencyContactName: selectedStudent.emergencyContactName || '', emergencyContactPhone: selectedStudent.emergencyContactPhone || '', healthNotes: selectedStudent.healthNotes || '', schoolItemsProvided: selectedStudent.schoolItemsProvided || '',
+      supplies: selectedStudent.supplies || false, fullDay: selectedStudent.fullDay || false, transportZone: selectedStudent.transportZone || null, karate: selectedStudent.karate || false, eveningClasses: selectedStudent.eveningClasses || false, hairCare: selectedStudent.hairCare || false, pharmacyKit: selectedStudent.pharmacyKit || false, emergencyContactName: selectedStudent.emergencyContactName || '', emergencyContactPhone: selectedStudent.emergencyContactPhone || '', healthNotes: selectedStudent.healthNotes || '', schoolItemsProvided: selectedStudent.schoolItemsProvided || '',
       parentData: {
         firstName: parent.firstName || '', lastName: parent.lastName || '',
         phone: parent.phone || '', email: parent.email || '', address: parent.address || '',
@@ -254,7 +254,7 @@ export const StudentsPage: React.FC = () => {
         originClass: formData.originClass.trim() || undefined,
         quranLevel: formData.quranLevel.trim() || undefined,
         generateInvoice: formData.generateInvoice,
-        supplies: formData.supplies, fullDay: formData.fullDay, transportZone: formData.transportZone, karate: formData.karate, eveningClasses: formData.eveningClasses, emergencyContactName: formData.emergencyContactName, emergencyContactPhone: formData.emergencyContactPhone, healthNotes: formData.healthNotes, schoolItemsProvided: formData.schoolItemsProvided,
+        supplies: formData.supplies, fullDay: formData.fullDay, transportZone: formData.transportZone, karate: formData.karate, eveningClasses: formData.eveningClasses, hairCare: formData.hairCare, pharmacyKit: formData.pharmacyKit, emergencyContactName: formData.emergencyContactName, emergencyContactPhone: formData.emergencyContactPhone, healthNotes: formData.healthNotes, schoolItemsProvided: formData.schoolItemsProvided,
       };
       if (formData.parentChoice === 'existing' && formData.parentId) {
         payload.parentId = formData.parentId;
@@ -287,7 +287,7 @@ export const StudentsPage: React.FC = () => {
         created = await studentsApi.create({ ...payload, duplicateOverrideReason: reason.trim() });
       }
       setShowAddModal(false);
-      setFormData((previous) => ({ ...previous, firstName: '', lastName: '', schoolMatricule: '', originClass: '', quranLevel: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentAddress: '', parentProfession: '', additionalGuardians: [], supplies: false, fullDay: false, transportZone: null, karate: false, eveningClasses: false, emergencyContactName: '', emergencyContactPhone: '', healthNotes: '', schoolItemsProvided: '', placeOfBirth: '', address: '', bloodGroup: '' }));
+      setFormData((previous) => ({ ...previous, firstName: '', lastName: '', schoolMatricule: '', originClass: '', quranLevel: '', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentAddress: '', parentProfession: '', additionalGuardians: [], supplies: false, fullDay: false, transportZone: null, karate: false, eveningClasses: false, hairCare: false, pharmacyKit: false, emergencyContactName: '', emergencyContactPhone: '', healthNotes: '', schoolItemsProvided: '', placeOfBirth: '', address: '', bloodGroup: '' }));
       await loadData();
       await handleOpenDetails(created.id, manager ? 'documents' : 'overview');
     } catch (error: any) {
@@ -453,7 +453,7 @@ export const StudentsPage: React.FC = () => {
               <section><h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-700">{t("1. Student details")}</h4><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="text-xs font-medium text-slate-700">{t("First name(s) *")}<input required value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className={inputClass} /></label>
                 <label className="text-xs font-medium text-slate-700">{t("Last name *")}<input required value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className={inputClass} /></label>
-                <label className="text-xs font-medium text-slate-700">{t("Gender")}<select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className={inputClass}><option value="MALE">{t("Boy")}</option><option value="FEMALE">{t("Girl")}</option></select></label>
+                <label className="text-xs font-medium text-slate-700">{t("Gender")}<select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value, hairCare: e.target.value === 'FEMALE' ? formData.hairCare : false })} className={inputClass}><option value="MALE">{t("Boy")}</option><option value="FEMALE">{t("Girl")}</option></select></label>
                 <label className="text-xs font-medium text-slate-700">{t("Date of birth")}<input type="date" value={formData.dateOfBirth} onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })} className={inputClass} /></label>
                 <label className="text-xs font-medium text-slate-700">{t("Place of birth")}<input value={formData.placeOfBirth} onChange={(e) => setFormData({ ...formData, placeOfBirth: e.target.value })} className={inputClass} /></label>
                 <label className="text-xs font-medium text-slate-700">{t("Blood type")}<select value={formData.bloodGroup} onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })} className={inputClass}><option value="">{t("Not provided")}</option>{['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((group) => <option key={group}>{group}</option>)}</select></label>
@@ -511,7 +511,7 @@ export const StudentsPage: React.FC = () => {
               {editingDetails && editData ? <form onSubmit={handleSaveDetails} className="space-y-5">
                 <section><h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-700">{t("Student information")}</h4><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="text-xs font-medium text-slate-700">{t("First name(s)")}<input required value={editData.firstName} onChange={(e) => setEditData({ ...editData, firstName: e.target.value })} className={inputClass} /></label><label className="text-xs font-medium text-slate-700">{t("Last name")}<input required value={editData.lastName} onChange={(e) => setEditData({ ...editData, lastName: e.target.value })} className={inputClass} /></label>
-                  <label className="text-xs font-medium text-slate-700">{t("Gender")}<select value={editData.gender} onChange={(e) => setEditData({ ...editData, gender: e.target.value })} className={inputClass}><option value="MALE">{t("Boy")}</option><option value="FEMALE">{t("Girl")}</option></select></label><label className="text-xs font-medium text-slate-700">{t("Date of birth")}<input type="date" value={editData.dateOfBirth} onChange={(e) => setEditData({ ...editData, dateOfBirth: e.target.value })} className={inputClass} /></label>
+                  <label className="text-xs font-medium text-slate-700">{t("Gender")}<select value={editData.gender} onChange={(e) => setEditData({ ...editData, gender: e.target.value, hairCare: e.target.value === 'FEMALE' ? editData.hairCare : false })} className={inputClass}><option value="MALE">{t("Boy")}</option><option value="FEMALE">{t("Girl")}</option></select></label><label className="text-xs font-medium text-slate-700">{t("Date of birth")}<input type="date" value={editData.dateOfBirth} onChange={(e) => setEditData({ ...editData, dateOfBirth: e.target.value })} className={inputClass} /></label>
                   <label className="text-xs font-medium text-slate-700">{t("Place of birth")}<input value={editData.placeOfBirth} onChange={(e) => setEditData({ ...editData, placeOfBirth: e.target.value })} className={inputClass} /></label><label className="text-xs font-medium text-slate-700">{t("Blood type")}<select value={editData.bloodGroup} onChange={(e) => setEditData({ ...editData, bloodGroup: e.target.value })} className={inputClass}><option value="">{t("Not provided")}</option>{['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((group) => <option key={group}>{group}</option>)}</select></label>
                   <label className="text-xs font-medium text-slate-700 sm:col-span-2">Matricule historique de l’école<input value={editData.schoolMatricule} onChange={(e) => setEditData({ ...editData, schoolMatricule: e.target.value })} maxLength={100} className={inputClass} /></label>
                   <label className="text-xs font-medium text-slate-700">Classe d’origine<input value={editData.originClass} onChange={(e) => setEditData({ ...editData, originClass: e.target.value })} maxLength={400} className={inputClass} /></label>

@@ -1,5 +1,5 @@
 import { findOrCreateParent } from '../parents/parent-identity';
-import { schoolFees, schoolOptions, validateProgramAge, validateOptionsForClass, registrationAdjustment, registrationSnapshot } from '../school/school-options';
+import { schoolFees, schoolOptions, validatePersonalOptions, validateProgramAge, validateOptionsForClass, registrationAdjustment, registrationSnapshot } from '../school/school-options';
 import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { DocumentsService } from '../documents/documents.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -239,6 +239,8 @@ export class StudentsService {
     transportZone?: number | null;
     karate?: boolean;
     eveningClasses?: boolean;
+    hairCare?: boolean;
+    pharmacyKit?: boolean;
     emergencyContactName?: string;
     emergencyContactPhone?: string;
     healthNotes?: string;
@@ -255,6 +257,7 @@ export class StudentsService {
     if (data.classroomId && !selectedClass) throw new BadRequestException('Classe sélectionnée introuvable.');
     validateProgramAge(selectedClass?.program, data.dateOfBirth);
     validateOptionsForClass(options, selectedClass);
+    validatePersonalOptions({ ...options, gender: data.gender });
     const studentId = await this.prisma.$transaction(async (tx) => {
     // Generate matricule
     // Serialize registration numbering; deletion must never reuse a matricule.
@@ -535,7 +538,8 @@ export class StudentsService {
         const enrollment = current.enrollments[0];
         const classroom = data.classroomId ? await tx.classroom.findUnique({ where: { id: data.classroomId } }) : enrollment?.classroom;
         const next = { ...current, ...studentData };
-        const billingChanged = Boolean(data.classroomId) || ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
+        validatePersonalOptions(next);
+        const billingChanged = Boolean(data.classroomId) || ['eveningClasses','hairCare','pharmacyKit'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
         if (billingChanged) validateOptionsForClass(next, classroom);
         if (billingChanged && enrollment && classroom) {
           // Lock invoices before reading their paid amounts: simultaneous cash receipts remain safe.

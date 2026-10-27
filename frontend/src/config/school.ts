@@ -26,11 +26,13 @@ export function ageWarning(birth: string | Date, classroom?: {program?:string; l
   const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - min);
   return new Date(birth) > cutoff;
 }
-export const effectiveFees = (student: {fullDay?:boolean}, classroom?: {program?:string;level?:string;registrationFee?:number;monthlyTuition?:number}) => {
+export const effectiveFees = (student: {fullDay?:boolean;supplies?:boolean;karate?:boolean;eveningClasses?:boolean;hairCare?:boolean;pharmacyKit?:boolean;transportZone?:number|null}, classroom?: {program?:string;level?:string;registrationFee?:number;monthlyTuition?:number}) => {
   const plan = programFor(classroom);
-  return student.fullDay && supportsFullDay(classroom)
+  const base = student.fullDay && supportsFullDay(classroom)
     ? {registrationFee:isPreschool(classroom) ? 65000 : (classroom?.registrationFee === 40500 && classroom.level === 'CI' ? 40000 : classroom?.registrationFee ?? plan.registrationFee) + 25000,monthlyTuition:35000}
     : {registrationFee:classroom?.registrationFee ?? plan.registrationFee,monthlyTuition:classroom?.monthlyTuition ?? plan.monthlyTuition};
+  const monthlyOptions=(transportFees[student.transportZone || 0] || 0)+(student.karate?4000:0)+(student.eveningClasses?10000:0)+(student.supplies&&isPreschool(classroom)?12000:0)+(student.hairCare?3000:0)+(student.pharmacyKit?2000:0);
+  return { registrationFee: base.registrationFee + (student.eveningClasses&&isPreschool(classroom)?10000:0), monthlyTuition: base.monthlyTuition + monthlyOptions };
 };
 
 export const isPreschool = (classroom?: {program?:string;level?:string}) => classroom?.program==='PRESCHOOL' || ['PS','MS','GS'].includes(classroom?.level || '');
