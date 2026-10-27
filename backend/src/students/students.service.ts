@@ -146,11 +146,15 @@ export class StudentsService {
       if (student.parent) delete (student.parent as any).documents;
     }
 
-    const attendanceGroups = await this.prisma.attendance.groupBy({
+    const [attendanceGroups, actionHistory] = await Promise.all([this.prisma.attendance.groupBy({
       by: ['status'],
       where: { studentId: id },
       _count: { _all: true },
-    });
+    }), (!isTeacher && !isParent) ? this.prisma.businessAudit.findMany({
+      where: { entityId: id, action: { in: ['STUDENT_CREATED', 'STUDENT_UPDATED', 'STUDENT_DEPARTED'] } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    }) : Promise.resolve([])]);
     const attendanceSummary = {
       total: attendanceGroups.reduce((sum, group) => sum + group._count._all, 0),
       present: attendanceGroups.find((group) => group.status === 'PRESENT')?._count._all || 0,
@@ -158,7 +162,7 @@ export class StudentsService {
       late: attendanceGroups.find((group) => group.status === 'LATE')?._count._all || 0,
       excused: attendanceGroups.find((group) => group.status === 'EXCUSED')?._count._all || 0,
     };
-    return { ...student, attendanceSummary, calculatedFees: student.enrollments[0] ? schoolFees(student, student.enrollments[0].classroom) : null };
+    return { ...student, actionHistory, attendanceSummary, calculatedFees: student.enrollments[0] ? schoolFees(student, student.enrollments[0].classroom) : null };
   }
 
   async getPhoto(id: string, requester: any) {
@@ -220,6 +224,7 @@ export class StudentsService {
     bloodGroup?: string;
     photoUrl?: string;
     schoolMatricule?: string;
+    schoolEntryDate?: string | Date;
     classroomId?: string;
     academicYearId?: string;
     parentId?: string;
@@ -251,6 +256,7 @@ export class StudentsService {
   }, actor: ActingUser) {
     const author = actorStamp(actor);
     const schoolMatricule = String(data.schoolMatricule || '').trim() || null;
+    const schoolEntryDate = this.schoolEntryDate(data.schoolEntryDate, data.dateOfBirth);
     if (schoolMatricule && schoolMatricule.length > 100) throw new BadRequestException('Le matricule école ne peut pas dépasser 100 caractères.');
     const options = schoolOptions(data as any);
     const selectedClass = data.classroomId ? await this.prisma.classroom.findUnique({ where: { id: data.classroomId }, }) : null;
@@ -310,6 +316,7 @@ export class StudentsService {
         ...options,
         matricule,
         schoolMatricule,
+        schoolEntryDate,
         duplicateOverrideReason: duplicates.length ? reason : null,
         firstName: data.firstName,
         lastName: data.lastName,
@@ -381,6 +388,11 @@ export class StudentsService {
       }
     }
 
+    await tx.businessAudit.create({ data: {
+      action: 'STUDENT_CREATED', entityId: student.id,
+      actorId: author.id, actorName: author.name, actorRole: author.role,
+      details: JSON.stringify({ matricule: student.matricule, schoolEntryDate: student.schoolEntryDate, classroomId: data.classroomId || null }),
+    } });
     if (duplicates.length) await tx.businessAudit.create({ data: {
       action: 'STUDENT_DUPLICATE_OVERRIDE', entityId: student.id,
       actorId: author.id, actorName: author.name, actorRole: author.role,
@@ -528,6 +540,7 @@ export class StudentsService {
       studentData.schoolMatricule = value || null;
     }
     if (data.dateOfBirth !== undefined) studentData.dateOfBirth = new Date(data.dateOfBirth);
+    if (data.schoolEntryDate !== undefined) studentData.schoolEntryDate = this.schoolEntryDate(data.schoolEntryDate, data.dateOfBirth || existing.dateOfBirth);
 
     if (Object.keys(studentData).length > 0) {
       await this.prisma.$transaction(async (tx) => {
@@ -600,6 +613,11 @@ export class StudentsService {
             update: { classroomId: classroom.id, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role },
             create: { studentId: id, classroomId: classroom.id, academicYearId: classroom.academicYearId, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role } });
         }
+        await tx.businessAudit.create({ data: {
+          action: 'STUDENT_UPDATED', entityId: id,
+          actorId: author.id, actorName: author.name, actorRole: author.role,
+          details: JSON.stringify({ fields: Object.keys(data).filter(key => !['parentData', 'guardians'].includes(key)), parentUpdated: Boolean(data.parentData), guardiansUpdated: Array.isArray(data.guardians) }),
+        } });
       });
     }
 
@@ -630,5 +648,17 @@ export class StudentsService {
   async remove(id: string) {
     // No financial or school history may disappear through a dossier deletion.
     throw new BadRequestException('La suppression des dossiers est désactivée. Utilisez Départs et remboursements pour conserver l’historique.');
+  }
+
+  private schoolEntryDate(value: string | Date | undefined, birthValue: string | Date) {
+    if (value === undefined || value === null || value === '') return null;
+    const entry = new Date(String(value).slice(0, 10) + 'T00:00:00.000Z');
+    const birth = new Date(birthValue);
+    const today = new Date();
+    const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    if (!Number.isFinite(entry.getTime())) throw new BadRequestException('Date d’entrée dans l’établissement invalide.');
+    if (entry > todayUtc) throw new BadRequestException('La date d’entrée dans l’établissement ne peut pas être future.');
+    if (Number.isFinite(birth.getTime()) && entry < birth) throw new BadRequestException('La date d’entrée dans l’établissement ne peut pas précéder la naissance.');
+    return entry;
   }
 }

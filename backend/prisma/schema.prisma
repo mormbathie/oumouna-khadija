@@ -193,6 +193,7 @@ model Student {
   duplicateOverrideReason String?
   matricule     String        @unique // e.g. "OS-2026-0001"
   schoolMatricule String?     // Matricule historique attribué par l'école
+  schoolEntryDate DateTime?   // Date historique d'entrée dans l'établissement (distincte de createdAt)
   firstName     String
   lastName      String
   dateOfBirth   DateTime

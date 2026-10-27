@@ -18,7 +18,7 @@ describe('Registration adjustments preserve recorded receipts', () => {
     const current:any = { id:'child', dateOfBirth:new Date('2023-01-01'), supplies:false, karate:false, fullDay:false, enrollments:[{id:'enrollment',academicYearId:'year',classroomId:'class',classroom:{id:'class',level:'CI',program:'ELEMENTARY',registrationFee:40000,monthlyTuition:15000}}] };
     const invoice:any = {id:'initial',amount,paidAmount,balance:amount-paidAmount,status:'PARTIAL'};
     const payments = [{id:'receipt',amount:paidAmount,reference:'original',paymentDate:'2026-10-01'}];
-    const tx:any = {studentDeparture:{findUnique:jest.fn(async()=>null)},$queryRaw:jest.fn(),student:{findUnique:jest.fn(async()=>current),update:jest.fn(async({data})=>Object.assign(current,data))},classroom:{findUnique:jest.fn()},enrollment:{upsert:jest.fn()},invoice:{findMany:jest.fn(async()=>[invoice]),update:jest.fn(async({data})=>Object.assign(invoice,data))}};
+    const tx:any = {studentDeparture:{findUnique:jest.fn(async()=>null)},businessAudit:{create:jest.fn()},$queryRaw:jest.fn(),student:{findUnique:jest.fn(async()=>current),update:jest.fn(async({data})=>Object.assign(current,data))},classroom:{findUnique:jest.fn()},enrollment:{upsert:jest.fn()},invoice:{findMany:jest.fn(async()=>[invoice]),update:jest.fn(async({data})=>Object.assign(invoice,data))}};
     const prisma:any = {student:{findUnique:jest.fn(async()=>current)},classroom:{findUnique:jest.fn()},$transaction:jest.fn(async fn=>fn(tx))};
     const service = new StudentsService(prisma,{} as any);jest.spyOn(service,'findOne').mockResolvedValue({} as any);
     return {service,invoice,payments,current,tx};
@@ -32,7 +32,7 @@ describe('Registration adjustments preserve recorded receipts', () => {
     expect(invoice.amount).toBe(100000);
   });
   it('does not reprice an unrelated profile edit',async()=>{
-    const {service,tx}=setup();await service.update('child',{firstName:'Updated'},actor);expect(tx.invoice.update).not.toHaveBeenCalled();
+    const {service,tx}=setup();await service.update('child',{firstName:'Updated'},actor);expect(tx.invoice.update).not.toHaveBeenCalled();expect(tx.businessAudit.create).toHaveBeenCalledWith({data:expect.objectContaining({action:'STUDENT_UPDATED',entityId:'child'})});
   });
   it('reprices an unpaid registration invoice when the class is corrected',async()=>{
     const {service,invoice,tx}=setup(40000,0);
@@ -58,6 +58,17 @@ describe('Registration adjustments preserve recorded receipts', () => {
   });
   it('refuses an ambiguous dossier with two registration invoices',async()=>{
     const {service,tx}=setup();tx.invoice.findMany.mockResolvedValue([{id:'one'},{id:'two'}]);await expect(service.update('child',{eveningClasses:true},actor)).rejects.toThrow('Plusieurs');expect(tx.student.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('Historical school entry date', () => {
+  const service = new StudentsService({} as any, {} as any);
+  it('accepts a historical date distinct from the platform timestamp', () => {
+    expect((service as any).schoolEntryDate('2022-09-15', '2018-04-03').toISOString()).toBe('2022-09-15T00:00:00.000Z');
+  });
+  it('rejects a date before birth or in the future', () => {
+    expect(() => (service as any).schoolEntryDate('2017-09-15', '2018-04-03')).toThrow('naissance');
+    expect(() => (service as any).schoolEntryDate('2999-01-01', '2018-04-03')).toThrow('future');
   });
 });
 
