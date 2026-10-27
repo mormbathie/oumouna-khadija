@@ -1,6 +1,17 @@
 jest.mock('../documents/documents.service', () => ({ DocumentsService: class {} }));
 import { StudentsService } from './students.service';
 
+describe('Active student roster', () => {
+  it('always excludes pupils with a recorded departure', async () => {
+    const prisma: any = { student: { findMany: jest.fn(async () => []) } };
+    const service = new StudentsService(prisma, {} as any);
+    await service.findAll({}, { roles: ['DIRECTEUR'] });
+    expect(prisma.student.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ departure: { is: null } }),
+    }));
+  });
+});
+
 describe('Registration adjustments preserve recorded receipts', () => {
   const actor = { userId: 'admin', username: 'admin', roles: ['ADMIN'] };
   function setup(amount=100000, paidAmount=80000) {

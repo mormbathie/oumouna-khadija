@@ -16,7 +16,9 @@ export class StudentsService {
   async findAll(params: { classId?: string; search?: string; status?: string; fullDay?: string }, requester: any) {
     const { classId, search, status, fullDay } = params;
 
-    const where: any = {};
+    // A departure preserves the complete archive but removes the pupil from every active roster.
+    // Departed pupils remain available from the dedicated "Départs et remboursements" register.
+    const where: any = { departure: { is: null } };
     if (fullDay !== undefined) {
       if (!['true', 'false'].includes(fullDay)) throw new BadRequestException('Filtre journée continue invalide.');
       where.fullDay = fullDay === 'true';
