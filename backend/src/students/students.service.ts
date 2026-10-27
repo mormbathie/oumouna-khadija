@@ -3,10 +3,11 @@ import { schoolFees, schoolOptions, validateProgramAge, validateOptionsForClass,
 import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { DocumentsService } from '../documents/documents.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, Gender, StudentStatus, InvoiceType, InvoiceStatus } from '@prisma/client';
+import { Prisma, Gender, StudentStatus, InvoiceType, InvoiceStatus, PaymentMethod } from '@prisma/client';
 import { ActingUser, actorStamp } from '../audit/actor';
 import { randomUUID } from 'node:crypto';
 import { normalizeEmail } from '../common/email';
+import { cashDay, dayRange, openCashDay } from '../finances/cash-day';
 
 @Injectable()
 export class StudentsService {
@@ -240,6 +241,8 @@ export class StudentsService {
     emergencyContactPhone?: string;
     healthNotes?: string;
     schoolItemsProvided?: string;
+    originClass?: string;
+    quranLevel?: string;
     duplicateOverrideReason?: string;
   }, actor: ActingUser) {
     const author = actorStamp(actor);
@@ -405,6 +408,98 @@ export class StudentsService {
       projectedBalance: invoice ? invoice.amount + delta - invoice.paidAmount : null };
   }
 
+  async applyRegistrationDiscount(studentId: string, data: { invoiceId?: string; amount?: number; type?: string; reason?: string }, actor: ActingUser) {
+    const author = actorStamp(actor);
+    const amount = Number(data.amount);
+    if (!Number.isInteger(amount) || amount < 0) throw new BadRequestException('Le montant de la réduction doit être un nombre entier positif ou zéro.');
+    const type = String(data.type || '').trim();
+    if (amount > 0 && !['DISCOUNT', 'SOCIAL_CASE'].includes(type)) throw new BadRequestException('Choisissez « réduction accordée » ou « cas social ».');
+    const reason = String(data.reason || '').trim();
+    if (amount > 0 && (reason.length < 10 || reason.length > 1000)) throw new BadRequestException('La justification doit contenir entre 10 et 1 000 caractères.');
+    if (!data.invoiceId) throw new BadRequestException('Facture d’inscription manquante.');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`SELECT id FROM "Invoice" WHERE id = ${data.invoiceId} FOR UPDATE`);
+      const invoice = await tx.invoice.findFirst({ where: { id: data.invoiceId, studentId, type: InvoiceType.REGISTRATION, cancelledAt: null } });
+      if (!invoice) throw new NotFoundException('Facture d’inscription introuvable.');
+      if (Number(invoice.discountRefundedAmount || 0) > 0) throw new BadRequestException('Cette réduction ne peut plus être modifiée car le remboursement au parent a déjà été enregistré.');
+      const previousDiscount = Number(invoice.discountAmount || 0);
+      const grossAmount = Number(invoice.grossAmount ?? invoice.amount + previousDiscount);
+      if (amount > grossAmount) throw new BadRequestException('La réduction ne peut pas dépasser le montant normal de l’inscription.');
+      const netAmount = grossAmount - amount;
+      const balance = Math.max(0, netAmount - invoice.paidAmount);
+      const refundDue = Math.max(0, invoice.paidAmount - netAmount);
+      await tx.invoice.update({ where: { id: invoice.id }, data: {
+        grossAmount, amount: netAmount, balance,
+        discountAmount: amount,
+        discountType: amount ? type : null,
+        discountReason: amount ? reason : null,
+        discountApprovedAt: amount ? new Date() : null,
+        discountApprovedById: amount ? author.id : null,
+        discountApprovedByName: amount ? author.name : null,
+        discountRefundDue: refundDue,
+        status: balance === 0 ? InvoiceStatus.PAID : invoice.paidAmount > 0 ? InvoiceStatus.PARTIAL : InvoiceStatus.UNPAID,
+      } });
+      await tx.businessAudit.create({ data: {
+        action: amount ? 'REGISTRATION_DISCOUNT_APPROVED' : 'REGISTRATION_DISCOUNT_REMOVED', entityId: invoice.id,
+        actorId: author.id, actorName: author.name, actorRole: author.role, reason: reason || 'Réduction retirée par le directeur.',
+        details: JSON.stringify({ studentId, invoiceNumber: invoice.invoiceNumber, grossAmount, previousDiscount, discountAmount: amount, netAmount, refundDue, type: amount ? type : null }),
+      } });
+    });
+    return this.findOne(studentId, { roles: ['ADMIN', 'DIRECTEUR'] });
+  }
+
+  async refundRegistrationDiscount(studentId: string, data: { invoiceId?: string; refundedOn?: string; paymentMethod?: PaymentMethod; recipient?: string; requestKey?: string }, actor: ActingUser) {
+    if (!actor?.roles?.includes('COMPTABLE')) throw new ForbiddenException('Cette action est réservée au comptable.');
+    const author = actorStamp(actor);
+    const invoiceId = String(data.invoiceId || '').trim();
+    const recipient = String(data.recipient || '').trim();
+    const requestKey = String(data.requestKey || '').trim();
+    const refundedOnText = String(data.refundedOn || '').trim();
+    if (!invoiceId) throw new BadRequestException('Facture d’inscription manquante.');
+    if (recipient.length < 2 || recipient.length > 150) throw new BadRequestException('Le bénéficiaire doit contenir entre 2 et 150 caractères.');
+    if (requestKey.length < 16 || requestKey.length > 80) throw new BadRequestException('Référence de demande invalide.');
+    dayRange(refundedOnText);
+    if (refundedOnText > cashDay(new Date())) throw new BadRequestException('La date ne peut pas être future.');
+    if (!Object.values(PaymentMethod).includes(data.paymentMethod as PaymentMethod)) throw new BadRequestException('Mode de remboursement invalide.');
+    const refundedOn = new Date(refundedOnText + 'T00:00:00Z');
+
+    await this.prisma.$transaction(async tx => {
+      await openCashDay(tx, refundedOnText);
+      await tx.$queryRaw(Prisma.sql`SELECT id FROM "Invoice" WHERE id = ${invoiceId} FOR UPDATE`);
+      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, studentId, type: InvoiceType.REGISTRATION, cancelledAt: null }, include: { payments: { where: { cancelledAt: null }, include: { refunds: true }, orderBy: { paymentDate: 'asc' } } } });
+      if (!invoice) throw new NotFoundException('Facture d’inscription introuvable.');
+      const alreadyRefunded = Number(invoice.discountRefundedAmount || 0);
+      const remaining = Number(invoice.discountRefundDue || 0) - alreadyRefunded;
+      if (remaining <= 0) throw new BadRequestException('Aucun remboursement de réduction n’est en attente.');
+      if (await tx.refund.findFirst({ where: { requestKey: { startsWith: requestKey + '-' } } })) throw new ConflictException('Cette remise au parent a déjà été enregistrée.');
+      let toAllocate = remaining;
+      let index = 0;
+      const createdIds: string[] = [];
+      for (const payment of invoice.payments) {
+        if (cashDay(payment.paymentDate) > refundedOnText) continue;
+        const refunded = payment.refunds.reduce((sum, item) => sum + item.amount, 0);
+        const amount = Math.min(toAllocate, payment.amount - refunded);
+        if (amount <= 0) continue;
+        const refund = await tx.refund.create({ data: {
+          paymentId: payment.id, amount, refundedOn, paymentMethod: data.paymentMethod as PaymentMethod,
+          reason: `Remboursement de la réduction d’inscription ${invoice.invoiceNumber}`, recipient,
+          mode: 'REFUND_RECORDED', requestKey: `${requestKey}-${index++}`,
+          refundNumber: 'REM-' + refundedOnText.slice(0, 4) + '-' + randomUUID().toUpperCase(),
+          actorId: author.id, actorName: author.name, actorRole: author.role,
+        } });
+        createdIds.push(refund.id);
+        toAllocate -= amount;
+        if (toAllocate === 0) break;
+      }
+      if (toAllocate > 0) throw new BadRequestException('Les paiements encaissés ne permettent pas de rembourser la totalité du trop-perçu.');
+      await tx.invoice.update({ where: { id: invoice.id }, data: { discountRefundedAmount: alreadyRefunded + remaining, discountRefundedAt: refundedOn, discountRefundedById: author.id, discountRefundedByName: author.name } });
+      await tx.businessAudit.create({ data: { action: 'REGISTRATION_DISCOUNT_REFUNDED', entityId: invoice.id, actorId: author.id, actorName: author.name, actorRole: author.role,
+        reason: `Trop-perçu remis à ${recipient}.`, details: JSON.stringify({ studentId, invoiceNumber: invoice.invoiceNumber, amount: remaining, refundedOn: refundedOnText, paymentMethod: data.paymentMethod, refundIds: createdIds }) } });
+    }, { timeout: 15000 });
+    return this.findOne(studentId, { roles: ['COMPTABLE'] });
+  }
+
   async update(id: string, data: any, actor: ActingUser) {
     const author = actorStamp(actor);
     const existing = await this.prisma.student.findUnique({ where: { id }, select: { id: true, parentId: true, dateOfBirth: true, enrollments: { where: { academicYear: { isCurrent: true } }, take: 1, select: { academicYearId: true, classroom: { select: { id: true, name: true, level: true, program: true, registrationFee: true, monthlyTuition: true } } } } } });
@@ -438,8 +533,9 @@ export class StudentsService {
         const enrollment = current.enrollments[0];
         const classroom = data.classroomId ? await tx.classroom.findUnique({ where: { id: data.classroomId } }) : enrollment?.classroom;
         const next = { ...current, ...studentData };
-        const billingChanged = ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
-        if (billingChanged || (data.classroomId && data.classroomId !== enrollment?.classroomId)) validateOptionsForClass(next, classroom);
+        const classChanged = Boolean(data.classroomId && data.classroomId !== enrollment?.classroomId);
+        const billingChanged = classChanged || ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
+        if (billingChanged) validateOptionsForClass(next, classroom);
         if (billingChanged && enrollment && classroom) {
           // Lock invoices before reading their paid amounts: simultaneous cash receipts remain safe.
           await tx.$queryRaw(Prisma.sql`SELECT id FROM "Invoice" WHERE "studentId" = ${id} AND "academicYearId" = ${enrollment.academicYearId} AND type = 'REGISTRATION' FOR UPDATE`);
@@ -448,10 +544,12 @@ export class StudentsService {
           const invoice = invoices[0];
           if (invoice) {
             const adjustment = registrationAdjustment(current, next, enrollment.classroom, classroom, invoice);
-            const amount = invoice.amount + adjustment.delta;
+            const discountAmount = Number(invoice.discountAmount || 0);
+            const grossAmount = Number(invoice.grossAmount ?? invoice.amount + discountAmount) + adjustment.delta;
+            const amount = grossAmount - discountAmount;
             if (amount < invoice.paidAmount || amount < 0) throw new BadRequestException('La modification ferait passer le montant dû sous les paiements encaissés. Une régularisation comptable est nécessaire.');
             const balance = amount - invoice.paidAmount;
-            await tx.invoice.update({ where: { id: invoice.id }, data: { amount, balance, registrationOptions: adjustment.registrationOptions,
+            await tx.invoice.update({ where: { id: invoice.id }, data: { grossAmount, amount, balance, registrationOptions: adjustment.registrationOptions,
               status: balance === 0 ? InvoiceStatus.PAID : invoice.paidAmount > 0 ? InvoiceStatus.PARTIAL : InvoiceStatus.UNPAID } });
           }
         }

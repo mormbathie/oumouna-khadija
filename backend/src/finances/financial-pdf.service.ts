@@ -23,6 +23,15 @@ export class FinancialPdfService {
       document.text(`Parent / payeur : ${`${parent.firstName || ''} ${parent.lastName || ''}`.trim() || '—'}`);
       document.moveDown().fontSize(11).text(invoice.title || 'Frais scolaires', { underline: true });
       document.moveDown(0.5).fontSize(10);
+      if (invoice.discountAmount > 0) {
+        document.text(`Montant normal : ${this.money(invoice.grossAmount || invoice.amount + invoice.discountAmount)}`);
+        document.text(`${invoice.discountType === 'SOCIAL_CASE' ? 'Cas social' : 'Réduction accordée'} : -${this.money(invoice.discountAmount)}`);
+        document.text(`Justification : ${invoice.discountReason || '—'}`);
+        document.text(`Validée par : ${invoice.discountApprovedByName || 'Direction'}`);
+        document.text(`Montant net facturé : ${this.money(invoice.amount)}`);
+        if (invoice.discountRefundDue > invoice.discountRefundedAmount) document.text(`Trop-perçu à rendre au parent : ${this.money(invoice.discountRefundDue - invoice.discountRefundedAmount)}`);
+        if (invoice.discountRefundedAmount > 0) document.text(`Trop-perçu remboursé : ${this.money(invoice.discountRefundedAmount)}${invoice.discountRefundedByName ? ` par ${invoice.discountRefundedByName}` : ''}`);
+      }
       document.text(`Montant de la facture : ${this.money(invoice.amount)}`);
       if (payment) document.text(`Versement reçu : ${this.money(payment.amount)}`);
       document.text(`Total payé : ${this.money(invoice.paidAmount)}`);

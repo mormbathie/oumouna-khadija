@@ -34,6 +34,20 @@ export class StudentsController {
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
   async quote(@Body() body: any) { return this.studentsService.quote(body); }
 
+  @Put(':id/registration-discount')
+  @Roles('DIRECTEUR')
+  @ApiOperation({ summary: 'Accorder, modifier ou retirer une réduction sur une facture d’inscription' })
+  async applyRegistrationDiscount(@Param('id') id: string, @Body() body: any, @CurrentUser() actor: any) {
+    return this.studentsService.applyRegistrationDiscount(id, body, actor);
+  }
+
+  @Post(':id/registration-discount/refund')
+  @Roles('COMPTABLE')
+  @ApiOperation({ summary: 'Enregistrer la remise au parent du trop-perçu approuvé par la direction' })
+  async refundRegistrationDiscount(@Param('id') id: string, @Body() body: any, @CurrentUser() actor: any) {
+    return this.studentsService.refundRegistrationDiscount(id, body, actor);
+  }
+
   @Get(':id/photo')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE')
   @ApiOperation({ summary: 'Afficher la photo d’identité de l’élève autorisé' })

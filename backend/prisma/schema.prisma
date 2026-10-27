@@ -197,6 +197,8 @@ model Student {
   lastName      String
   dateOfBirth   DateTime
   placeOfBirth  String?
+  originClass   String?
+  quranLevel    String?
   gender        Gender
   address       String?
   transportZone Int?
@@ -331,6 +333,18 @@ model Invoice {
   title           String        // e.g. "Inscription 2026-2027", "Mensualité Octobre"
   type            InvoiceType   @default(TUITION)
   amount          Float
+  grossAmount     Float?
+  discountAmount  Float         @default(0)
+  discountType    String?
+  discountReason  String?
+  discountApprovedAt DateTime?
+  discountApprovedById String?
+  discountApprovedByName String?
+  discountRefundDue Float @default(0)
+  discountRefundedAmount Float @default(0)
+  discountRefundedAt DateTime?
+  discountRefundedById String?
+  discountRefundedByName String?
   paidAmount      Float         @default(0)
   balance         Float
   dueDate         DateTime

@@ -12,7 +12,7 @@ export function schoolOptions(data: Record<string, unknown>) {
     if (typeof data[key] !== 'boolean') throw new BadRequestException('Option scolaire invalide.');
     result[key] = data[key];
   }
-  for (const key of ['emergencyContactName','emergencyContactPhone','healthNotes','schoolItemsProvided']) if (data[key] !== undefined) {
+  for (const key of ['emergencyContactName','emergencyContactPhone','healthNotes','schoolItemsProvided','originClass','quranLevel']) if (data[key] !== undefined) {
     if (data[key] !== null && typeof data[key] !== 'string') throw new BadRequestException('Renseignement scolaire invalide.');
     const value = String(data[key] || '').trim();
     if (value.length > (key === 'healthNotes' ? 2000 : 400)) throw new BadRequestException('Renseignement trop long.');

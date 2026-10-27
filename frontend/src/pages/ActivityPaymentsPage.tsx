@@ -40,7 +40,7 @@ export function ActivityPaymentsPage({ category }: { category: 'KIMONO' | 'KARAT
   const input='w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm';
   return <div className="mx-auto max-w-6xl space-y-5">
     <h2 className="text-xl font-bold">{t(category==='KIMONO'?'Kimono sales':'Monthly karate payments')}</h2>
-    <p className="text-sm text-slate-600">{t(category==='KIMONO'?'Kimono is billed separately from registration. One sale per pupil and school year.':'Only eligible pupils with active karate are shown. One invoice per pupil and month.')} {money(category==='KIMONO'?6000:2000)}</p>
+    <p className="text-sm text-slate-600">{t(category==='KIMONO'?'Kimono is billed separately from registration. One sale per pupil and school year.':'Only eligible pupils with active karate are shown. One invoice per pupil and month.')} {money(category==='KIMONO'?6000:4000)}</p>
     {error&&<p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-800">{error}</p>}{notice&&<p role="status" className="rounded-lg bg-amber-50 p-3 text-amber-800">{notice}</p>}
     <form onSubmit={create} className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2">
       <label>{t('Search by name or student ID…')}<input className={input} value={search} onChange={e=>{setSearch(e.target.value);setStudentId('');}}/></label>

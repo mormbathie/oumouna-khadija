@@ -3280,9 +3280,9 @@
     "ar": "شهر"
   },
   "Karate": {
-    "fr": "Karaté",
-    "en": "Karate",
-    "ar": "الكاراتيه"
+    "fr": "Taekwondo",
+    "en": "Taekwondo",
+    "ar": "التايكوندو"
   },
   "Kimono": {
     "fr": "Kimono",
@@ -3630,9 +3630,9 @@
     "ar": "مبيعات الكيمونو"
   },
   "Monthly karate payments": {
-    "fr": "Mensualités Karaté",
-    "en": "Monthly karate payments",
-    "ar": "دفعات الكاراتيه الشهرية"
+    "fr": "Mensualités Taekwondo",
+    "en": "Monthly Taekwondo payments",
+    "ar": "دفعات التايكوندو الشهرية"
   },
   "Kimono is billed separately from registration. One sale per pupil and school year.": {
     "fr": "Le Kimono est facturé séparément de l’inscription. Une vente par élève et par année scolaire.",
@@ -3640,9 +3640,9 @@
     "ar": "تُصدر فاتورة الكيمونو بشكل منفصل عن التسجيل. بيع واحد لكل تلميذ في السنة الدراسية."
   },
   "Only eligible pupils with active karate are shown. One invoice per pupil and month.": {
-    "fr": "Seuls les élèves éligibles inscrits au Karaté sont proposés. Une facture par élève et par mois.",
-    "en": "Only eligible pupils with active karate are shown. One invoice per pupil and month.",
-    "ar": "تظهر فقط أسماء التلاميذ المؤهلين والمسجلين في الكاراتيه. فاتورة واحدة لكل تلميذ شهرياً."
+    "fr": "Seuls les élèves éligibles inscrits au Taekwondo sont proposés. Une facture par élève et par mois.",
+    "en": "Only eligible pupils with active Taekwondo are shown. One invoice per pupil and month.",
+    "ar": "تظهر فقط أسماء التلاميذ المؤهلين والمسجلين في التايكوندو. فاتورة واحدة لكل تلميذ شهرياً."
   },
   "Unable to load payments": {
     "fr": "Impossible de charger les paiements.",
@@ -3815,9 +3815,9 @@
     "ar": "الكيمونو"
   },
   "KARATE": {
-    "fr": "Karaté",
-    "en": "KARATE",
-    "ar": "الكاراتيه"
+    "fr": "Taekwondo",
+    "en": "TAEKWONDO",
+    "ar": "التايكوندو"
   },
   "REGISTRATION": {
     "fr": "Inscriptions",
