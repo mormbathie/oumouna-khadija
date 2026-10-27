@@ -64,8 +64,9 @@ export function registrationAdjustment(current: FeeOptions, next: FeeOptions, pr
   for (const key of ['fullDay','supplies','karate','eveningClasses','transportZone'] as const) {
     if ((current[key] || false) !== (next[key] || false)) (after as any)[key] = next[key] ?? (key === 'transportZone' ? null : false);
   }
-  return { delta: schoolFees(after, nextClass).registrationFee - schoolFees(billed, previousClass).registrationFee,
-    registrationOptions: JSON.stringify(after) };
+  const registrationFee = schoolFees(after, nextClass).registrationFee;
+  return { delta: registrationFee - schoolFees(billed, previousClass).registrationFee,
+    registrationFee, registrationOptions: JSON.stringify(after) };
 }
 export function registrationSnapshot(student: FeeOptions) {
   return JSON.stringify({ fullDay: !!student.fullDay, supplies: !!student.supplies, karate: !!student.karate, eveningClasses: !!student.eveningClasses, transportZone: student.transportZone ?? null });

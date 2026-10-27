@@ -32,6 +32,15 @@ describe('Registration adjustments preserve recorded receipts', () => {
     expect(invoice).toMatchObject({grossAmount:53000,amount:53000,balance:53000,status:'UNPAID'});
     expect(tx.enrollment.upsert).toHaveBeenCalledWith(expect.objectContaining({update:expect.objectContaining({classroomId:'cm2'})}));
   });
+  it('repairs a stale unpaid amount when the already-selected class is saved again',async()=>{
+    const {service,invoice,tx,current}=setup(40000,0);
+    const cm2={...current.enrollments[0].classroom,registrationFee:53000};
+    current.enrollments[0].classroom=cm2;
+    (service as any).prisma.classroom.findUnique.mockResolvedValue(cm2);
+    tx.classroom.findUnique.mockResolvedValue(cm2);
+    await service.update('child',{classroomId:'class'},actor);
+    expect(invoice).toMatchObject({grossAmount:53000,amount:53000,balance:53000,status:'UNPAID'});
+  });
   it('rejects reducing a due amount below the amount already received',async()=>{
     const {service,current,tx}=setup(110000,110000);current.enrollments[0].classroom.program='PRESCHOOL';current.enrollments[0].classroom.level='MS';current.eveningClasses=true;const invoice=(await tx.invoice.findMany())[0];invoice.registrationOptions=JSON.stringify({eveningClasses:true});
     await expect(service.update('child',{eveningClasses:false},actor)).rejects.toThrow('régularisation');expect(tx.student.update).not.toHaveBeenCalled();

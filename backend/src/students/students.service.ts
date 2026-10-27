@@ -402,10 +402,10 @@ export class StudentsService {
     const invoices = enrollment ? await this.prisma.invoice.findMany({ where: { studentId: current.id, academicYearId: enrollment.academicYearId, type: InvoiceType.REGISTRATION, cancelledAt: null } }) : [];
     if (invoices.length > 1) throw new BadRequestException('Plusieurs factures d’inscription existent : faites vérifier le dossier.');
     const invoice = invoices[0];
-    const changed = ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (options[key] || false));
-    const delta = changed && enrollment && invoice ? registrationAdjustment(current, { ...current, ...options }, enrollment.classroom, classroom, invoice).delta : 0;
-    return { ...fees, projectedAmount: invoice ? invoice.amount + delta : null, paidAmount: invoice?.paidAmount ?? null,
-      projectedBalance: invoice ? invoice.amount + delta - invoice.paidAmount : null };
+    const adjustment = enrollment && invoice ? registrationAdjustment(current, { ...current, ...options }, enrollment.classroom, classroom, invoice) : null;
+    const projectedAmount = adjustment ? adjustment.registrationFee - Number(invoice?.discountAmount || 0) : null;
+    return { ...fees, projectedAmount, paidAmount: invoice?.paidAmount ?? null,
+      projectedBalance: projectedAmount === null ? null : Math.max(0, projectedAmount - (invoice?.paidAmount || 0)) };
   }
 
   async applyRegistrationDiscount(studentId: string, data: { invoiceId?: string; amount?: number; type?: string; reason?: string }, actor: ActingUser) {
@@ -533,8 +533,7 @@ export class StudentsService {
         const enrollment = current.enrollments[0];
         const classroom = data.classroomId ? await tx.classroom.findUnique({ where: { id: data.classroomId } }) : enrollment?.classroom;
         const next = { ...current, ...studentData };
-        const classChanged = Boolean(data.classroomId && data.classroomId !== enrollment?.classroomId);
-        const billingChanged = classChanged || ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
+        const billingChanged = Boolean(data.classroomId) || ['eveningClasses'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
         if (billingChanged) validateOptionsForClass(next, classroom);
         if (billingChanged && enrollment && classroom) {
           // Lock invoices before reading their paid amounts: simultaneous cash receipts remain safe.
@@ -545,7 +544,7 @@ export class StudentsService {
           if (invoice) {
             const adjustment = registrationAdjustment(current, next, enrollment.classroom, classroom, invoice);
             const discountAmount = Number(invoice.discountAmount || 0);
-            const grossAmount = Number(invoice.grossAmount ?? invoice.amount + discountAmount) + adjustment.delta;
+            const grossAmount = adjustment.registrationFee;
             const amount = grossAmount - discountAmount;
             if (amount < invoice.paidAmount || amount < 0) throw new BadRequestException('La modification ferait passer le montant dû sous les paiements encaissés. Une régularisation comptable est nécessaire.');
             const balance = amount - invoice.paidAmount;
