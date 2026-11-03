@@ -40,6 +40,7 @@ export class FinancesService {
     type?: string;
     academicYearId?: string;
     category?: string;
+    search?: string;
   }) {
     const { studentId, classroomId, status, type, academicYearId, category } = params;
 
@@ -50,6 +51,17 @@ export class FinancesService {
     if (status) where.status = status as InvoiceStatus;
     if (type) where.type = type as InvoiceType;
     if (academicYearId) where.academicYearId = academicYearId;
+    const search = String(params.search || '').trim();
+    if (search) where.OR = [
+      { invoiceNumber: { contains: search, mode: 'insensitive' } },
+      { title: { contains: search, mode: 'insensitive' } },
+      { student: { is: { OR: [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { matricule: { contains: search, mode: 'insensitive' } },
+        { schoolMatricule: { contains: search, mode: 'insensitive' } },
+      ] } } },
+    ];
 
     if (classroomId) {
       where.student = {

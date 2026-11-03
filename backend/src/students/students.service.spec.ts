@@ -102,9 +102,15 @@ describe('Director registration discounts', () => {
     expect(tx.invoice.update).not.toHaveBeenCalled();
   });
 
-  it('rejects an undocumented or excessive reduction', async () => {
+  it('accepts an optional reason and rejects an excessive reduction', async () => {
     const { service } = setup();
     await expect(service.applyRegistrationDiscount('student', { invoiceId: 'invoice', amount: 50001, type: 'DISCOUNT', reason: 'Réduction exceptionnelle autorisée.' }, actor)).rejects.toThrow('dépasser');
-    await expect(service.applyRegistrationDiscount('student', { invoiceId: 'invoice', amount: 1000, type: 'SOCIAL_CASE', reason: 'court' }, actor)).rejects.toThrow('justification');
+    await expect(service.applyRegistrationDiscount('student', { invoiceId: 'invoice', amount: 1000, type: 'SOCIAL_CASE', reason: '' }, actor)).resolves.toEqual({ id: 'student' });
+  });
+
+  it('applies the same controlled discount to a monthly invoice', async () => {
+    const { service, invoice } = setup({ type: 'TUITION', title: 'Scolarité novembre' });
+    await service.applyRegistrationDiscount('student', { invoiceId: 'invoice', amount: 5000, type: 'DISCOUNT', reason: '' }, actor);
+    expect(invoice).toMatchObject({ grossAmount: 50000, discountAmount: 5000, amount: 45000, balance: 45000 });
   });
 });

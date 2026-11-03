@@ -67,6 +67,7 @@ export const FinancesPage: React.FC = () => {
   // Filters
   const [statusFilter, setStatusFilter] = useState('');
   const [classFilter, setClassFilter] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
 
   // Modals
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -131,7 +132,7 @@ export const FinancesPage: React.FC = () => {
       if (!background) setLoading(true);
       const [statsRes, invoicesRes, classesRes, studentsRes] = await Promise.all([
         financesApi.getStats(),
-        financesApi.getInvoices({ status: statusFilter || undefined, classroomId: classFilter || undefined }),
+        financesApi.getInvoices({ status: statusFilter || undefined, classroomId: classFilter || undefined, search: searchFilter.trim() || undefined }),
         refreshLists ? classesApi.getAll() : Promise.resolve(null),
         refreshLists ? studentsApi.getAll() : Promise.resolve(null),
       ]);
@@ -156,7 +157,7 @@ export const FinancesPage: React.FC = () => {
     setSelectedIds([]);
     loadFinances();
     return () => { ++requestVersion.current; requestPending.current = false; };
-  }, [statusFilter, classFilter]);
+  }, [statusFilter, classFilter, searchFilter]);
 
   useEffect(() => {
     // Keep open forms and receipts stable; refresh only while this tab is visible.
@@ -172,7 +173,7 @@ export const FinancesPage: React.FC = () => {
       window.removeEventListener('focus', refresh);
       document.removeEventListener('visibilitychange', refresh);
     };
-  }, [statusFilter, classFilter, showPaymentModal, showBatchModal, showReceiptModal, settlementInvoices.length, correctionInvoice]);
+  }, [statusFilter, classFilter, searchFilter, showPaymentModal, showBatchModal, showReceiptModal, settlementInvoices.length, correctionInvoice]);
 
   const handleOpenPayment = (inv: any) => {
     setSelectedInvoice(inv);
@@ -312,6 +313,7 @@ export const FinancesPage: React.FC = () => {
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
+        <label className="relative min-w-64 flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input type="search" value={searchFilter} onChange={e=>setSearchFilter(e.target.value)} placeholder="Rechercher un élève, matricule ou numéro de facture…" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:ring-2 focus:ring-amber-500"/></label>
         <div className="mobile-finance-filters flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Filter className="w-3.5 h-3.5 text-slate-400" />

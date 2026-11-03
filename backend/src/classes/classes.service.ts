@@ -7,11 +7,20 @@ import { UsersService } from '../users/users.service';
 export class ClassesService {
   constructor(private prisma: PrismaService, private readonly users: UsersService) {}
 
+  private pedagogicalOrder<T extends { level: string; name?: string }>(classes: T[]) {
+    const levels = ['TPS', 'PS', 'MS', 'GS', 'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'];
+    return classes.sort((a, b) => {
+      const left = levels.indexOf(String(a.level).toUpperCase());
+      const right = levels.indexOf(String(b.level).toUpperCase());
+      return (left < 0 ? 999 : left) - (right < 0 ? 999 : right) || String(a.name || '').localeCompare(String(b.name || ''), 'fr');
+    });
+  }
+
   async findAll(requester?: any) {
     const roles: string[] = requester?.roles || [];
     const managesAll = roles.includes('ADMIN') || roles.includes('DIRECTEUR');
     if (roles.includes('CONTROLEUR_PRESENCE') && !managesAll && !roles.includes('ENSEIGNANT')) {
-      return this.prisma.classroom.findMany({
+      return this.pedagogicalOrder(await this.prisma.classroom.findMany({
         where: { academicYear: { isCurrent: true } },
         select: {
           id: true,
@@ -21,7 +30,7 @@ export class ClassesService {
           _count: { select: { enrollments: { where: { status: 'REGISTERED', student: { status: 'ACTIVE' } } } } },
         },
         orderBy: { level: 'asc' },
-      });
+      }));
     }
     if (roles.includes('ENSEIGNANT') && !managesAll) {
       if (!requester.email) return [];
@@ -34,7 +43,7 @@ export class ClassesService {
         },
         orderBy: { level: 'asc' },
       });
-      return assignedClasses.map(classroom => ({ ...classroom, effectiveRegistrationFee: schoolFees({}, classroom).registrationFee }));
+      return this.pedagogicalOrder(assignedClasses.map(classroom => ({ ...classroom, effectiveRegistrationFee: schoolFees({}, classroom).registrationFee })));
     }
     const classrooms = await this.prisma.classroom.findMany({
       where: { academicYear: { isCurrent: true } },
@@ -49,7 +58,7 @@ export class ClassesService {
       },
       orderBy: { level: 'asc' },
     });
-    return classrooms.map(classroom => ({ ...classroom, effectiveRegistrationFee: schoolFees({}, classroom).registrationFee }));
+    return this.pedagogicalOrder(classrooms.map(classroom => ({ ...classroom, effectiveRegistrationFee: schoolFees({}, classroom).registrationFee })));
   }
 
   async currentYear() { return this.prisma.academicYear.findFirst({ where: { isCurrent: true }, select: { id: true, name: true } }); }

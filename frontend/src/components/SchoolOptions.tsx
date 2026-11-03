@@ -1,6 +1,6 @@
 import { t } from '../i18n';
 import { itemLabels, money, programs, transportFees, type SchoolProgram } from '../config/school';
-export type SchoolOptionsValue = { gender?:string; supplies?:boolean; fullDay?:boolean; transportZone?: number|null; karate?:boolean; eveningClasses?:boolean; hairCare?:boolean; pharmacyKit?:boolean; emergencyContactName?:string|null; emergencyContactPhone?:string|null; healthNotes?:string|null; schoolItemsProvided?:string|null };
+export type SchoolOptionsValue = { gender?:string; registrationKind?:'NEW'|'RENEWAL'; supplies?:boolean; fullDay?:boolean; transportZone?: number|null; karate?:boolean; eveningClasses?:boolean; hairCare?:boolean; pharmacyKit?:boolean; emergencyContactName?:string|null; emergencyContactPhone?:string|null; healthNotes?:string|null; schoolItemsProvided?:string|null };
 export function SchoolOptions({value, onChange, program = programs[0], disabled=false}: {value:SchoolOptionsValue;onChange:(v:SchoolOptionsValue)=>void;program?:SchoolProgram;level?:string;allowFullDay?:boolean;disabled?:boolean}) {
   const change = (key:keyof SchoolOptionsValue,v:unknown) => onChange({...value,[key]:v});
   const checked=(value.schoolItemsProvided || '').split(',').filter(Boolean);

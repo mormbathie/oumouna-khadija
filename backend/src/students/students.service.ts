@@ -253,10 +253,12 @@ export class StudentsService {
     originClass?: string;
     quranLevel?: string;
     duplicateOverrideReason?: string;
+    registrationKind?: 'NEW' | 'RENEWAL';
   }, actor: ActingUser) {
     const author = actorStamp(actor);
     const schoolMatricule = String(data.schoolMatricule || '').trim() || null;
     const schoolEntryDate = this.schoolEntryDate(data.schoolEntryDate, data.dateOfBirth);
+    const registrationKind: 'NEW' | 'RENEWAL' = data.registrationKind === 'RENEWAL' ? 'RENEWAL' : 'NEW';
     if (schoolMatricule && schoolMatricule.length > 100) throw new BadRequestException('Le matricule école ne peut pas dépasser 100 caractères.');
     const options = schoolOptions(data as any);
     const selectedClass = data.classroomId ? await this.prisma.classroom.findUnique({ where: { id: data.classroomId }, }) : null;
@@ -352,6 +354,7 @@ export class StudentsService {
             classroomId: data.classroomId,
             academicYearId,
             status: 'REGISTERED',
+            registrationKind,
             registeredById: author.id,
             registeredByName: author.name,
             registeredByRole: author.role,
@@ -365,17 +368,18 @@ export class StudentsService {
           });
 
           if (classroom) {
+            const billingProfile = { ...student, registrationKind };
             await tx.invoice.create({
               data: {
                 invoiceNumber: `FAC-${currentYear}-${randomUUID().toUpperCase()}`,
                 studentId: student.id,
                 academicYearId,
-                title: `Inscription - ${classroom.name}`,
+                title: `${registrationKind === 'RENEWAL' ? 'Réinscription' : 'Inscription'} - ${classroom.name}`,
                 type: InvoiceType.REGISTRATION,
-                registrationOptions: registrationSnapshot(student),
-                amount: schoolFees(student, classroom).registrationFee,
+                registrationOptions: registrationSnapshot(billingProfile),
+                amount: schoolFees(billingProfile, classroom).registrationFee,
                 paidAmount: 0,
-                balance: schoolFees(student, classroom).registrationFee,
+                balance: schoolFees(billingProfile, classroom).registrationFee,
                 dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // in 15 days
                 status: InvoiceStatus.UNPAID,
                 createdById: author.id,
@@ -409,7 +413,8 @@ export class StudentsService {
     if (!classroom) throw new BadRequestException('Choisissez une classe.');
     const options = schoolOptions(data);
     validateOptionsForClass(options, classroom);
-    const fees = schoolFees(options, classroom);
+    const requestedKind = data.registrationKind === 'RENEWAL' ? 'RENEWAL' : 'NEW';
+    const fees = schoolFees({ ...options, registrationKind: requestedKind }, classroom);
     if (!data.studentId) return fees;
     const current = await this.prisma.student.findUnique({ where: { id: data.studentId }, include: {
       enrollments: { where: { academicYear: { isCurrent: true } }, take: 1, include: { classroom: true } },
@@ -419,9 +424,12 @@ export class StudentsService {
     const invoices = enrollment ? await this.prisma.invoice.findMany({ where: { studentId: current.id, academicYearId: enrollment.academicYearId, type: InvoiceType.REGISTRATION, cancelledAt: null } }) : [];
     if (invoices.length > 1) throw new BadRequestException('Plusieurs factures d’inscription existent : faites vérifier le dossier.');
     const invoice = invoices[0];
-    const adjustment = enrollment && invoice ? registrationAdjustment(current, { ...current, ...options }, enrollment.classroom, classroom, invoice) : null;
+    const registrationKind = data.registrationKind === 'RENEWAL' ? 'RENEWAL' : enrollment?.registrationKind === 'RENEWAL' ? 'RENEWAL' : 'NEW';
+    const currentFees = schoolFees({ ...options, registrationKind }, classroom);
+    const currentProfile = { ...current, registrationKind: enrollment?.registrationKind === 'RENEWAL' ? 'RENEWAL' as const : 'NEW' as const };
+    const adjustment = enrollment && invoice ? registrationAdjustment(currentProfile, { ...currentProfile, ...options, registrationKind }, enrollment.classroom, classroom, invoice) : null;
     const projectedAmount = adjustment ? adjustment.registrationFee - Number(invoice?.discountAmount || 0) : null;
-    return { ...fees, projectedAmount, paidAmount: invoice?.paidAmount ?? null,
+    return { ...currentFees, projectedAmount, paidAmount: invoice?.paidAmount ?? null,
       projectedBalance: projectedAmount === null ? null : Math.max(0, projectedAmount - (invoice?.paidAmount || 0)) };
   }
 
@@ -432,17 +440,17 @@ export class StudentsService {
     const type = String(data.type || '').trim();
     if (amount > 0 && !['DISCOUNT', 'SOCIAL_CASE'].includes(type)) throw new BadRequestException('Choisissez « réduction accordée » ou « cas social ».');
     const reason = String(data.reason || '').trim();
-    if (amount > 0 && (reason.length < 10 || reason.length > 1000)) throw new BadRequestException('La justification doit contenir entre 10 et 1 000 caractères.');
+    if (reason.length > 1000) throw new BadRequestException('Le motif ne peut pas dépasser 1 000 caractères.');
     if (!data.invoiceId) throw new BadRequestException('Facture d’inscription manquante.');
 
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw(Prisma.sql`SELECT id FROM "Invoice" WHERE id = ${data.invoiceId} FOR UPDATE`);
-      const invoice = await tx.invoice.findFirst({ where: { id: data.invoiceId, studentId, type: InvoiceType.REGISTRATION, cancelledAt: null } });
-      if (!invoice) throw new NotFoundException('Facture d’inscription introuvable.');
+      const invoice = await tx.invoice.findFirst({ where: { id: data.invoiceId, studentId, type: { in: [InvoiceType.REGISTRATION, InvoiceType.TUITION] }, cancelledAt: null } });
+      if (!invoice) throw new NotFoundException('Facture d’inscription ou de mensualité introuvable.');
       if (Number(invoice.discountRefundedAmount || 0) > 0) throw new BadRequestException('Cette réduction ne peut plus être modifiée car le remboursement au parent a déjà été enregistré.');
       const previousDiscount = Number(invoice.discountAmount || 0);
       const grossAmount = Number(invoice.grossAmount ?? invoice.amount + previousDiscount);
-      if (amount > grossAmount) throw new BadRequestException('La réduction ne peut pas dépasser le montant normal de l’inscription.');
+      if (amount > grossAmount) throw new BadRequestException('La réduction ne peut pas dépasser le montant normal de la facture.');
       const netAmount = grossAmount - amount;
       const balance = Math.max(0, netAmount - invoice.paidAmount);
       const refundDue = Math.max(0, invoice.paidAmount - netAmount);
@@ -458,8 +466,8 @@ export class StudentsService {
         status: balance === 0 ? InvoiceStatus.PAID : invoice.paidAmount > 0 ? InvoiceStatus.PARTIAL : InvoiceStatus.UNPAID,
       } });
       await tx.businessAudit.create({ data: {
-        action: amount ? 'REGISTRATION_DISCOUNT_APPROVED' : 'REGISTRATION_DISCOUNT_REMOVED', entityId: invoice.id,
-        actorId: author.id, actorName: author.name, actorRole: author.role, reason: reason || 'Réduction retirée par le directeur.',
+        action: amount ? `${invoice.type}_DISCOUNT_APPROVED` : `${invoice.type}_DISCOUNT_REMOVED`, entityId: invoice.id,
+        actorId: author.id, actorName: author.name, actorRole: author.role, reason: reason || (amount ? null : 'Réduction retirée par le directeur.'),
         details: JSON.stringify({ studentId, invoiceNumber: invoice.invoiceNumber, grossAmount, previousDiscount, discountAmount: amount, netAmount, refundDue, type: amount ? type : null }),
       } });
     });
@@ -484,8 +492,8 @@ export class StudentsService {
     await this.prisma.$transaction(async tx => {
       await openCashDay(tx, refundedOnText);
       await tx.$queryRaw(Prisma.sql`SELECT id FROM "Invoice" WHERE id = ${invoiceId} FOR UPDATE`);
-      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, studentId, type: InvoiceType.REGISTRATION, cancelledAt: null }, include: { payments: { where: { cancelledAt: null }, include: { refunds: true }, orderBy: { paymentDate: 'asc' } } } });
-      if (!invoice) throw new NotFoundException('Facture d’inscription introuvable.');
+      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, studentId, type: { in: [InvoiceType.REGISTRATION, InvoiceType.TUITION] }, cancelledAt: null }, include: { payments: { where: { cancelledAt: null }, include: { refunds: true }, orderBy: { paymentDate: 'asc' } } } });
+      if (!invoice) throw new NotFoundException('Facture d’inscription ou de mensualité introuvable.');
       const alreadyRefunded = Number(invoice.discountRefundedAmount || 0);
       const remaining = Number(invoice.discountRefundDue || 0) - alreadyRefunded;
       if (remaining <= 0) throw new BadRequestException('Aucun remboursement de réduction n’est en attente.');
@@ -500,7 +508,7 @@ export class StudentsService {
         if (amount <= 0) continue;
         const refund = await tx.refund.create({ data: {
           paymentId: payment.id, amount, refundedOn, paymentMethod: data.paymentMethod as PaymentMethod,
-          reason: `Remboursement de la réduction d’inscription ${invoice.invoiceNumber}`, recipient,
+          reason: `Remboursement de la réduction ${invoice.invoiceNumber}`, recipient,
           mode: 'REFUND_RECORDED', requestKey: `${requestKey}-${index++}`,
           refundNumber: 'REM-' + refundedOnText.slice(0, 4) + '-' + randomUUID().toUpperCase(),
           actorId: author.id, actorName: author.name, actorRole: author.role,
@@ -511,7 +519,7 @@ export class StudentsService {
       }
       if (toAllocate > 0) throw new BadRequestException('Les paiements encaissés ne permettent pas de rembourser la totalité du trop-perçu.');
       await tx.invoice.update({ where: { id: invoice.id }, data: { discountRefundedAmount: alreadyRefunded + remaining, discountRefundedAt: refundedOn, discountRefundedById: author.id, discountRefundedByName: author.name } });
-      await tx.businessAudit.create({ data: { action: 'REGISTRATION_DISCOUNT_REFUNDED', entityId: invoice.id, actorId: author.id, actorName: author.name, actorRole: author.role,
+      await tx.businessAudit.create({ data: { action: `${invoice.type}_DISCOUNT_REFUNDED`, entityId: invoice.id, actorId: author.id, actorName: author.name, actorRole: author.role,
         reason: `Trop-perçu remis à ${recipient}.`, details: JSON.stringify({ studentId, invoiceNumber: invoice.invoiceNumber, amount: remaining, refundedOn: refundedOnText, paymentMethod: data.paymentMethod, refundIds: createdIds }) } });
     }, { timeout: 15000 });
     return this.findOne(studentId, { roles: ['COMPTABLE'] });
@@ -550,9 +558,11 @@ export class StudentsService {
         if (await tx.studentDeparture.findUnique({ where: { studentId: id } })) throw new BadRequestException('Ce dossier est conservé après un départ et ne peut plus être modifié ici.');
         const enrollment = current.enrollments[0];
         const classroom = data.classroomId ? await tx.classroom.findUnique({ where: { id: data.classroomId } }) : enrollment?.classroom;
-        const next = { ...current, ...studentData };
+        const registrationKind = data.registrationKind === 'RENEWAL' ? 'RENEWAL' : enrollment?.registrationKind === 'RENEWAL' ? 'RENEWAL' : 'NEW';
+        const currentProfile = { ...current, registrationKind: enrollment?.registrationKind === 'RENEWAL' ? 'RENEWAL' as const : 'NEW' as const };
+        const next = { ...currentProfile, ...studentData, registrationKind };
         validatePersonalOptions(next);
-        const billingChanged = Boolean(data.classroomId) || ['eveningClasses','hairCare','pharmacyKit'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
+        const billingChanged = Boolean(data.classroomId) || data.registrationKind !== undefined || ['eveningClasses','hairCare','pharmacyKit'].some(key => data[key] !== undefined && (current[key] || false) !== (next[key] || false));
         if (billingChanged) validateOptionsForClass(next, classroom);
         if (billingChanged && enrollment && classroom) {
           // Lock invoices before reading their paid amounts: simultaneous cash receipts remain safe.
@@ -561,7 +571,7 @@ export class StudentsService {
           if (invoices.length > 1) throw new BadRequestException('Plusieurs factures d’inscription existent : faites vérifier le dossier avant de changer les options.');
           const invoice = invoices[0];
           if (invoice) {
-            const adjustment = registrationAdjustment(current, next, enrollment.classroom, classroom, invoice);
+            const adjustment = registrationAdjustment(currentProfile, next, enrollment.classroom, classroom, invoice);
             const discountAmount = Number(invoice.discountAmount || 0);
             const grossAmount = adjustment.registrationFee;
             const amount = grossAmount - discountAmount;
@@ -608,10 +618,10 @@ export class StudentsService {
         }
 
         await tx.student.update({ where: { id }, data: studentData });
-        if (data.classroomId && classroom) {
+        if ((data.classroomId || data.registrationKind !== undefined) && classroom) {
           await tx.enrollment.upsert({ where: { studentId_academicYearId: { studentId: id, academicYearId: classroom.academicYearId } },
-            update: { classroomId: classroom.id, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role },
-            create: { studentId: id, classroomId: classroom.id, academicYearId: classroom.academicYearId, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role } });
+            update: { classroomId: classroom.id, registrationKind, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role },
+            create: { studentId: id, classroomId: classroom.id, academicYearId: classroom.academicYearId, registrationKind, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role } });
         }
         await tx.businessAudit.create({ data: {
           action: 'STUDENT_UPDATED', entityId: id,

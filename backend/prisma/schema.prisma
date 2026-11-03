@@ -260,6 +260,7 @@ model Enrollment {
   academicYearId  String
   academicYear    AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   enrollmentDate  DateTime      @default(now())
+  registrationKind String       @default("NEW") // NEW ou RENEWAL
   status          String        @default("REGISTERED") // REGISTERED, CANCELLED
   remarks         String?
   registeredById   String?

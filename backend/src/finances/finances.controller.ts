@@ -42,6 +42,7 @@ export class FinancesController {
     @Query('type') type?: string,
     @Query('academicYearId') academicYearId?: string,
     @Query('category') category?: string,
+    @Query('search') search?: string,
   ) {
     return this.financesService.getInvoices({
       studentId,
@@ -50,6 +51,7 @@ export class FinancesController {
       type,
       academicYearId,
       category,
+      search,
     });
   }
 

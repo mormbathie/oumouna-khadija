@@ -30,6 +30,7 @@ describe('Options Oumouna Khadija', () => {
     expect(schoolFees({ transportZone: 1, eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 34000 });
     expect(schoolFees({ karate: true }, boarding)).toEqual({ registrationFee: 160000, monthlyTuition: 95000 });
     expect(schoolFees({ hairCare: true, pharmacyKit: true }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 17000 });
+    expect(schoolFees({ registrationKind: 'RENEWAL' }, boarding)).toEqual({ registrationFee: 60000, monthlyTuition: 91000 });
   });
   it('réserve les soins capillaires aux filles', () => {
     expect(() => validatePersonalOptions({ gender: 'FEMALE', hairCare: true })).not.toThrow();
