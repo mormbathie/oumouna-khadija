@@ -22,7 +22,7 @@ describe('Options Oumouna Khadija', () => {
     jest.useRealTimers();
   });
   it('sépare les frais d’inscription et les options mensuelles', () => {
-    const preschool = { level: 'MS', program: 'PRESCHOOL', registrationFee: 43000, monthlyTuition: 12000 };
+    const preschool = { level: 'MS', program: 'PRESCHOOL', registrationFee: 43000, reenrollmentFee: 43000, monthlyTuition: 12000 };
     const boarding = { level: 'TAHFIZ', program: 'DAARA_BOARDING', registrationFee: 160000, monthlyTuition: 91000 };
     expect(schoolFees({}, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 12000 });
     expect(schoolFees({ transportZone: 1 }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 24000 });
@@ -30,6 +30,7 @@ describe('Options Oumouna Khadija', () => {
     expect(schoolFees({ transportZone: 1, eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 34000 });
     expect(schoolFees({ karate: true }, boarding)).toEqual({ registrationFee: 160000, monthlyTuition: 95000 });
     expect(schoolFees({ hairCare: true, pharmacyKit: true }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 17000 });
+    expect(schoolFees({ registrationKind: 'RENEWAL' }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 12000 });
     expect(schoolFees({ registrationKind: 'RENEWAL' }, boarding)).toEqual({ registrationFee: 60000, monthlyTuition: 91000 });
   });
   it('réserve les soins capillaires aux filles', () => {

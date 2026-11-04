@@ -157,6 +157,7 @@ model Classroom {
   program         String?
   monthlyTuition  Float         @default(25000)
   registrationFee Float         @default(50000)
+  reenrollmentFee Float         @default(60000)
   academicYearId  String
   academicYear    AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   teacherId       String?

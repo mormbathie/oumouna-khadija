@@ -22,7 +22,7 @@ export class AcademicTransitionService {
       const year = await tx.academicYear.create({ data: { name: data.name, startDate, endDate, isCurrent: false } });
       for (const room of current.classrooms) await tx.classroom.create({ data: {
         academicYearId: year.id, name: room.name, level: room.level, capacity: room.capacity,
-        program: room.program, monthlyTuition: room.monthlyTuition, registrationFee: room.registrationFee, teacherId: room.teacherId,
+        program: room.program, monthlyTuition: room.monthlyTuition, registrationFee: room.registrationFee, reenrollmentFee: room.reenrollmentFee, teacherId: room.teacherId,
       } });
       await tx.businessAudit.create({ data: { action: 'ACADEMIC_YEAR_PREPARED', entityId: year.id, actorId: author.id, actorName: author.name, actorRole: author.role, details: JSON.stringify({ sourceYearId: current.id, copiedClasses: current.classrooms.length }) } });
       return year;

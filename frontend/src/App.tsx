@@ -24,6 +24,7 @@ import { PasswordPage } from './pages/PasswordPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { StaffAttendancePage } from './pages/StaffAttendancePage';
 import { DataTransferPage } from './pages/DataTransferPage';
+import { FeeSettingsPage } from './pages/FeeSettingsPage';
 
 const AttendanceScanPage = lazy(() => import('./pages/AttendanceScanPage').then((module) => ({ default: module.AttendanceScanPage })));
 
@@ -69,6 +70,7 @@ export const App: React.FC = () => (
           <Route path="attendance/scan" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE']}><Suspense fallback={<div className="p-8 text-sm text-slate-500">{t("Chargement du scanner…")}</div>}><AttendanceScanPage /></Suspense></RequireRoles>} />
           <Route path="classes" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT']}><ClassesPage /></RequireRoles>} />
           <Route path="users" element={<RequireRoles roles={['ADMIN']}><UsersPage /></RequireRoles>} />
+          <Route path="fee-settings" element={<RequireRoles roles={['ADMIN']}><FeeSettingsPage /></RequireRoles>} />
           <Route path="school-information" element={<SchoolInformationPage />} />
           <Route path="password" element={<PasswordPage />} />
           <Route path="profile" element={<ProfilePage />} />

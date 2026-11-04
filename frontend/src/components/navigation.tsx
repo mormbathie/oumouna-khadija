@@ -1,4 +1,4 @@
-import { createLucideIcon, LayoutDashboard, GraduationCap, ContactRound, UsersRound, CalendarRange, CalendarClock, ReceiptText, ShieldCheck, ChartColumnIncreasing, Fingerprint, BookOpenCheck, ClipboardCheck, ScanQrCode, School, UserRoundCog, ArrowLeftRight, Landmark, CircleUserRound, KeyRound } from 'lucide-react';
+import { createLucideIcon, LayoutDashboard, GraduationCap, ContactRound, UsersRound, CalendarRange, CalendarClock, ReceiptText, ShieldCheck, ChartColumnIncreasing, Fingerprint, BookOpenCheck, ClipboardCheck, ScanQrCode, School, UserRoundCog, ArrowLeftRight, Landmark, CircleUserRound, KeyRound, BadgeDollarSign } from 'lucide-react';
 
 // A kimono collar, sleeves and belt: a distinct symbol for the school uniform sale.
 const KimonoIcon = createLucideIcon('Kimono', [
@@ -27,6 +27,7 @@ export const navigationVisuals = {
   '/attendance/scan': { icon: ScanQrCode, color: 'text-cyan-300 bg-cyan-400/10 border-cyan-400/15', light: 'text-cyan-700 bg-cyan-50 border-cyan-100' },
   '/classes': { icon: School, color: 'text-amber-300 bg-amber-400/10 border-amber-400/15', light: 'text-amber-700 bg-amber-50 border-amber-100' },
   '/users': { icon: UserRoundCog, color: 'text-rose-300 bg-rose-400/10 border-rose-400/15', light: 'text-rose-700 bg-rose-50 border-rose-100' },
+  '/fee-settings': { icon: BadgeDollarSign, color: 'text-amber-300 bg-amber-400/10 border-amber-400/15', light: 'text-amber-700 bg-amber-50 border-amber-100' },
   '/staff-attendance': { icon: CalendarClock, color: 'text-cyan-300 bg-cyan-400/10 border-cyan-400/15', light: 'text-cyan-700 bg-cyan-50 border-cyan-100' },
   '/data-transfer': { icon: ArrowLeftRight, color: 'text-rose-300 bg-rose-400/10 border-rose-400/15', light: 'text-rose-700 bg-rose-50 border-rose-100' },
   '/school-information': { icon: Landmark, color: 'text-rose-300 bg-rose-400/10 border-rose-400/15', light: 'text-rose-700 bg-rose-50 border-rose-100' },
@@ -39,6 +40,6 @@ export const navigationCategories = [
   { id: 'finance', label: 'Comptabilité', routes: ['/finances', '/refunds', '/registration-report', '/finance-control'] },
   { id: 'activities', label: 'Activités & équipements', routes: ['/karate', '/kimono'] },
   { id: 'attendance', label: 'Présences & personnel', routes: ['/attendance', '/attendance/scan', '/staff-attendance', '/teacher-badge'] },
-  { id: 'administration', label: 'Administration', routes: ['/users', '/data-transfer', '/school-information'] },
+  { id: 'administration', label: 'Administration', routes: ['/users', '/fee-settings', '/data-transfer', '/school-information'] },
   { id: 'account', label: 'Mon compte', routes: ['/profile'] },
 ];

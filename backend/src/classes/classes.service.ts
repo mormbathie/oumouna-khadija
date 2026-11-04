@@ -109,12 +109,38 @@ export class ClassesService {
     });
   }
 
+  async updateFees(rows: Array<{ id: string; registrationFee: number; reenrollmentFee: number; monthlyTuition: number }>) {
+    if (!Array.isArray(rows) || rows.length === 0) throw new BadRequestException('Aucun tarif à enregistrer.');
+    if (new Set(rows.map(row => row.id)).size !== rows.length) throw new BadRequestException('Une classe est présente plusieurs fois.');
+    for (const row of rows) {
+      if (!row?.id || ['registrationFee', 'reenrollmentFee', 'monthlyTuition'].some(field => {
+        const value = Number(row[field as keyof typeof row]);
+        return !Number.isFinite(value) || value < 0 || !Number.isInteger(value);
+      })) throw new BadRequestException('Les tarifs doivent être des montants entiers positifs ou nuls.');
+    }
+    const current = await this.prisma.classroom.findMany({
+      where: { id: { in: rows.map(row => row.id) }, academicYear: { isCurrent: true } },
+      select: { id: true },
+    });
+    if (current.length !== rows.length) throw new BadRequestException('Une classe ne fait pas partie de l’année scolaire courante.');
+    await this.prisma.$transaction(rows.map(row => this.prisma.classroom.update({
+      where: { id: row.id },
+      data: {
+        registrationFee: Number(row.registrationFee),
+        reenrollmentFee: Number(row.reenrollmentFee),
+        monthlyTuition: Number(row.monthlyTuition),
+      },
+    })));
+    return this.findAll({ roles: ['ADMIN'] });
+  }
+
   async create(data: {
     name: string;
     level: string;
     capacity?: number;
     monthlyTuition?: number;
     registrationFee?: number;
+    reenrollmentFee?: number;
     academicYearId?: string;
     teacherId?: string;
     program?: string;
@@ -122,7 +148,7 @@ export class ClassesService {
     if (typeof data.name !== 'string' || !data.name.trim()) throw new BadRequestException('Le nom de la classe est obligatoire.');
     if (!LEVELS.includes(data.level)) throw new BadRequestException('Niveau invalide.');
     if (data.program && !PROGRAMS.includes(data.program)) throw new BadRequestException('Formule scolaire invalide.');
-    for (const field of ['capacity','monthlyTuition','registrationFee'] as const) if (data[field] !== undefined && (!Number.isFinite(data[field]) || data[field]! < (field === 'capacity' ? 1 : 0) || (field === 'capacity' && !Number.isInteger(data[field])))) throw new BadRequestException('Tarif ou effectif invalide.');
+    for (const field of ['capacity','monthlyTuition','registrationFee','reenrollmentFee'] as const) if (data[field] !== undefined && (!Number.isFinite(data[field]) || data[field]! < (field === 'capacity' ? 1 : 0) || (field === 'capacity' && !Number.isInteger(data[field])))) throw new BadRequestException('Tarif ou effectif invalide.');
     const academicYear = data.academicYearId
       ? await this.prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
       : await this.getOrCreateCurrentAcademicYear();
@@ -139,6 +165,7 @@ export class ClassesService {
         capacity: data.capacity ?? 30,
         monthlyTuition: data.monthlyTuition ?? 25000,
         registrationFee: data.registrationFee ?? (data.level === 'CI' ? optionTariffs.elementaryRegistration : 50000),
+        reenrollmentFee: data.reenrollmentFee ?? (['PS', 'MS', 'GS'].includes(data.level) ? 43000 : 60000),
         academicYearId: academicYear.id,
         teacherId: data.teacherId,
       },
@@ -184,7 +211,7 @@ export class ClassesService {
       if (!LEVELS.includes(data.level)) throw new BadRequestException('Niveau invalide.');
       update.level = data.level;
     }
-    for (const field of ['capacity', 'monthlyTuition', 'registrationFee'] as const) {
+    for (const field of ['capacity', 'monthlyTuition', 'registrationFee', 'reenrollmentFee'] as const) {
       if (data[field] !== undefined) {
         const value = Number(data[field]);
         if (!Number.isFinite(value) || value < (field === 'capacity' ? 1 : 0) || (field === 'capacity' && !Number.isInteger(value))) {

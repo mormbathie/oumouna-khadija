@@ -27,7 +27,7 @@ export function validateProgramAge(_program: string | null | undefined, birth: s
 }
 export const optionTariffs = { elementaryRegistration: 160000, supplies: 0, karateRegistration: 0, karateMonthly: 4000, snack: 10000, kimono: 10000, fullDayRegistration: 43000, elementaryFullDaySupplement: 0, fullDayMonthly: 12000, transport: { 1: 12000 } };
 export type FeeOptions = { fullDay?: boolean; supplies?: boolean; karate?: boolean; eveningClasses?: boolean; hairCare?: boolean; pharmacyKit?: boolean; transportZone?: number | null; registrationKind?: 'NEW' | 'RENEWAL' };
-export type FeeClass = { level?: string; program?: string | null; registrationFee: number; monthlyTuition: number };
+export type FeeClass = { level?: string; program?: string | null; registrationFee: number; reenrollmentFee?: number; monthlyTuition: number };
 export const elementaryClass = (classroom: FeeClass) => classroom.program === 'ELEMENTARY' || ['CI','CP','CE1','CE2','CM1','CM2'].includes(classroom.level || '');
 export function validateOptionsForClass(student: FeeOptions, classroom?: FeeClass | null) {
   if (!classroom) {
@@ -42,7 +42,7 @@ export function validatePersonalOptions(student: FeeOptions & { gender?: string 
   if (student.hairCare && student.gender !== 'FEMALE') throw new BadRequestException('L’option soins capillaires et tresses est réservée aux filles.');
 }
 export function schoolFees(student: FeeOptions, classroom: FeeClass) {
-  const registrationBase = student.registrationKind === 'RENEWAL' ? 60000 : classroom.registrationFee;
+  const registrationBase = student.registrationKind === 'RENEWAL' ? (classroom.reenrollmentFee ?? 60000) : classroom.registrationFee;
   const transport = optionTariffs.transport[student.transportZone || 0] || 0;
   const snack = student.eveningClasses && classroom.program === 'PRESCHOOL' ? optionTariffs.snack : 0;
   const monthlyKarate = student.karate ? optionTariffs.karateMonthly : 0;

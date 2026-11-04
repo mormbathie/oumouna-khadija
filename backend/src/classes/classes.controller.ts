@@ -58,6 +58,13 @@ export class ClassesController {
     return this.classesService.getTeachers();
   }
 
+  @Put('fees')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Modifier les tarifs des classes de l’année courante' })
+  async updateFees(@Body() body: { classes: Array<{ id: string; registrationFee: number; reenrollmentFee: number; monthlyTuition: number }> }) {
+    return this.classesService.updateFees(body.classes);
+  }
+
   @Get(':id')
   @Roles('ADMIN', 'DIRECTEUR', 'ENSEIGNANT')
   @ApiOperation({ summary: 'Détails d\'une classe avec élèves inscrits' })

@@ -47,6 +47,7 @@ export const Layout: React.FC = () => {
     { to: '/attendance/scan', label: t("Scan Student QR Codes"), icon: navigationVisuals['/attendance/scan'].icon, roles: ['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE'] },
     { to: '/classes', label: t("Classes & Subjects"), icon: navigationVisuals['/classes'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT'] },
     { to: '/users', label: t("User Management"), icon: navigationVisuals['/users'].icon, roles: ['ADMIN'] },
+    { to: '/fee-settings', label: 'Paramètres des tarifs', icon: navigationVisuals['/fee-settings'].icon, roles: ['ADMIN'] },
     { to: '/staff-attendance', label: t("Teacher Attendance"), icon: navigationVisuals['/staff-attendance'].icon, roles: ['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE'] },
     { to: '/data-transfer', label: t("Import / Export"), icon: navigationVisuals['/data-transfer'].icon, roles: ['ADMIN'] },
     { to: '/school-information', label: t('School information and fees'), icon: navigationVisuals['/school-information'].icon, roles: roleNames },

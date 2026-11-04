@@ -76,9 +76,9 @@ async function main() {
 
   // 4. Classrooms
   const classesData = [
-    { name: 'Petite section', level: 'PS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, teacherId: teacher1.id },
-    { name: 'Moyenne section', level: 'MS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, teacherId: teacher2.id },
-    { name: 'Grande section', level: 'GS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, teacherId: teacher1.id },
+    { name: 'Petite section', level: 'PS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, reenrollmentFee: 43000, teacherId: teacher1.id },
+    { name: 'Moyenne section', level: 'MS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, reenrollmentFee: 43000, teacherId: teacher2.id },
+    { name: 'Grande section', level: 'GS', program: 'PRESCHOOL', capacity: 25, monthlyTuition: 12000, registrationFee: 43000, reenrollmentFee: 43000, teacherId: teacher1.id },
     { name: 'Internat Tahfiz', level: 'TAHFIZ', program: 'DAARA_BOARDING', capacity: 30, monthlyTuition: 91000, registrationFee: 160000, teacherId: teacher2.id },
     { name: 'Internat franco-arabe CI', level: 'CI', program: 'FRANCO_ARAB_BOARDING', capacity: 25, monthlyTuition: 91000, registrationFee: 160000, teacherId: teacher1.id },
     { name: 'Internat franco-arabe CP', level: 'CP', program: 'FRANCO_ARAB_BOARDING', capacity: 25, monthlyTuition: 91000, registrationFee: 160000, teacherId: teacher2.id },
