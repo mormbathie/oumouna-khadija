@@ -13,15 +13,16 @@ try{
  for(const [i,x] of defs.entries()){
   const s=await db.student.create({data:{matricule:'QA-'+tag+'-'+i,firstName:'Report',lastName:tag+'-'+i,gender:'FEMALE',dateOfBirth:new Date('2020-01-01'),karate:x.karate,fullDay:x.fullDay}});ids.push(s.id);
   await db.enrollment.create({data:{studentId:s.id,classroomId:classroom.id,academicYearId:year.id}});
-  await db.invoice.create({data:{studentId:s.id,academicYearId:year.id,invoiceNumber:'QA-'+tag+'-'+i,title:'QA registration',type:'REGISTRATION',amount:x.amount||90000,paidAmount:x.paid,balance:x.amount-x.paid,dueDate:new Date(),status:x.paid===x.amount?'PAID':x.paid?'PARTIAL':'UNPAID',cancelledAt:x.amount?null:new Date()}});
+  const invoice=await db.invoice.create({data:{studentId:s.id,academicYearId:year.id,invoiceNumber:'QA-'+tag+'-'+i,title:'QA registration',type:'REGISTRATION',amount:x.amount||90000,paidAmount:x.paid,balance:x.amount-x.paid,dueDate:new Date(),status:x.paid===x.amount?'PAID':x.paid?'PARTIAL':'UNPAID',cancelledAt:x.amount?null:new Date()}});
+  if(x.paid)await db.payment.create({data:{invoiceId:invoice.id,paymentNumber:'QA-REC-'+tag+'-'+i,amount:x.paid,paymentDate:new Date(),paymentMethod:'CASH'}});
  }
  const report=new RegistrationReportService(db);
- let r=await report.report({academicYearId:year.id});assert.equal(r.rows.length,4);assert.equal(r.totals.invoiced,167000);assert.equal(r.totals.paid,92000);assert.equal(r.totals.balance,75000);assert.equal(r.totals.unbilledEstimate,40000);assert.deepEqual(r.totals.counts,{PAID:1,PARTIAL:1,UNPAID:1,NOT_INVOICED:1});
- r=await report.report({academicYearId:year.id,karate:'false',fullDay:'false'});assert.equal(r.rows.length,2);assert.equal(r.totals.invoiced,50000);assert.equal(r.totals.paid,40000);
- r=await report.report({academicYearId:year.id,status:'OUTSTANDING'});assert.equal(r.rows.length,2);assert.equal(r.totals.balance,75000);
- r=await report.report({academicYearId:year.id,status:'NOT_INVOICED'});assert.equal(r.rows.length,1);assert.equal(r.totals.invoiced,0);assert.equal(r.totals.unbilledEstimate,40000);
- await assert.rejects(report.report({academicYearId:year.id,karate:'bad'}));await assert.rejects(report.report({academicYearId:year.id,classroomId:'foreign'}));
- console.log('PASS: registration totals, current option intersections, partial/unpaid/unbilled distinction, cancelled exclusion, year/class validation');
+ let r=await report.report({academicYearId:year.id});assert.equal(r.rows.length,4);assert.equal(r.totals.invoiced,167000);assert.equal(r.totals.grossCollected,92000);assert.equal(r.totals.netCollected,92000);assert.equal(r.totals.outstanding,75000);assert.deepEqual(r.totals.counts,{PAID:1,PARTIAL:1,UNPAID:1,NOT_INVOICED:1});
+ r=await report.report({academicYearId:year.id,fullDay:'false'});assert.equal(r.rows.length,3);assert.equal(r.totals.invoiced,102000);assert.equal(r.totals.netCollected,92000);
+ r=await report.report({academicYearId:year.id,status:'OUTSTANDING'});assert.equal(r.rows.length,2);assert.equal(r.totals.outstanding,75000);
+ r=await report.report({academicYearId:year.id,status:'NOT_INVOICED'});assert.equal(r.rows.length,1);assert.equal(r.totals.invoiced,0);assert.equal(r.totals.outstanding,0);
+ await assert.rejects(report.report({academicYearId:year.id,fullDay:'bad'}));await assert.rejects(report.report({academicYearId:year.id,classroomId:'foreign'}));
+ console.log('PASS: registration totals, full-day filter, real receipts, partial/unpaid/unbilled distinction, cancelled exclusion, year/class validation');
  settings=await db.schoolCalendarSettings.findUnique({where:{id:1}});door=await db.staffDoorBadge.findUnique({where:{id:1}});
  await db.schoolCalendarSettings.upsert({where:{id:1},update:{restDays:'',timeZone:'Africa/Dakar'},create:{id:1,restDays:'',timeZone:'Africa/Dakar'}});
  const staff=new StaffAttendanceService(db),badge=new DoorBadgeService(db,staff);
