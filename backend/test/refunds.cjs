@@ -63,7 +63,7 @@ const { StudentsService } = require('../dist/src/students/students.service');
   await db.cashClosing.create({data:{day:'2020-01-01',expectedCash:0,countedCash:0,difference:0,summary:'{}',actorId:prefix,actorName:'QA',actorRole:'ADMIN'}});
   await assert.rejects(()=>service.create({...base,requestKey:randomUUID(),refundedOn:'2020-01-01',amount:1,expectedRefundedAmount:60000},actor), /clôturée/);
   // cash-day protection is exercised without editing an existing real closure.
-  const tuition = await finances.generateTuitionInvoicesForClass({classroomId:room.id,monthName:'Test après départ',dueDate:today},actor);assert.equal(tuition.createdCount,0);
+  const tuition = await finances.generateTuitionInvoicesForClass({classroomId:room.id,billingMonth:today.slice(0,7),dueDate:today},actor);assert.equal(tuition.createdCount,0);
   console.log('PASS refunds: permissions, partial/full, idempotent retry, stale amount, overshoot, concurrent requests, immutable originals, protected corrections/deletes, net/year/day/cash stats, departure, retained debt, audit');
  } finally {
   if(payment)await db.refund.deleteMany({where:{paymentId:payment.id}});

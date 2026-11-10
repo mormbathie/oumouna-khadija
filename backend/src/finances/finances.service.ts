@@ -334,7 +334,7 @@ export class FinancesService {
         const student = enrollment.student;
         const name = `${student.firstName} ${student.lastName}`;
         if (enrollment.enrollmentDate > monthEnd) { skip('NOT_ENROLLED_YET'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'NOT_ENROLLED_YET' }); continue; }
-        if (student.departure && student.departure.departedOn < monthStart) { skip('LEFT_BEFORE_MONTH'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'LEFT_BEFORE_MONTH' }); continue; }
+        if (student.departure && student.departure.departedOn <= monthEnd) { skip('LEFT_BEFORE_OR_DURING_MONTH'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'LEFT_BEFORE_OR_DURING_MONTH' }); continue; }
         result.eligibleCount++;
         const existing = await tx.invoice.findFirst({ where: { studentId: student.id, academicYearId, type: InvoiceType.TUITION, billingMonth: data.billingMonth, cancelledAt: null } });
         if (existing) { skip('ALREADY_EXISTS'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'ALREADY_EXISTS', invoiceNumber: existing.invoiceNumber }); continue; }
