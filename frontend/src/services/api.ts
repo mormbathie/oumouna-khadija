@@ -156,6 +156,8 @@ export const financesApi = {
   getInvoice: (id: string) => api.get(`/finances/invoices/${id}`).then((r) => r.data),
   createInvoice: (data: any) => api.post('/finances/invoices', data).then((r) => r.data),
   generateBatch: (data: any) => api.post('/finances/invoices/generate-batch', data).then((r) => r.data),
+  analyzeLegacyTuition: (academicYearId?: string) => api.get('/finances/invoices-legacy/tuition', { params: { academicYearId } }).then(r=>r.data),
+  confirmLegacyTuition: (data:any) => api.post('/finances/invoices-legacy/tuition/confirm', data).then(r=>r.data),
   correctPayment: (id: string, data: any) => api.post(`/finance-control/payments/${id}/correct`, data).then(r => r.data),
   correctionHistory: (id: string) => api.get(`/finance-control/invoices/${id}/corrections`).then(r => r.data),
   settleBatch: (data: any) => api.post('/finances/payments/settle-batch', data).then((r) => r.data),

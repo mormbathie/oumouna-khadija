@@ -2,6 +2,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Tracks idempotent data patches used by the existing db-push deployment workflow.
+model AppDataMigration {
+  name      String   @id
+  appliedAt DateTime @default(now())
+
+  @@map("_AppDataMigration")
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -368,7 +376,13 @@ model Invoice {
   registrationOptions String?
   category        String?
   billingKey      String?       @unique
+  // Structured accounting period for monthly tuition (YYYY-MM). Legacy rows stay null.
+  billingMonth    String?
+  // Unique only while the monthly invoice is active; cancellation clears this key.
+  tuitionPeriodKey String?       @unique
   payments        Payment[]
+
+  @@index([academicYearId, type, billingMonth])
 }
 
 model Payment {

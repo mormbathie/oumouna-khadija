@@ -41,6 +41,8 @@ export class FinancesService {
     academicYearId?: string;
     category?: string;
     search?: string;
+    group?: string;
+    billingMonth?: string;
   }) {
     const { studentId, classroomId, status, type, academicYearId, category } = params;
 
@@ -51,11 +53,17 @@ export class FinancesService {
     if (status) where.status = status as InvoiceStatus;
     if (type) where.type = type as InvoiceType;
     if (academicYearId) where.academicYearId = academicYearId;
+    if (params.group === 'REGISTRATION') where.type = InvoiceType.REGISTRATION;
+    if (params.group === 'TUITION') where.type = InvoiceType.TUITION;
+    if (params.group === 'OTHER' && !type) where.type = { notIn: [InvoiceType.REGISTRATION, InvoiceType.TUITION] };
+    if (params.billingMonth === 'UNKNOWN') where.billingMonth = null;
+    else if (params.billingMonth) where.billingMonth = params.billingMonth;
     const search = String(params.search || '').trim();
+    const studentFilters: any = {};
+    if (classroomId) studentFilters.enrollments = { some: { classroomId, ...(academicYearId ? { academicYearId } : {}) } };
     if (search) where.OR = [
-      { invoiceNumber: { contains: search, mode: 'insensitive' } },
-      { title: { contains: search, mode: 'insensitive' } },
-      { student: { is: { OR: [
+      { invoiceNumber: { contains: search, mode: 'insensitive' } }, { title: { contains: search, mode: 'insensitive' } },
+      { student: { is: { ...studentFilters, OR: [
         { firstName: { contains: search, mode: 'insensitive' } },
         { lastName: { contains: search, mode: 'insensitive' } },
         { matricule: { contains: search, mode: 'insensitive' } },
@@ -63,13 +71,7 @@ export class FinancesService {
       ] } } },
     ];
 
-    if (classroomId) {
-      where.student = {
-        enrollments: {
-          some: { classroomId },
-        },
-      };
-    }
+    if (classroomId && !search) where.student = { is: studentFilters };
 
     return this.prisma.invoice.findMany({
       where,
@@ -84,6 +86,7 @@ export class FinancesService {
           },
         },
         payments: {
+          include: { refunds: true },
           orderBy: { paymentDate: 'desc' },
         },
       },
@@ -305,52 +308,86 @@ export class FinancesService {
 
   async generateTuitionInvoicesForClass(data: {
     classroomId: string;
-    monthName: string;
+    billingMonth: string;
     dueDate: string | Date;
     academicYearId?: string;
+    preview?: boolean;
   }, actor: ActingUser) {
     const author = actorStamp(actor);
-    const classroom = await this.prisma.classroom.findUnique({
-      where: { id: data.classroomId },
-      include: {
-        enrollments: {
-          where: { status: 'REGISTERED', student: { status: 'ACTIVE' } },
-          include: { student: true },
-        },
-      },
-    });
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(data.billingMonth || '')) throw new BadRequestException('Le mois de facturation doit être au format AAAA-MM.');
+    const dueDate = new Date(data.dueDate);
+    if (!Number.isFinite(dueDate.getTime())) throw new BadRequestException('Date d’échéance invalide.');
+    const [monthYear, monthNumber] = data.billingMonth.split('-').map(Number);
+    const monthStart = new Date(Date.UTC(monthYear, monthNumber - 1, 1));
+    const monthEnd = new Date(Date.UTC(monthYear, monthNumber, 0, 23, 59, 59, 999));
+    const monthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric', timeZone: 'Africa/Dakar' }).format(monthStart);
 
-    if (!classroom) {
-      throw new NotFoundException(`Classe avec l'ID ${data.classroomId} non trouvée`);
-    }
-
-    let academicYearId = data.academicYearId || classroom.academicYearId;
-    const year = new Date().getFullYear();
-    let createdCount = 0;
-
-    for (const enrollment of classroom.enrollments) {
-      const created = await this.prisma.$transaction(async tx => {
-        await tx.$queryRaw(Prisma.sql`SELECT id FROM "Student" WHERE id = ${enrollment.studentId} FOR UPDATE`);
-        const active = await tx.student.findUnique({ where: { id: enrollment.studentId } });
-        const registered = await tx.enrollment.findUnique({ where: { id: enrollment.id } });
-        if (!active || active.status !== 'ACTIVE' || registered?.status !== 'REGISTERED') return false;
-        const title = `Scolarité ${data.monthName} - ${classroom.name}`;
-        if (await tx.invoice.findFirst({ where: { studentId: enrollment.studentId, academicYearId, title, cancelledAt: null } })) return false;
-        await tx.invoice.create({ data: {
-          invoiceNumber: `FAC-${year}-${randomUUID().toUpperCase()}`, studentId: enrollment.studentId, academicYearId, title,
-          type: InvoiceType.TUITION, amount: schoolFees(active, classroom).monthlyTuition, paidAmount: 0,
-          balance: schoolFees(active, classroom).monthlyTuition, dueDate: new Date(data.dueDate), status: InvoiceStatus.UNPAID,
-          createdById: author.id, createdByName: author.name, createdByRole: author.role,
-        } });
-        return true;
-      });
-      if (created) createdCount++;
-    }
-
-    return {
-      message: `${createdCount} factures générées pour la classe ${classroom.name}`,
-      createdCount,
+    const execute = async (tx: Prisma.TransactionClient, lock: boolean) => {
+      if (lock) await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${`TUITION:${data.classroomId}:${data.billingMonth}`}))`);
+      const classroom = await tx.classroom.findUnique({ where: { id: data.classroomId }, include: { enrollments: { where: { status: 'REGISTERED' }, include: { student: { include: { departure: true } } } } } });
+      if (!classroom) throw new NotFoundException(`Classe avec l'ID ${data.classroomId} non trouvée`);
+      const academicYearId = data.academicYearId || classroom.academicYearId;
+      if (academicYearId !== classroom.academicYearId) throw new BadRequestException('La classe ne correspond pas à l’année scolaire sélectionnée.');
+      const result = { classroom: classroom.name, billingMonth: data.billingMonth, eligibleCount: 0, createdCount: 0, skippedCount: 0, reasons: {} as Record<string, number>, rows: [] as any[] };
+      const skip = (reason: string) => { result.skippedCount++; result.reasons[reason] = (result.reasons[reason] || 0) + 1; };
+      for (const enrollment of classroom.enrollments) {
+        const student = enrollment.student;
+        const name = `${student.firstName} ${student.lastName}`;
+        if (enrollment.enrollmentDate > monthEnd) { skip('NOT_ENROLLED_YET'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'NOT_ENROLLED_YET' }); continue; }
+        if (student.departure && student.departure.departedOn < monthStart) { skip('LEFT_BEFORE_MONTH'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'LEFT_BEFORE_MONTH' }); continue; }
+        result.eligibleCount++;
+        const existing = await tx.invoice.findFirst({ where: { studentId: student.id, academicYearId, type: InvoiceType.TUITION, billingMonth: data.billingMonth, cancelledAt: null } });
+        if (existing) { skip('ALREADY_EXISTS'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'ALREADY_EXISTS', invoiceNumber: existing.invoiceNumber }); continue; }
+        const unknownLegacy = await tx.invoice.findFirst({ where: { studentId: student.id, academicYearId, type: InvoiceType.TUITION, billingMonth: null, cancelledAt: null } });
+        if (unknownLegacy) { skip('LEGACY_MONTH_UNKNOWN'); result.rows.push({ studentId: student.id, name, action: 'SKIP', reason: 'LEGACY_MONTH_UNKNOWN', invoiceNumber: unknownLegacy.invoiceNumber }); continue; }
+        const amount = schoolFees(student, classroom).monthlyTuition;
+        result.rows.push({ studentId: student.id, name, action: data.preview ? 'CREATE_PREVIEW' : 'CREATED', amount });
+        if (!data.preview) {
+          await tx.invoice.create({ data: {
+            invoiceNumber: `FAC-${new Date().getFullYear()}-${randomUUID().toUpperCase()}`, studentId: student.id, academicYearId,
+            title: `Scolarité ${monthLabel} - ${classroom.name}`, type: InvoiceType.TUITION, billingMonth: data.billingMonth,
+            tuitionPeriodKey: `TUITION:${student.id}:${academicYearId}:${data.billingMonth}`, amount, paidAmount: 0, balance: amount,
+            dueDate, status: InvoiceStatus.UNPAID, createdById: author.id, createdByName: author.name, createdByRole: author.role,
+          } });
+          result.createdCount++;
+        }
+      }
+      return result;
     };
+    const result = data.preview ? await this.prisma.$transaction(tx => execute(tx, false), { isolationLevel: 'RepeatableRead' }) : await this.prisma.$transaction(tx => execute(tx, true), { isolationLevel: 'Serializable', timeout: 30000 });
+    return { ...result, message: data.preview ? `${result.rows.filter(row => row.action === 'CREATE_PREVIEW').length} factures peuvent être créées.` : `${result.createdCount} factures générées pour la classe ${result.classroom}.` };
+  }
+
+  async analyzeLegacyTuition(academicYearId?: string) {
+    const months: Record<string, number> = { janvier:1,fevrier:2,février:2,mars:3,avril:4,mai:5,juin:6,juillet:7,aout:8,août:8,septembre:9,octobre:10,novembre:11,decembre:12,décembre:12 };
+    const invoices = await this.prisma.invoice.findMany({ where: { type: InvoiceType.TUITION, billingMonth: null, cancelledAt: null, ...(academicYearId ? { academicYearId } : {}) }, include: { student: { select: { firstName:true,lastName:true,matricule:true } }, academicYear: { select: { name:true } } }, orderBy: { createdAt:'asc' } });
+    return invoices.map(invoice => {
+      const normalized = invoice.title.toLocaleLowerCase('fr').normalize('NFC');
+      const match = Object.keys(months).find(month => new RegExp(`\\b${month}\\b`, 'i').test(normalized));
+      const explicitYear = normalized.match(/\b(20\d{2})\b/)?.[1];
+      const fallbackYear = invoice.academicYear.name.match(/20\d{2}/)?.[0];
+      const proposal = match && (explicitYear || fallbackYear) ? `${explicitYear || fallbackYear}-${String(months[match]).padStart(2,'0')}` : null;
+      return { id:invoice.id,invoiceNumber:invoice.invoiceNumber,title:invoice.title,student:invoice.student,academicYear:invoice.academicYear.name,amount:invoice.amount,paidAmount:invoice.paidAmount,proposal,confidence:proposal?(explicitYear?'HIGH':'MEDIUM'):'NONE' };
+    });
+  }
+
+  async confirmLegacyTuition(data: { updates: { invoiceId:string; billingMonth:string }[]; reason:string }, actor: ActingUser) {
+    if (!Array.isArray(data.updates) || !data.updates.length || data.updates.length > 500 || !data.reason?.trim()) throw new BadRequestException('Sélection et motif obligatoires.');
+    if (data.updates.some(item => !item.invoiceId || !/^\d{4}-(0[1-9]|1[0-2])$/.test(item.billingMonth))) throw new BadRequestException('Mois ou facture invalide.');
+    const author=actorStamp(actor);
+    return this.prisma.$transaction(async tx=>{
+      const updated:string[]=[];
+      for(const item of data.updates){
+        const invoice=await tx.invoice.findUnique({where:{id:item.invoiceId}});
+        if(!invoice||invoice.type!==InvoiceType.TUITION||invoice.cancelledAt||invoice.billingMonth) throw new BadRequestException('Une facture n’est plus une mensualité historique à confirmer.');
+        const key=`TUITION:${invoice.studentId}:${invoice.academicYearId}:${item.billingMonth}`;
+        if(await tx.invoice.findFirst({where:{tuitionPeriodKey:key,cancelledAt:null}})) throw new BadRequestException(`Une mensualité active existe déjà pour ${item.billingMonth}.`);
+        await tx.invoice.update({where:{id:invoice.id},data:{billingMonth:item.billingMonth,tuitionPeriodKey:key}});
+        await tx.businessAudit.create({data:{action:'LEGACY_TUITION_MONTH_CONFIRMED',entityId:invoice.id,actorId:author.id,actorName:author.name,actorRole:author.role,reason:data.reason.trim(),details:JSON.stringify({billingMonth:item.billingMonth,title:invoice.title,amount:invoice.amount,paidAmount:invoice.paidAmount})}});
+        updated.push(invoice.id);
+      }
+      return{updatedCount:updated.length,updated};
+    },{isolationLevel:'Serializable',timeout:30000});
   }
 
   async createActivityInvoice(data: { studentId: string; category: string; month?: string }, actor: ActingUser) {

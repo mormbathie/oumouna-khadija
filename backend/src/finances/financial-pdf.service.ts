@@ -22,6 +22,7 @@ export class FinancialPdfService {
       document.text(`Matricule : ${student.matricule || '—'}`);
       document.text(`Parent / payeur : ${`${parent.firstName || ''} ${parent.lastName || ''}`.trim() || '—'}`);
       document.moveDown().fontSize(11).text(invoice.title || 'Frais scolaires', { underline: true });
+      if (invoice.billingMonth) document.fontSize(10).text(`Mois de facturation : ${invoice.billingMonth}`);
       document.moveDown(0.5).fontSize(10);
       if (invoice.discountAmount > 0) {
         document.text(`Montant normal : ${this.money(invoice.grossAmount || invoice.amount + invoice.discountAmount)}`);

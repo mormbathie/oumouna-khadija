@@ -1,5 +1,7 @@
 import { RegistrationReportService } from './registration-report.service';
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import type { RegistrationReportQuery } from './registration-report.service';
+import { Controller, Get, Post, Body, Param, Query, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FinancesService } from './finances.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,7 +19,17 @@ export class FinancesController {
 
   @Get('registration-report')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
-  registrationReport(@Query() query: { academicYearId?: string; classroomId?: string; karate?: string; fullDay?: string; status?: string }) { return this.reportService.report(query); }
+  registrationReport(@Query() query: RegistrationReportQuery) { return this.reportService.report(query); }
+
+  @Get('registration-report/export')
+  @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
+  async exportRegistrationReport(@Query() query: RegistrationReportQuery & { format?: string }, @Res() response: Response) {
+    const format = query.format === 'csv' ? 'csv' : 'xlsx';
+    const file = await this.reportService.export(query, format);
+    response.setHeader('Content-Type', file.mime);
+    response.setHeader('Content-Disposition', `attachment; filename="synthese-inscriptions.${file.extension}"`);
+    response.send(file.content);
+  }
 
   @Get('stats')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
@@ -43,6 +55,8 @@ export class FinancesController {
     @Query('academicYearId') academicYearId?: string,
     @Query('category') category?: string,
     @Query('search') search?: string,
+    @Query('group') group?: string,
+    @Query('billingMonth') billingMonth?: string,
   ) {
     return this.financesService.getInvoices({
       studentId,
@@ -52,8 +66,18 @@ export class FinancesController {
       academicYearId,
       category,
       search,
+      group,
+      billingMonth,
     });
   }
+
+  @Get('invoices-legacy/tuition')
+  @Roles('ADMIN')
+  analyzeLegacyTuition(@Query('academicYearId') academicYearId?: string) { return this.financesService.analyzeLegacyTuition(academicYearId); }
+
+  @Post('invoices-legacy/tuition/confirm')
+  @Roles('ADMIN')
+  confirmLegacyTuition(@Body() body: { updates: { invoiceId:string; billingMonth:string }[]; reason:string }, @CurrentUser() actor:any) { return this.financesService.confirmLegacyTuition(body, actor); }
 
   @Get('invoices/:id')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
@@ -95,9 +119,10 @@ export class FinancesController {
     @Body()
     body: {
       classroomId: string;
-      monthName: string;
+      billingMonth: string;
       dueDate: string;
       academicYearId?: string;
+      preview?: boolean;
     },
     @CurrentUser() actor: any,
   ) {

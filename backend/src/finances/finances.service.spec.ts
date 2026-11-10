@@ -88,15 +88,15 @@ describe('Financial action attribution', () => {
 describe('Oumouna Khadija tuition', () => {
   it('uses the class tuition and never reuses the former full-day tariff', async () => {
     const prisma: any = {
-      classroom: { findUnique: jest.fn().mockResolvedValue({id:'class',level:'MS',program:'PRESCHOOL',monthlyTuition:15000,registrationFee:50000,academicYearId:'year',enrollments:[{studentId:'full',student:{fullDay:true}},{studentId:'ordinary',student:{fullDay:false}},{studentId:'existing',student:{fullDay:true}}]}) },
-      invoice: { findFirst: jest.fn().mockImplementation(({where}:any)=>Promise.resolve(where.studentId==='existing'?{id:'old',amount:15000}:null)),count:jest.fn().mockResolvedValue(0),create:jest.fn().mockResolvedValue({}) },
+      classroom: { findUnique: jest.fn().mockResolvedValue({id:'class',name:'MS',level:'MS',program:'PRESCHOOL',monthlyTuition:15000,registrationFee:50000,academicYearId:'year',enrollments:[{studentId:'full',enrollmentDate:new Date('2026-09-01'),student:{id:'full',firstName:'A',lastName:'A',fullDay:true,departure:null}},{studentId:'ordinary',enrollmentDate:new Date('2026-09-01'),student:{id:'ordinary',firstName:'B',lastName:'B',fullDay:false,departure:null}},{studentId:'existing',enrollmentDate:new Date('2026-09-01'),student:{id:'existing',firstName:'C',lastName:'C',fullDay:true,departure:null}}]}) },
+      invoice: { findFirst: jest.fn().mockImplementation(({where}:any)=>Promise.resolve(where.studentId==='existing'&&where.billingMonth==='2026-11'?{id:'old',invoiceNumber:'FAC-OLD',amount:15000}:null)),count:jest.fn().mockResolvedValue(0),create:jest.fn().mockResolvedValue({}) },
     };
     prisma.$queryRaw = jest.fn();
     prisma.student = { findUnique: jest.fn(async ({where}: any) => ({ id: where.id, status: 'ACTIVE', fullDay: where.id !== 'ordinary' })) };
     prisma.enrollment = { findUnique: jest.fn(async () => ({ status: 'REGISTERED' })) };
-    prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
+    prisma.$executeRaw = jest.fn(); prisma.$transaction = jest.fn(async (fn: any) => fn(prisma));
     const service = new FinancesService(prisma);
-    const result = await service.generateTuitionInvoicesForClass({classroomId:'class',monthName:'Novembre',dueDate:'2026-11-01'}, {userId:'agent',username:'agent',roles:['ADMIN']});
+    const result = await service.generateTuitionInvoicesForClass({classroomId:'class',billingMonth:'2026-11',dueDate:'2026-11-01'}, {userId:'agent',username:'agent',roles:['ADMIN']});
     expect(prisma.invoice.create.mock.calls.map(([args]:any[])=>[args.data.studentId,args.data.amount,args.data.balance])).toEqual([['full',15000,15000],['ordinary',15000,15000]]);
     expect(result.createdCount).toBe(2);
   });

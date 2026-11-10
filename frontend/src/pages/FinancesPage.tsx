@@ -25,6 +25,7 @@ import { printPaymentReceipt } from '../utils/receipt';
 
 export const FinancesPage: React.FC = () => {
   const { hasRole } = useAuth();
+  const linkedStudentId = new URLSearchParams(window.location.search).get('studentId') || '';
   const [correctionInvoice, setCorrectionInvoice] = useState<any>(null);
   const [correctionPaymentId, setCorrectionPaymentId] = useState('');
   const [correctionAmount, setCorrectionAmount] = useState('');
@@ -61,6 +62,7 @@ export const FinancesPage: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
+  const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +70,10 @@ export const FinancesPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState('');
+  const [billingMonthFilter, setBillingMonthFilter] = useState('');
+  const [typeFilter,setTypeFilter]=useState('');
+  const [financeGroup, setFinanceGroup] = useState<'REGISTRATION'|'TUITION'|'OTHER'>('REGISTRATION');
 
   // Modals
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -116,8 +122,15 @@ export const FinancesPage: React.FC = () => {
 
   // Batch Invoice Form
   const [batchClassId, setBatchClassId] = useState('');
-  const [batchMonth, setBatchMonth] = useState('Novembre 2026');
-  const [batchDueDate, setBatchDueDate] = useState('2026-11-10');
+  const dakarToday = new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Dakar',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const [batchMonth, setBatchMonth] = useState(dakarToday.slice(0,7));
+  const [batchDueDate, setBatchDueDate] = useState(dakarToday);
+  const [batchPreview,setBatchPreview]=useState<any>(null);
+  const [batchBusy,setBatchBusy]=useState(false);
+  const [legacyInvoices,setLegacyInvoices]=useState<any[]|null>(null);
+  const [legacySelection,setLegacySelection]=useState<Record<string,string>>({});
+  const [legacyReason,setLegacyReason]=useState('');
+  const [legacyBusy,setLegacyBusy]=useState(false);
 
   const requestVersion = useRef(0);
   const requestPending = useRef(false);
@@ -130,18 +143,23 @@ export const FinancesPage: React.FC = () => {
     const refreshLists = !background || Date.now() - referenceLoadedAt.current >= 300000;
     try {
       if (!background) setLoading(true);
-      const [statsRes, invoicesRes, classesRes, studentsRes] = await Promise.all([
-        financesApi.getStats(),
-        financesApi.getInvoices({ status: statusFilter || undefined, classroomId: classFilter || undefined, search: searchFilter.trim() || undefined }),
+      const [invoicesRes, classesRes, studentsRes, yearsRes] = await Promise.all([
+        financesApi.getInvoices({ studentId:linkedStudentId||undefined,status: statusFilter || undefined, classroomId: classFilter || undefined, search: searchFilter.trim() || undefined, academicYearId:yearFilter||undefined, group:financeGroup, type:typeFilter||undefined, billingMonth:billingMonthFilter||undefined }),
         refreshLists ? classesApi.getAll() : Promise.resolve(null),
         refreshLists ? studentsApi.getAll() : Promise.resolve(null),
+        refreshLists ? classesApi.getAcademicYears() : Promise.resolve(null),
       ]);
       if (version !== requestVersion.current) return;
-      setStats(statsRes);
       setInvoices(invoicesRes);
+      const activePayments=invoicesRes.flatMap((invoice:any)=>(invoice.payments||[]).filter((payment:any)=>!payment.cancelledAt));
+      const grossCollected=activePayments.reduce((sum:number,payment:any)=>sum+payment.amount,0);
+      const totalRefunded=activePayments.reduce((sum:number,payment:any)=>sum+(payment.refunds||[]).reduce((a:number,r:any)=>a+r.amount,0),0);
+      const totalInvoiced=invoicesRes.reduce((sum:number,invoice:any)=>sum+invoice.amount,0),totalOutstanding=invoicesRes.reduce((sum:number,invoice:any)=>sum+invoice.balance,0);
+      setStats({totalInvoiced,totalOutstanding,grossCollected,totalRefunded,totalCollected:grossCollected-totalRefunded,invoiceCount:invoicesRes.length,recoveryRate:totalInvoiced?Math.round((grossCollected-totalRefunded)*100/totalInvoiced):0,byStatus:invoicesRes.reduce((a:any,i:any)=>({...a,[i.status]:(a[i.status]||0)+1}),{})});
       if (classesRes && studentsRes) referenceLoadedAt.current = Date.now();
       if (classesRes) setClasses(classesRes);
       if (studentsRes) setStudents(studentsRes);
+      if(yearsRes)setAcademicYears(yearsRes);
       if (classesRes && classesRes.length > 0) setBatchClassId(current => current || classesRes[0].id);
     } catch (err) {
       console.error('Failed to load finances:', err);
@@ -157,7 +175,7 @@ export const FinancesPage: React.FC = () => {
     setSelectedIds([]);
     loadFinances();
     return () => { ++requestVersion.current; requestPending.current = false; };
-  }, [statusFilter, classFilter, searchFilter]);
+  }, [statusFilter, classFilter, searchFilter, yearFilter, billingMonthFilter, typeFilter, financeGroup]);
 
   useEffect(() => {
     // Keep open forms and receipts stable; refresh only while this tab is visible.
@@ -173,7 +191,7 @@ export const FinancesPage: React.FC = () => {
       window.removeEventListener('focus', refresh);
       document.removeEventListener('visibilitychange', refresh);
     };
-  }, [statusFilter, classFilter, searchFilter, showPaymentModal, showBatchModal, showReceiptModal, settlementInvoices.length, correctionInvoice]);
+  }, [statusFilter, classFilter, searchFilter, yearFilter, billingMonthFilter, typeFilter, financeGroup, showPaymentModal, showBatchModal, showReceiptModal, settlementInvoices.length, correctionInvoice]);
 
   const handleOpenPayment = (inv: any) => {
     setSelectedInvoice(inv);
@@ -212,18 +230,21 @@ export const FinancesPage: React.FC = () => {
 
   const handleGenerateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBatchBusy(true);
     try {
+      if(!batchPreview){const preview=await financesApi.generateBatch({classroomId:batchClassId,billingMonth:batchMonth,dueDate:batchDueDate,academicYearId:yearFilter||undefined,preview:true});setBatchPreview(preview);return;}
       const res = await financesApi.generateBatch({
         classroomId: batchClassId,
-        monthName: batchMonth,
+        billingMonth: batchMonth,
         dueDate: batchDueDate,
+        academicYearId:yearFilter||undefined,
       });
       alert(res.message);
       setShowBatchModal(false);
       loadFinances();
     } catch (err: any) {
-      alert(t("Error: {0}", [err.message]));
-    }
+      alert(t("Error: {0}", [err.response?.data?.message||err.message]));
+    }finally{setBatchBusy(false);}
   };
 
   const handleViewReceipt = (inv: any, pay: any) => {
@@ -244,6 +265,8 @@ export const FinancesPage: React.FC = () => {
     try { const result = await financesApi.emailReceipt(payment.id); alert(result.sent ? `Reçu envoyé à ${result.recipient}.` : 'Aucun e-mail parent enregistré.'); }
     catch (error: any) { alert(error.response?.data?.message || error.message); }
   };
+  const openLegacy=async()=>{setLegacyBusy(true);try{const rows=await financesApi.analyzeLegacyTuition(yearFilter||undefined);setLegacyInvoices(rows);setLegacySelection(Object.fromEntries(rows.filter((row:any)=>row.proposal).map((row:any)=>[row.id,row.proposal])));}catch(error:any){alert(error.response?.data?.message||error.message);}finally{setLegacyBusy(false);}};
+  const confirmLegacy=async()=>{const updates=Object.entries(legacySelection).filter(([,month])=>month).map(([invoiceId,billingMonth])=>({invoiceId,billingMonth}));if(!updates.length||!legacyReason.trim())return;setLegacyBusy(true);try{await financesApi.confirmLegacyTuition({updates,reason:legacyReason});setLegacyInvoices(null);setLegacyReason('');await loadFinances();}catch(error:any){alert(error.response?.data?.message||error.message);}finally{setLegacyBusy(false);}};
 
   return (
     <div className="space-y-6">
@@ -255,6 +278,7 @@ export const FinancesPage: React.FC = () => {
             {t("Manage tuition invoices, payments, and receipts")}</p>
         </div>
         <div className="flex items-center space-x-3">
+          {hasRole(['ADMIN'])&&<button disabled={legacyBusy} onClick={()=>void openLegacy()} className="rounded-xl border bg-white px-3.5 py-2 text-xs font-semibold">Analyser les anciennes mensualités</button>}
           <button
             onClick={() => setShowBatchModal(true)}
             className="inline-flex items-center space-x-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3.5 py-2 rounded-xl text-xs font-semibold border border-indigo-200 transition"
@@ -264,8 +288,10 @@ export const FinancesPage: React.FC = () => {
           </button>
         </div>
       </div>
+      {linkedStudentId&&<div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">Factures de l’élève sélectionné uniquement. <a href="/finances" className="font-semibold underline">Afficher tous les élèves</a></div>}
 
       <p className="text-sm text-slate-600">{t('Encaissements bruts')} : {(stats?.grossCollected || 0).toLocaleString(locale())} F CFA · {t('Remboursements')} : {(stats?.totalRefunded || 0).toLocaleString(locale())} F CFA · {t('Encaissements nets')} : {(stats?.totalCollected || 0).toLocaleString(locale())} F CFA</p>
+      <nav className="grid grid-cols-1 gap-2 rounded-2xl border bg-white p-2 sm:grid-cols-3" aria-label="Catégories financières">{([['REGISTRATION','Inscriptions'],['TUITION','Mensualités'],['OTHER','Fournitures et autres services']] as const).map(([key,label])=><button key={key} onClick={()=>{setFinanceGroup(key);setBillingMonthFilter('');setTypeFilter('');}} className={`rounded-xl px-4 py-3 text-sm font-semibold ${financeGroup===key?'bg-amber-600 text-white':'text-slate-600 hover:bg-slate-50'}`}>{label}</button>)}</nav>
       {/* Financial KPIs */}
       <div className="mobile-finance-kpis grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
@@ -315,6 +341,7 @@ export const FinancesPage: React.FC = () => {
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
         <label className="relative min-w-64 flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input type="search" value={searchFilter} onChange={e=>setSearchFilter(e.target.value)} placeholder="Rechercher un élève, matricule ou numéro de facture…" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:ring-2 focus:ring-amber-500"/></label>
         <div className="mobile-finance-filters flex items-center space-x-4">
+          <select aria-label="Année scolaire" value={yearFilter} onChange={e=>{setYearFilter(e.target.value);setClassFilter('');}} className="rounded-lg border bg-slate-50 px-2.5 py-1.5"><option value="">Toutes les années</option>{academicYears.map(y=><option key={y.id} value={y.id}>{y.name}</option>)}</select>
           <div className="flex items-center space-x-2">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <span className="font-semibold text-slate-600">{t("Status :")}</span>
@@ -329,6 +356,8 @@ export const FinancesPage: React.FC = () => {
               <option value="UNPAID">{t("Unpaid")}</option>
             </select>
           </div>
+          {financeGroup==='TUITION'&&<select aria-label="Mois de facturation" value={billingMonthFilter} onChange={e=>setBillingMonthFilter(e.target.value)} className="rounded-lg border bg-slate-50 px-2.5 py-1.5"><option value="">Tous les mois</option><option value="UNKNOWN">Mois inconnu (historique)</option>{Array.from({length:12},(_,index)=>{const year=Number(batchMonth.slice(0,4))||new Date().getFullYear(),value=`${year}-${String(index+1).padStart(2,'0')}`;return <option key={value} value={value}>{new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(year,index,1)))}</option>;})}</select>}
+          {financeGroup==='OTHER'&&<select aria-label="Type de facture" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} className="rounded-lg border bg-slate-50 px-2.5 py-1.5"><option value="">Tous les types</option><option value="CANTEEN">Cantine</option><option value="UNIFORM">Uniforme / fournitures</option><option value="TRANSPORT">Transport</option><option value="OTHER">Autre service</option></select>}
 
           <div className="flex items-center space-x-2">
             <span className="font-semibold text-slate-600">{t("Class:")}</span>
@@ -338,7 +367,7 @@ export const FinancesPage: React.FC = () => {
               className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500"
             >
               <option value="">{t("All classes")}</option>
-              {classes.map((c) => (
+              {classes.filter(c=>!yearFilter||c.academicYearId===yearFilter).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -365,7 +394,7 @@ export const FinancesPage: React.FC = () => {
           const payment = inv.payments?.find((p: any) => !p.cancelledAt);
           return <article key={inv.id} className={`rounded-2xl border bg-white p-4 shadow-xs ${selectedIds.includes(inv.id) ? 'border-amber-500 ring-1 ring-amber-500' : 'border-slate-200'}`}>
             <div className="flex items-start justify-between gap-3"><label className="flex min-w-0 items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-amber-600" aria-label={t('Sélectionner la facture {0}', [inv.invoiceNumber])} disabled={!!inv.cancelledAt || inv.balance <= 0} checked={inv.balance > 0 && selectedIds.includes(inv.id)} onChange={e => setSelectedIds(ids => e.target.checked ? [...ids, inv.id] : ids.filter(id => id !== inv.id))} /><span className="min-w-0"><strong className="block break-words text-sm text-slate-900">{inv.student?.firstName} {inv.student?.lastName}</strong><span className="text-xs text-slate-500">{inv.student?.enrollments?.[0]?.classroom?.name || '—'}</span></span></label><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${inv.status === 'PAID' ? 'bg-amber-50 text-amber-800' : 'bg-amber-50 text-amber-800'}`}>{t(inv.status === 'PAID' ? 'Paid' : inv.status === 'PARTIAL' ? 'Partially paid' : 'Unpaid')}</span></div>
-            <p className="mt-3 text-sm text-slate-700">{inv.title}</p><p className="mt-1 break-all text-[10px] text-slate-400">{inv.invoiceNumber} · {new Date(inv.createdAt).toLocaleDateString(locale())}</p>
+            <p className="mt-3 text-sm text-slate-700">{inv.title}</p>{inv.type==='TUITION'&&<p className="text-xs font-semibold text-amber-800">Mois : {inv.billingMonth||'Inconnu (historique)'}</p>}<p className="mt-1 break-all text-[10px] text-slate-400">{inv.invoiceNumber} · {new Date(inv.createdAt).toLocaleDateString(locale())}</p>
             <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs"><div><span className="block text-slate-500">{t('Invoice amount')}</span><strong className="text-slate-800">{inv.amount.toLocaleString(locale())} FCFA</strong></div><div><span className="block text-slate-500">{t('Total paid')}</span><strong className="text-amber-700">{inv.paidAmount.toLocaleString(locale())} FCFA</strong></div></div>
             <div className="mt-3 flex items-center justify-between gap-2"><div><span className="block text-xs text-slate-500">{t('Balance due')}</span><strong className="text-lg text-slate-900">{inv.balance.toLocaleString(locale())} <span className="text-xs font-medium">FCFA</span></strong></div>{inv.balance > 0 ? <button onClick={() => handleOpenPayment(inv)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white"><CreditCard className="h-4 w-4" />{t('Pay')}</button> : payment && <button onClick={() => handleViewReceipt(inv, payment)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-50 px-4 text-sm font-semibold text-amber-800"><Receipt className="h-4 w-4" />{t('Receipt')}</button>}</div>
             <details className="mt-3 border-t border-slate-100 pt-1"><summary className="flex min-h-11 cursor-pointer items-center text-xs font-semibold text-slate-600">{t('Autres actions')}</summary><div className="flex flex-wrap gap-2"><button onClick={() => printInvoice(inv)} className="rounded-xl border px-3 py-2 text-xs">{t('Print invoice')}</button><button onClick={() => void emailInvoice(inv)} className="rounded-xl border px-3 py-2 text-xs">Envoyer la facture</button>{payment && <button onClick={() => void emailReceipt(payment)} className="rounded-xl border px-3 py-2 text-xs">Envoyer le reçu</button>}{payment && inv.balance > 0 && <button onClick={() => handleViewReceipt(inv, payment)} className="rounded-xl border px-3 py-2 text-xs">{t('Receipt')}</button>}{hasRole(['ADMIN']) && payment && <button onClick={() => void openCorrection(inv)} className="rounded-xl border border-amber-200 px-3 py-2 text-xs text-amber-800">{t('Corriger le paiement')}</button>}</div>{inv.createdByName && <p className="mt-2 text-xs text-slate-500">{t('Created by')} {inv.createdByName} · {roleLabel(inv.createdByRole)}</p>}</details>
@@ -422,7 +451,7 @@ export const FinancesPage: React.FC = () => {
                           {studentClass}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 font-medium text-slate-700">{inv.title}</td>
+                      <td className="px-4 py-3.5 font-medium text-slate-700">{inv.title}{inv.type==='TUITION'&&<p className="text-[10px] text-amber-800">Mois : {inv.billingMonth||'Inconnu (historique)'}</p>}</td>
                       <td className="px-4 py-3.5 font-bold text-slate-800">{inv.amount.toLocaleString()} {t("F")}</td>
                       <td className="px-4 py-3.5 text-amber-600 font-semibold">{inv.paidAmount.toLocaleString()} {t("F")}</td>
                       <td className="px-4 py-3.5 text-amber-600 font-bold">{inv.balance.toLocaleString()} {t("F")}</td>
@@ -617,6 +646,8 @@ export const FinancesPage: React.FC = () => {
         </div>
       )}
 
+      {legacyInvoices&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"><section className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 space-y-4" role="dialog" aria-modal="true"><div className="flex justify-between"><div><h3 className="text-lg font-bold">Mensualités historiques sans mois structuré</h3><p className="text-sm text-slate-500">Aucun montant ni paiement ne sera modifié. Vérifiez chaque proposition avant confirmation.</p></div><button onClick={()=>setLegacyInvoices(null)}><X/></button></div>{legacyInvoices.length===0?<p>Aucune facture historique à traiter.</p>:<div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="p-2 text-left">Facture</th><th className="p-2 text-left">Élève</th><th className="p-2 text-left">Libellé</th><th className="p-2 text-left">Mois confirmé</th></tr></thead><tbody>{legacyInvoices.map(row=><tr key={row.id} className="border-t"><td className="p-2">{row.invoiceNumber}<br/><small>{row.amount.toLocaleString(locale())} FCFA</small></td><td className="p-2">{row.student.firstName} {row.student.lastName}</td><td className="p-2">{row.title}<br/><small>Confiance : {row.confidence}</small></td><td className="p-2"><input type="month" value={legacySelection[row.id]||''} onChange={e=>setLegacySelection(current=>({...current,[row.id]:e.target.value}))} className="rounded-lg border p-2"/></td></tr>)}</tbody></table></div>}<label className="block text-sm">Motif de la confirmation<textarea value={legacyReason} onChange={e=>setLegacyReason(e.target.value)} className="mt-1 block w-full rounded-lg border p-2" placeholder="Ex. Vérification avec le registre comptable"/></label><div className="flex justify-end gap-2"><button onClick={()=>setLegacyInvoices(null)} className="rounded-lg border px-4 py-2">Annuler</button><button disabled={legacyBusy||!legacyReason.trim()||!Object.values(legacySelection).some(Boolean)} onClick={()=>void confirmLegacy()} className="rounded-lg bg-amber-600 px-4 py-2 text-white disabled:opacity-50">Confirmer les mois sélectionnés</button></div></section></div>}
+
       {/* Modal: Générer Mensualités de Classe */}
       {showBatchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
@@ -626,7 +657,7 @@ export const FinancesPage: React.FC = () => {
                 <h3 className="font-bold text-base text-slate-800">{t("Batch Tuition Invoices")}</h3>
                 <p className="text-xs text-slate-400">{t("Automatically create invoices for every student in a class")}</p>
               </div>
-              <button onClick={() => setShowBatchModal(false)} className="text-slate-400 hover:bg-slate-100 p-1 rounded-lg">
+              <button onClick={() => {setShowBatchModal(false);setBatchPreview(null);}} className="text-slate-400 hover:bg-slate-100 p-1 rounded-lg">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -637,10 +668,10 @@ export const FinancesPage: React.FC = () => {
                 <select
                   required
                   value={batchClassId}
-                  onChange={(e) => setBatchClassId(e.target.value)}
+                  onChange={(e) => {setBatchClassId(e.target.value);setBatchPreview(null);}}
                   className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 >
-                  {classes.map((c) => (
+                  <option value="">Choisir une classe</option>{classes.filter(c=>!yearFilter||c.academicYearId===yearFilter).map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} {t("- Monthly tuition:")}{c.monthlyTuition.toLocaleString()} {t("FCFA")}</option>
                   ))}
@@ -650,11 +681,10 @@ export const FinancesPage: React.FC = () => {
               <div>
                 <label className="font-medium text-slate-700 block mb-1">{t("Month / Description *")}</label>
                 <input
-                  type="text"
+                  type="month"
                   required
                   value={batchMonth}
-                  onChange={(e) => setBatchMonth(e.target.value)}
-                  placeholder="Ex: Novembre 2026"
+                  onChange={(e) => {setBatchMonth(e.target.value);setBatchPreview(null);}}
                   className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
@@ -665,23 +695,25 @@ export const FinancesPage: React.FC = () => {
                   type="date"
                   required
                   value={batchDueDate}
-                  onChange={(e) => setBatchDueDate(e.target.value)}
+                  onChange={(e) => {setBatchDueDate(e.target.value);setBatchPreview(null);}}
                   className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                 />
               </div>
 
+              {batchPreview&&<div className="rounded-xl border bg-slate-50 p-3 text-sm"><p className="font-bold">Aperçu avant confirmation</p><p>{batchPreview.rows.filter((r:any)=>r.action==='CREATE_PREVIEW').length} facture(s) à créer · {batchPreview.skippedCount} ignorée(s)</p>{Object.entries(batchPreview.reasons||{}).map(([reason,count])=><p key={reason} className="text-xs">{reason} : {String(count)}</p>)}<div className="mt-2 max-h-32 overflow-y-auto text-xs">{batchPreview.rows.map((row:any)=><p key={row.studentId}>{row.name} — {row.action==='CREATE_PREVIEW'?`${row.amount.toLocaleString(locale())} FCFA`:row.reason}</p>)}</div></div>}
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowBatchModal(false)}
+                  onClick={() => {setShowBatchModal(false);setBatchPreview(null);}}
                   className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50"
                 >
                   {t("Cancel")}</button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-md"
+                  disabled={batchBusy}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-md disabled:opacity-50"
                 >
-                  {t("Generate invoices")}</button>
+                  {batchBusy?'Chargement…':batchPreview?'Confirmer la génération':'Prévisualiser'}</button>
               </div>
             </form>
           </div>

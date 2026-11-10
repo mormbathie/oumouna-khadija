@@ -84,7 +84,7 @@ export class FinanceControlService {
       if (!invoice) throw new NotFoundException('Facture introuvable.');
       if (invoice.cancelledAt) return invoice;
       if (invoice.paidAmount !== 0 || await tx.payment.count({ where: { invoiceId: id, cancelledAt: null } })) throw new BadRequestException('Annulez les paiements de cette facture avant son annulation.');
-      const result = await tx.invoice.update({ where: { id }, data: { cancelledAt: new Date(), cancellationReason: reason, cancelledById: author.id, cancelledByName: author.name, cancelledByRole: author.role, billingKey: null, balance: 0 } });
+      const result = await tx.invoice.update({ where: { id }, data: { cancelledAt: new Date(), cancellationReason: reason, cancelledById: author.id, cancelledByName: author.name, cancelledByRole: author.role, billingKey: null, tuitionPeriodKey: null, balance: 0 } });
       await tx.businessAudit.create({ data: { action: 'INVOICE_CANCELLED', entityId: id, actorId: author.id, actorName: author.name, actorRole: author.role, reason, details: JSON.stringify({ amount: invoice.amount, invoiceNumber: invoice.invoiceNumber, billingKey: invoice.billingKey }) } });
       return result;
     });
