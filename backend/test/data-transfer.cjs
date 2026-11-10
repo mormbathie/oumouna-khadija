@@ -3,7 +3,7 @@ const{PrismaClient,Prisma}=require('@prisma/client');
 const{DataTransferService}=require('../dist/src/data-transfer/data-transfer.service');
 const{RefundsService}=require('../dist/src/finances/refunds.service');
 (async()=>{const u=new URL(process.env.DATABASE_URL);assert.ok(['localhost','127.0.0.1'].includes(u.hostname)&&['/as_sakina_test2','/ci_test'].includes(u.pathname),'Dedicated local/CI test database required');const db=new PrismaClient(),tag='export-test-'+crypto.randomUUID();let year,parent,student,invoice,payment;const service=new DataTransferService(db);
-async function snapshot(){const result={};for(const m of Prisma.dmmf.datamodel.models){const key=m.fields.find(f=>f.isId).name;result[m.name]=await db.$queryRawUnsafe(`SELECT "${key}"::text AS id,md5(to_jsonb(t)::text) AS hash FROM "${m.name}" t ORDER BY "${key}"`);}return result;}
+async function snapshot(){const result={};for(const m of Prisma.dmmf.datamodel.models){const key=m.fields.find(f=>f.isId).name,table=m.dbName||m.name;result[m.name]=await db.$queryRawUnsafe(`SELECT "${key}"::text AS id,md5(to_jsonb(t)::text) AS hash FROM "${table}" t ORDER BY "${key}"`);}return result;}
 try{
  year=await db.academicYear.create({data:{name:tag,startDate:new Date('2026-09-01'),endDate:new Date('2027-07-31'),isCurrent:false}});
  parent=await db.parent.create({data:{firstName:'Parent exemple',lastName:tag,phone:'0771234567',address:'Dakar, Sénégal'}});
