@@ -26,7 +26,8 @@ export class FinancialPdfService {
       document.moveDown(0.5).fontSize(10);
       if (invoice.discountAmount > 0) {
         document.text(`Montant normal : ${this.money(invoice.grossAmount || invoice.amount + invoice.discountAmount)}`);
-        document.text(`${invoice.discountType === 'SOCIAL_CASE' ? 'Cas social' : 'Réduction accordée'} : -${this.money(invoice.discountAmount)}`);
+        const discountLabels: Record<string, string> = { DISCOUNT: 'Réduction accordée', SOCIAL_CASE: 'Cas social', STAFF_CHILD_NP: 'Enfant personnel NP', STAFF_CHILD_P: 'Enfant personnel P' };
+        document.text(`${discountLabels[invoice.discountType] || 'Réduction accordée'} : -${this.money(invoice.discountAmount)}`);
         document.text(`Justification : ${invoice.discountReason || '—'}`);
         document.text(`Validée par : ${invoice.discountApprovedByName || 'Direction'}`);
         document.text(`Montant net facturé : ${this.money(invoice.amount)}`);

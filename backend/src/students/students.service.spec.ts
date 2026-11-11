@@ -113,4 +113,10 @@ describe('Director registration discounts', () => {
     await service.applyRegistrationDiscount('student', { invoiceId: 'invoice', amount: 5000, type: 'DISCOUNT', reason: '' }, actor);
     expect(invoice).toMatchObject({ grossAmount: 50000, discountAmount: 5000, amount: 45000, balance: 45000 });
   });
+
+  it.each(['STAFF_CHILD_NP', 'STAFF_CHILD_P'])('accepts the director staff-child category %s', async type => {
+    const { service, invoice } = setup();
+    await service.applyRegistrationDiscount('student', { invoiceId: 'invoice', amount: 5000, type, reason: '' }, actor);
+    expect(invoice).toMatchObject({ discountType: type, discountAmount: 5000, amount: 45000 });
+  });
 });

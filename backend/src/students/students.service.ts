@@ -438,7 +438,7 @@ export class StudentsService {
     const amount = Number(data.amount);
     if (!Number.isInteger(amount) || amount < 0) throw new BadRequestException('Le montant de la réduction doit être un nombre entier positif ou zéro.');
     const type = String(data.type || '').trim();
-    if (amount > 0 && !['DISCOUNT', 'SOCIAL_CASE'].includes(type)) throw new BadRequestException('Choisissez « réduction accordée » ou « cas social ».');
+    if (amount > 0 && !['DISCOUNT', 'SOCIAL_CASE', 'STAFF_CHILD_NP', 'STAFF_CHILD_P'].includes(type)) throw new BadRequestException('Choisissez un type de réduction valide.');
     const reason = String(data.reason || '').trim();
     if (reason.length > 1000) throw new BadRequestException('Le motif ne peut pas dépasser 1 000 caractères.');
     if (!data.invoiceId) throw new BadRequestException('Facture d’inscription manquante.');
