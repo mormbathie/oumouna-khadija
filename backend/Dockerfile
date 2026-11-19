@@ -23,6 +23,10 @@ RUN npx --no-install prisma generate
 COPY . .
 RUN npm run build
 
+# Ne garder que les dépendances de production (le client Prisma généré, le CLI Prisma
+# et les données de géolocalisation restent dans node_modules), sans cache npm.
+RUN npm prune --omit=dev && npx --no-install prisma --version && npm cache clean --force
+
 # ─────────────────────────────────────────────
 # Stage 2 : Production
 # ─────────────────────────────────────────────
@@ -34,21 +38,13 @@ RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Dépendances de production uniquement
+# Dépendances de production déjà préparées et vérifiées dans le stage builder :
+# une seule couche, sans cache npm ni copie en double du client Prisma.
 COPY package*.json ./
 COPY prisma ./prisma/
-# Le CLI Prisma est conservé comme peer optionnel du client dans le lockfile.
-# Vérifier sa présence pour ne jamais télécharger une autre version au démarrage.
-RUN npm ci --omit=dev && npx --no-install prisma --version
-
-# Copie du client Prisma généré depuis le stage builder
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
-
-# Copie du code compilé et du schéma Prisma
-ENV ILA_IP_LOCATION_DB=iptoasn-country ILA_AUTO_UPDATE=false ILA_SILENT=true
-COPY --from=builder /app/node_modules/ip-location-api/data ./node_modules/ip-location-api/data
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+ENV ILA_IP_LOCATION_DB=iptoasn-country ILA_AUTO_UPDATE=false ILA_SILENT=true
 
 # Script de démarrage
 COPY entrypoint.sh ./
