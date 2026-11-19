@@ -11,7 +11,10 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role as LocalRole } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
+import { PARENT_EMAIL_DOMAIN, isTechnicalParentEmail } from '../auth/parent-scope';
+import { whatsappNumber } from '../notifications/whatsapp-templates';
+import { ActingUser, actorStamp } from '../audit/actor';
 
 const APP_ROLES = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE'];
 
@@ -115,7 +118,9 @@ export class UsersService {
   }
 
   async findAll() {
-    const users = await this.request('/users?max=500');
+    // Parent accounts are managed from their parent record; listing them here would cost one
+    // Keycloak request per parent.
+    const users = (await this.request('/users?max=2000')).filter((user: any) => !isTechnicalParentEmail(user.email));
     const managedUsers = await Promise.all(
       users.map(async (user: any) => {
         const mappings = await this.request(`/users/${encodeURIComponent(user.id)}/role-mappings/realm`);
@@ -324,6 +329,92 @@ export class UsersService {
     const safeUser = this.publicUser({ ...user, email, firstName, lastName }, [{ name: roleName }]);
     await this.syncLocalUser(safeUser);
     return safeUser;
+  }
+
+  // ── Parent accounts: sign-in with the mobile number, linked to one parent record ──
+
+  private temporaryPassword() {
+    // No look-alike characters (0/O, 1/l/I) so the password can be read out or typed from WhatsApp.
+    const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    return Array.from({ length: 10 }, () => alphabet[randomInt(alphabet.length)]).join('');
+  }
+
+  private async parentWithAccount(parentId: string) {
+    const parent = await this.prisma.parent.findUnique({ where: { id: parentId }, include: { accounts: { select: { id: true, keycloakId: true, username: true, mustChangePassword: true }, orderBy: { createdAt: 'asc' }, take: 1 } } });
+    if (!parent) throw new NotFoundException('Parent introuvable.');
+    const { accounts, ...rest } = parent;
+    return { ...rest, account: accounts[0] ?? null };
+  }
+
+  private async auditParentAccount(action: string, parentId: string, actor: ActingUser, details: Record<string, unknown>) {
+    const author = actorStamp(actor);
+    await this.prisma.businessAudit.create({ data: { action, entityId: parentId, actorId: author.id, actorName: author.name, actorRole: author.role, details: JSON.stringify(details) } });
+  }
+
+  async parentAccount(parentId: string) {
+    const parent = await this.parentWithAccount(parentId);
+    if (!parent.account?.keycloakId) return { exists: false };
+    let enabled: boolean | null = null;
+    try { enabled = Boolean((await this.request(`/users/${encodeURIComponent(parent.account.keycloakId)}`))?.enabled); }
+    catch (error) { if (!(error instanceof NotFoundException)) throw error; }
+    return { exists: true, username: parent.account.username, mustChangePassword: parent.account.mustChangePassword, enabled };
+  }
+
+  async createParentAccount(parentId: string, actor: ActingUser) {
+    actorStamp(actor);
+    const parent = await this.parentWithAccount(parentId);
+    if (parent.account) throw new ConflictException('Ce parent a déjà un accès. Utilisez « Nouveau mot de passe » si besoin.');
+    const username = whatsappNumber(parent.phone) || whatsappNumber(parent.whatsappPhone);
+    if (!username) throw new BadRequestException('Le parent doit avoir un numéro de portable valide (77, 78, 76, 70 ou 75…) pour se connecter.');
+    const holder = await this.prisma.user.findFirst({ where: { OR: [{ username }, { email: `${username}@${PARENT_EMAIL_DOMAIN}` }] }, select: { parentId: true } });
+    if (holder) throw new ConflictException('Ce numéro sert déjà d’identifiant à un autre compte. Chaque parent doit avoir son propre numéro de portable.');
+    const email = `${username}@${PARENT_EMAIL_DOMAIN}`;
+    const temporaryPassword = this.temporaryPassword();
+    try {
+      await this.request('/users', { method: 'POST', body: JSON.stringify({
+        username, email, emailVerified: true, firstName: parent.firstName.trim() || 'Parent', lastName: parent.lastName.trim() || 'Parent',
+        enabled: true, attributes: { locale: ['fr'] } }) });
+    } catch (error) {
+      if (error instanceof ConflictException) throw new ConflictException('Ce numéro sert déjà d’identifiant à un autre compte. Chaque parent doit avoir son propre numéro de portable.');
+      throw error;
+    }
+    const user = (await this.request(`/users?username=${encodeURIComponent(username)}&exact=true`))?.[0];
+    if (!user?.id) throw new BadGatewayException('Le compte a été créé, mais son identifiant est indisponible.');
+    try {
+      await this.request(`/users/${encodeURIComponent(user.id)}/reset-password`, { method: 'PUT', body: JSON.stringify({ type: 'password', value: temporaryPassword, temporary: false }) });
+      const role = await this.ensureRealmRole('PARENT');
+      await this.request(`/users/${encodeURIComponent(user.id)}/role-mappings/realm`, { method: 'POST', body: JSON.stringify([role]) });
+      // The temporary password must be replaced at the first sign-in (enforced by JwtAuthGuard).
+      await this.prisma.user.create({ data: { keycloakId: user.id, username, email, firstName: parent.firstName, lastName: parent.lastName,
+        role: 'PARENT', phone: parent.phone, parentId: parent.id, mustChangePassword: true } });
+      await this.auditParentAccount('PARENT_ACCOUNT_CREATED', parent.id, actor, { username });
+    } catch (error) {
+      await this.request(`/users/${encodeURIComponent(user.id)}`, { method: 'DELETE' }).catch(() => undefined);
+      await this.prisma.user.deleteMany({ where: { keycloakId: user.id } }).catch(() => undefined);
+      throw error;
+    }
+    return { username, temporaryPassword };
+  }
+
+  async resetParentPassword(parentId: string, actor: ActingUser) {
+    actorStamp(actor);
+    const parent = await this.parentWithAccount(parentId);
+    if (!parent.account?.keycloakId) throw new BadRequestException('Ce parent n’a pas encore d’accès.');
+    const temporaryPassword = this.temporaryPassword();
+    await this.request(`/users/${encodeURIComponent(parent.account.keycloakId)}/reset-password`, { method: 'PUT', body: JSON.stringify({ type: 'password', value: temporaryPassword, temporary: false }) });
+    await this.prisma.user.update({ where: { id: parent.account.id }, data: { mustChangePassword: true } });
+    await this.auditParentAccount('PARENT_PASSWORD_RESET', parent.id, actor, { username: parent.account.username });
+    return { username: parent.account.username, temporaryPassword };
+  }
+
+  async setParentAccountEnabled(parentId: string, enabled: boolean, actor: ActingUser) {
+    if (typeof enabled !== 'boolean') throw new BadRequestException('Statut invalide.');
+    actorStamp(actor);
+    const parent = await this.parentWithAccount(parentId);
+    if (!parent.account?.keycloakId) throw new BadRequestException('Ce parent n’a pas encore d’accès.');
+    await this.request(`/users/${encodeURIComponent(parent.account.keycloakId)}`, { method: 'PUT', body: JSON.stringify({ id: parent.account.keycloakId, enabled }) });
+    await this.auditParentAccount(enabled ? 'PARENT_ACCOUNT_ENABLED' : 'PARENT_ACCOUNT_DISABLED', parent.id, actor, { username: parent.account.username });
+    return { enabled };
   }
 
   private async ensureRealmRole(roleName: string) {

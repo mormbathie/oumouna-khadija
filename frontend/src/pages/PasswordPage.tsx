@@ -2,8 +2,11 @@ import { t } from "../i18n/index";
 import React, { useState } from 'react';
 import { KeyRound } from 'lucide-react';
 import { usersApi } from '../services/api';
+import { useAuth } from '../auth/AuthContext';
 
 export const PasswordPage: React.FC = () => {
+  const { user } = useAuth();
+  const firstSignIn = Boolean(user?.mustChangePassword);
   const [currentPassword, setCurrentPassword] = useState('');
   const [totp, setTotp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,7 +28,8 @@ export const PasswordPage: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
       setMessage(t("Your password has been changed."));
-      window.location.assign('/profile');
+      // Reload so the session no longer carries the temporary-password flag.
+      window.location.assign(firstSignIn ? '/' : '/profile');
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("Unable to save changes."));
     } finally {
@@ -35,7 +39,8 @@ export const PasswordPage: React.FC = () => {
 
   return <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
     <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900"><KeyRound className="h-5 w-5 text-amber-700" />{t("Change my password")}</h2>
-    <p className="mt-1 text-sm text-slate-500">{t("Enter your current password to protect your account.")}</p>
+    {firstSignIn ? <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Bienvenue ! Pour protéger votre compte, choisissez maintenant votre mot de passe personnel (8 caractères minimum). Dans « Mot de passe actuel », saisissez le mot de passe provisoire reçu de l’école.</p>
+      : <p className="mt-1 text-sm text-slate-500">{t("Enter your current password to protect your account.")}</p>}
     <form onSubmit={submit} className="mt-6 space-y-4">
       <label className="block text-sm font-medium text-slate-700">{t("Current password")}<input required type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 p-3" /></label>
       <label className="block text-sm font-medium text-slate-700">{t("New password")}<input required minLength={8} type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 p-3" /></label>

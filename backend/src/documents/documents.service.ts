@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parentStudentScope } from '../auth/parent-scope';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
@@ -38,8 +39,8 @@ export class DocumentsService {
   }
 
   async assertParentOwnsStudent(studentId: string, user: any) {
-    if (!user.email || !user.emailVerified) throw new ForbiddenException('Vérifiez votre adresse e-mail pour consulter les dossiers de vos enfants.');
-    const row = await this.prisma.student.findFirst({ where: { id: studentId, parent: { is: { email: { equals: user.email, mode: 'insensitive' } } } }, select: { id: true } });
+    const scope = await parentStudentScope(this.prisma, user);
+    const row = await this.prisma.student.findFirst({ where: { AND: [{ id: studentId }, scope] }, select: { id: true } });
     if (!row) throw new NotFoundException('Document introuvable.');
   }
 

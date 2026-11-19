@@ -13,6 +13,7 @@ import { UsersModule } from './users/users.module';
 import { DocumentsModule } from './documents/documents.module';
 import { StaffAttendanceModule } from './staff-attendance/staff-attendance.module';
 import { DataTransferModule } from './data-transfer/data-transfer.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -35,6 +36,7 @@ import { AppService } from './app.service';
     DocumentsModule,
     StaffAttendanceModule,
     DataTransferModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

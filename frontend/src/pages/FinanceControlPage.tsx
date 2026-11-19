@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import api, { financesApi } from '../services/api';
+import api, { financesApi, notificationsApi } from '../services/api';
 import { useAuth } from '../auth/AuthContext';
+import { WhatsAppModal } from '../components/WhatsAppLinks';
 
 const money = (value: number) => `${Number(value || 0).toLocaleString('fr-FR')} F CFA`;
 export function FinanceControlPage() {
@@ -15,6 +16,7 @@ export function FinanceControlPage() {
   const [planInvoice, setPlanInvoice] = useState<any>(null);
   const [planRows, setPlanRows] = useState<{dueDate:string;amount:string}[]>([]);
   const [reminder, setReminder] = useState<any>(null);
+  const [whatsappReminder, setWhatsappReminder] = useState<any>(null);
   const [cancelled, setCancelled] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const load = async () => {
@@ -43,9 +45,11 @@ export function FinanceControlPage() {
     const [preview, history] = await Promise.all([api.get(`/finance-control/invoices/${invoice.id}/reminder`), api.get(`/finance-control/invoices/${invoice.id}/reminders`)]);
     setReminder({id:invoice.id,...preview.data,history:history.data});
   });
+  const openWhatsappReminder = (invoice: any) => void act(async () => setWhatsappReminder(await notificationsApi.reminder(invoice.id)));
   return <div className="space-y-6 p-4 sm:p-6">
     <h1 className="text-2xl font-bold text-slate-800">Contrôle financier et clôture de caisse</h1>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}
+    {whatsappReminder && <WhatsAppModal message={whatsappReminder} onClose={()=>setWhatsappReminder(null)}/>}
     {planInvoice && <form className="space-y-3 rounded-xl border bg-white p-5" onSubmit={e=>{e.preventDefault();void act(async()=>{await api.post(`/finance-control/invoices/${planInvoice.id}/installments`,{installments:planRows.map(row=>({dueDate:row.dueDate,amount:Number(row.amount)}))});setPlanInvoice(null);});}}><h2 className="font-semibold">Échéancier — {planInvoice.invoiceNumber}</h2><p>Le total doit correspondre au reste à payer : {money(planInvoice.balance)}. Les paiements seront déduits des premières échéances.</p>{planRows.map((row,index)=><div key={index} className="flex flex-wrap gap-2"><input aria-label={`Date échéance ${index+1}`} required type="date" value={row.dueDate} onChange={e=>setPlanRows(planRows.map((item,i)=>i===index?{...item,dueDate:e.target.value}:item))} className="rounded border p-2"/><input aria-label={`Montant échéance ${index+1}`} required type="number" min="1" step="1" value={row.amount} onChange={e=>setPlanRows(planRows.map((item,i)=>i===index?{...item,amount:e.target.value}:item))} className="rounded border p-2"/><button type="button" onClick={()=>setPlanRows(planRows.filter((_,i)=>i!==index))}>Retirer</button></div>)}<button type="button" disabled={planRows.length>=24} onClick={()=>setPlanRows([...planRows,{dueDate:day,amount:''}])} className="rounded border px-3 py-2">Ajouter une échéance</button><button disabled={busy||!planRows.length} className="ml-2 rounded bg-amber-600 px-3 py-2 text-white">Enregistrer</button><button type="button" onClick={()=>setPlanInvoice(null)} className="ml-2">Fermer</button></form>}
     {reminder && <section className="space-y-3 rounded-xl border bg-white p-5"><h2 className="font-semibold">Vérifier la relance avant l’envoi</h2><p>Destinataire : <strong>{reminder.email}</strong></p><p>{reminder.subject}</p><pre className="whitespace-pre-wrap font-sans text-sm">{reminder.text}</pre><button disabled={busy} onClick={()=>{if(window.confirm(`Envoyer cette relance à ${reminder.email} ?`))void act(async()=>{await api.post(`/finance-control/invoices/${reminder.id}/reminder`,{approved:true,approvalToken:reminder.approvalToken});setReminder(null);});}} className="rounded bg-amber-600 px-3 py-2 text-white">Valider et envoyer</button><button onClick={()=>setReminder(null)} className="ml-3">Fermer</button>{reminder.history.map((row:any)=><p key={row.id} className="text-sm">{new Date(row.createdAt).toLocaleString('fr-FR')} — {row.actorName} — {({SENT:'Accepté par le serveur e-mail',SENDING:'Envoi en cours',UNKNOWN:'Envoi non confirmé'} as any)[row.status] || row.status}</p>)}</section>}
     <section className="space-y-4 rounded-xl border bg-white p-5">
@@ -61,7 +65,7 @@ export function FinanceControlPage() {
     </section>
     <section className="space-y-3 rounded-xl border bg-white p-5"><h2 className="text-lg font-semibold">Annuler une écriture</h2><p>Annulez d’abord les paiements d’une facture. Une annulation exige un motif et conserve l’écriture originale.</p>
       {invoices.map(invoice => <div key={invoice.id} className="space-y-2 border-t py-3"><div className="flex flex-wrap items-center justify-between gap-2"><span>{invoice.student?.firstName} {invoice.student?.lastName} — {invoice.invoiceNumber} — {invoice.title} — {money(invoice.amount)}</span><button disabled={busy || invoice.paidAmount > 0} onClick={() => cancel('invoices', invoice.id)} className="rounded border px-3 py-1 text-red-700 disabled:opacity-40">Annuler la facture</button></div>
-        {invoice.balance > 0 && <div className="flex gap-3"><button disabled={busy} onClick={()=>openPlan(invoice)} className="rounded border px-3 py-1">Échéancier</button><button disabled={busy} onClick={()=>openReminder(invoice)} className="rounded border px-3 py-1">Préparer une relance e-mail</button></div>}
+        {invoice.balance > 0 && <div className="flex gap-3"><button disabled={busy} onClick={()=>openPlan(invoice)} className="rounded border px-3 py-1">Échéancier</button><button disabled={busy} onClick={()=>openReminder(invoice)} className="rounded border px-3 py-1">Préparer une relance e-mail</button><button disabled={busy} onClick={()=>openWhatsappReminder(invoice)} className="rounded border border-emerald-300 px-3 py-1 text-emerald-700">Relance WhatsApp</button></div>}
         {invoice.payments?.map((payment: any) => <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>{payment.paymentNumber} — {money(payment.amount)} — {payment.receivedBy} {payment.cancelledAt ? `— Annulé par ${payment.cancelledByName} : ${payment.cancellationReason}` : ''}</span>{!payment.cancelledAt && <button disabled={busy} onClick={() => cancel('payments', payment.id)} className="rounded border px-3 py-1 text-red-700">Annuler ce paiement</button>}</div>)}
       </div>)}
     </section>

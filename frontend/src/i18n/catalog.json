@@ -4983,5 +4983,20 @@
     "fr": "Halkhas coraniques",
     "en": "Quran circles",
     "ar": "الحلقات القرآنية"
+  },
+  "WhatsApp messages": {
+    "fr": "Messages WhatsApp",
+    "en": "WhatsApp messages",
+    "ar": "رسائل واتساب"
+  },
+  "Username or phone number": {
+    "fr": "Identifiant ou numéro de téléphone",
+    "en": "Username or phone number",
+    "ar": "اسم المستخدم أو رقم الهاتف"
+  },
+  "Username or phone number (77 123 45 67)": {
+    "fr": "Identifiant ou numéro (77 123 45 67)",
+    "en": "Username or phone number (77 123 45 67)",
+    "ar": "اسم المستخدم أو الرقم (77 123 45 67)"
   }
 }

@@ -33,6 +33,7 @@ export const Layout: React.FC = () => {
     { to: '/', label: t("Dashboard"), icon: navigationVisuals['/'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/students', label: t("Enrollment & Students"), icon: navigationVisuals['/students'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT'] },
     { to: '/quran-circles', label: t("Quran circles"), icon: navigationVisuals['/quran-circles'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
+    { to: '/notifications', label: t("WhatsApp messages"), icon: navigationVisuals['/notifications'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/parent-portal', label: 'Espace parents', icon: navigationVisuals['/parent-portal'].icon, roles: ['PARENT'] },
     { to: '/academic-transition', label: 'Passage d’année', icon: navigationVisuals['/academic-transition'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
     { to: '/parents', label: t("Parents & Guardians"), icon: navigationVisuals['/parents'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },

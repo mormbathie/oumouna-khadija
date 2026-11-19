@@ -89,6 +89,15 @@ export const dataTransferApi = {
   },
 };
 
+export const notificationsApi = {
+  journal: (params?: { kind?: string; studentId?: string }) => api.get('/notifications', { params }).then((r) => r.data),
+  absences: (date: string) => api.get('/notifications/absences', { params: { date } }).then((r) => r.data),
+  payment: (paymentId: string) => api.get(`/notifications/payments/${paymentId}`).then((r) => r.data),
+  reminder: (invoiceId: string) => api.get(`/notifications/invoices/${invoiceId}/reminder`).then((r) => r.data),
+  announcement: (data: { audience: string; classroomId?: string; quranCircle?: string; message: string }) => api.post('/notifications/announcements', data).then((r) => r.data),
+  logOpened: (data: { kind: string; referenceId?: string; phone: string; studentId?: string; parentId?: string; message: string }) => api.post('/notifications/opened', data).then((r) => r.data),
+};
+
 export const dashboardApi = {
   getSummary: (params?: {mode?:string;start?:string;end?:string}) => api.get('/dashboard/summary', {params}).then((r) => r.data),
 };
@@ -127,6 +136,10 @@ export const parentsApi = {
   create: (data: any) => api.post('/parents', data).then((r) => r.data),
   update: (id: string, data: any) => api.put(`/parents/${id}`, data).then((r) => r.data),
   delete: (id: string) => api.delete(`/parents/${id}`).then((r) => r.data),
+  account: (id: string) => api.get(`/parents/${id}/account`).then((r) => r.data),
+  createAccount: (id: string) => api.post(`/parents/${id}/account`).then((r) => r.data as { username: string; temporaryPassword: string }),
+  resetAccountPassword: (id: string) => api.post(`/parents/${id}/account/reset-password`).then((r) => r.data as { username: string; temporaryPassword: string }),
+  setAccountEnabled: (id: string, enabled: boolean) => api.patch(`/parents/${id}/account/status`, { enabled }).then((r) => r.data),
   uploadDocument: (id: string, category: string, file: File) => {
     const data = new FormData();
     data.append('file', file);

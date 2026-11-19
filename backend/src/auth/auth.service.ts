@@ -1,6 +1,14 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { whatsappNumber } from '../notifications/whatsapp-templates';
+
+// Parents sign in with their mobile number, typed in any usual notation.
+export function loginIdentifier(value: string) {
+  const input = String(value || '').trim();
+  if (/^[+\d][\d\s().-]*$/.test(input)) return whatsappNumber(input) || input;
+  return input;
+}
 
 @Injectable()
 export class AuthService {
@@ -37,7 +45,8 @@ export class AuthService {
     return response.json();
   }
 
-  async directLogin(username: string, password: string, totp?: string) {
+  async directLogin(rawUsername: string, password: string, totp?: string) {
+    const username = loginIdentifier(rawUsername);
     try {
       const tokenData = await this.exchangeToken({ grant_type: 'password', username, password, ...(totp ? { totp } : {}) });
 
@@ -75,14 +84,13 @@ export class AuthService {
   }
 
   async getProfile(user: any) {
-    const localUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: user.username },
-          { email: user.email },
-        ],
-      },
-    });
+    // Only defined identifiers: `{ email: undefined }` would match any user.
+    const identifiers = [
+      ...(user.userId ? [{ keycloakId: String(user.userId) }] : []),
+      ...(user.username ? [{ username: String(user.username) }] : []),
+      ...(user.email ? [{ email: String(user.email).toLowerCase() }] : []),
+    ];
+    const localUser = identifiers.length ? await this.prisma.user.findFirst({ where: { OR: identifiers } }) : null;
 
     const rolePriority = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE'];
     const appRole = rolePriority.find((role) => (user.roles || []).includes(role));

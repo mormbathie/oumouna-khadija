@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { normalizeEmail } from '../common/email';
 import { cashDay, dayRange, openCashDay } from '../finances/cash-day';
 import { quranCircleValue } from './quran-circles';
+import { parentStudentScope } from '../auth/parent-scope';
 
 @Injectable()
 export class StudentsService {
@@ -47,12 +48,7 @@ export class StudentsService {
     const isManager = roles.includes('ADMIN') || roles.includes('DIRECTEUR');
     const isTeacher = roles.includes('ENSEIGNANT') && !isManager;
     if (!isManager && roles.includes('PARENT') && !isTeacher) {
-      if (!requester.email || !requester.emailVerified) throw new ForbiddenException('Vérifiez votre adresse e-mail pour accéder aux dossiers de vos enfants.');
-      const ownership = { OR: [
-        { parent: { is: { email: { equals: requester.email, mode: 'insensitive' } } } },
-        { guardians: { some: { parent: { email: { equals: requester.email, mode: 'insensitive' } } } } },
-      ] };
-      where.AND = [...(where.AND || []), ownership];
+      where.AND = [...(where.AND || []), await parentStudentScope(this.prisma, requester)];
     } else if (isTeacher) {
       if (!requester.email) return [];
       const assigned = await this.prisma.classroom.findMany({
@@ -101,7 +97,7 @@ export class StudentsService {
     const isManager = roles.includes('ADMIN') || roles.includes('DIRECTEUR');
     const isTeacher = roles.includes('ENSEIGNANT') && !isManager;
     const isParent = !isManager && !isTeacher && roles.includes('PARENT');
-    if (isParent && (!requester.email || !requester.emailVerified)) throw new ForbiddenException('Vérifiez votre adresse e-mail pour accéder aux dossiers de vos enfants.');
+    const parentScope = isParent ? await parentStudentScope(this.prisma, requester) : null;
     const student = await this.prisma.student.findUnique({
       where: { id },
       include: {
@@ -138,9 +134,7 @@ export class StudentsService {
       throw new NotFoundException(`Élève avec l'ID ${id} non trouvé`);
     }
 
-    const parentEmails = [student.parent, ...(student.guardians || []).map((item: any) => item.parent)]
-      .map((parent: any) => String(parent?.email || '').toLowerCase());
-    if (!isManager && roles.includes('PARENT') && !parentEmails.includes(String(requester.email || '').toLowerCase())) {
+    if (parentScope && !(await this.prisma.student.count({ where: { AND: [{ id }, parentScope] } }))) {
       throw new NotFoundException(`Élève avec l'ID ${id} non trouvé`);
     }
     if (!isManager && roles.includes('ENSEIGNANT') &&
@@ -191,7 +185,7 @@ export class StudentsService {
     if (!student) throw new NotFoundException('Élève introuvable.');
 
     if (!scannerOnly && !isManager && roles.includes('PARENT') && !isTeacher &&
-        String(student.parent?.email || '').toLowerCase() !== String(requester.email || '').toLowerCase()) {
+        !(await this.prisma.student.count({ where: { AND: [{ id }, await parentStudentScope(this.prisma, requester)] } }))) {
       throw new NotFoundException('Élève introuvable.');
     }
     if (!scannerOnly && isTeacher &&

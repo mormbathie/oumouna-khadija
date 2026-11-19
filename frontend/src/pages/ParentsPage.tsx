@@ -10,9 +10,47 @@ import {
   Briefcase,
   GraduationCap,
   X,
-  Plus
+  Plus,
+  MessageCircle
 } from 'lucide-react';
 import { parentsApi } from '../services/api';
+import { ParentAccess } from '../components/ParentAccess';
+
+const ParentWhatsApp: React.FC<{ parent: any; onSaved: () => void }> = ({ parent, onSaved }) => {
+  const [editing, setEditing] = useState(false);
+  const [phone, setPhone] = useState(parent.whatsappPhone || '');
+  const [optOut, setOptOut] = useState(Boolean(parent.whatsappOptOut));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const save = async () => {
+    setSaving(true); setError('');
+    try { await parentsApi.update(parent.id, { whatsappPhone: phone.trim(), whatsappOptOut: optOut }); setEditing(false); onSaved(); }
+    catch (requestError: any) { setError(requestError.response?.data?.message || 'Enregistrement impossible.'); }
+    finally { setSaving(false); }
+  };
+  if (!editing) return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="flex items-center space-x-2">
+        <MessageCircle className={`w-3.5 h-3.5 shrink-0 ${parent.whatsappOptOut ? 'text-slate-300' : 'text-green-600'}`} />
+        <span className={parent.whatsappOptOut ? 'italic text-slate-400' : ''}>{parent.whatsappOptOut ? 'Refuse les messages WhatsApp' : `WhatsApp : ${parent.whatsappPhone || parent.phone}`}</span>
+      </span>
+      <button type="button" onClick={() => setEditing(true)} className="text-[11px] font-semibold text-amber-700">Modifier</button>
+    </div>
+  );
+  return (
+    <div className="space-y-2 rounded-lg border border-green-100 bg-green-50/50 p-2">
+      <label className="block text-[11px] font-medium text-slate-600">Numéro WhatsApp (si différent du téléphone)
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={parent.phone} className="mt-1 w-full rounded border border-slate-200 bg-white p-1.5 text-xs" />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-slate-600"><input type="checkbox" checked={optOut} onChange={(e) => setOptOut(e.target.checked)} />Le parent refuse les messages WhatsApp</label>
+      {error && <p className="text-[11px] text-rose-700">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={() => { setEditing(false); setPhone(parent.whatsappPhone || ''); setOptOut(Boolean(parent.whatsappOptOut)); }} className="rounded border px-2 py-1 text-[11px]">Annuler</button>
+        <button type="button" disabled={saving} onClick={() => void save()} className="rounded bg-green-600 px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-50">Enregistrer</button>
+      </div>
+    </div>
+  );
+};
 
 export const ParentsPage: React.FC = () => {
   const [parents, setParents] = useState<any[]>([]);
@@ -141,6 +179,8 @@ export const ParentsPage: React.FC = () => {
                     <Phone className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span className="font-medium text-slate-800">{p.phone}</span>
                   </div>
+                  <ParentWhatsApp key={`${p.id}-${p.whatsappPhone || ''}-${p.whatsappOptOut}`} parent={p} onSaved={loadParents} />
+                  <ParentAccess parent={p} onChanged={loadParents} />
                   {p.email && (
                     <div className="flex items-center space-x-2">
                       <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />

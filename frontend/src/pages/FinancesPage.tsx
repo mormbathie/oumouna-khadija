@@ -19,14 +19,17 @@ import {
   School,
   Sparkles,
   Mail,
+  MessageCircle,
 } from 'lucide-react';
-import { financesApi, classesApi, studentsApi } from '../services/api';
+import { financesApi, classesApi, studentsApi, notificationsApi } from '../services/api';
 import { printPaymentReceipt } from '../utils/receipt';
+import { WhatsAppModal } from '../components/WhatsAppLinks';
 
 export const FinancesPage: React.FC = () => {
   const { hasRole } = useAuth();
   const linkedStudentId = new URLSearchParams(window.location.search).get('studentId') || '';
   const [correctionInvoice, setCorrectionInvoice] = useState<any>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState<any>(null);
   const [correctionPaymentId, setCorrectionPaymentId] = useState('');
   const [correctionAmount, setCorrectionAmount] = useState('');
   const [correctionReason, setCorrectionReason] = useState('');
@@ -261,6 +264,11 @@ export const FinancesPage: React.FC = () => {
     catch (error: any) { alert(error.response?.data?.message || error.message); }
   };
 
+  const whatsappReceipt = async (payment: any) => {
+    try { setWhatsappMessage(await notificationsApi.payment(payment.id)); }
+    catch (error: any) { alert(error.response?.data?.message || error.message); }
+  };
+
   const emailReceipt = async (payment: any) => {
     try { const result = await financesApi.emailReceipt(payment.id); alert(result.sent ? `Reçu envoyé à ${result.recipient}.` : 'Aucun e-mail parent enregistré.'); }
     catch (error: any) { alert(error.response?.data?.message || error.message); }
@@ -270,6 +278,7 @@ export const FinancesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {whatsappMessage && <WhatsAppModal message={whatsappMessage} onClose={() => setWhatsappMessage(null)} />}
       {/* Top Banner & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -494,6 +503,7 @@ export const FinancesPage: React.FC = () => {
                           </button>
                         )}
                         {inv.payments?.some((payment: any) => !payment.cancelledAt) && <button onClick={() => void emailReceipt(inv.payments.find((payment: any) => !payment.cancelledAt))} className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px]" title="Envoyer le reçu par e-mail"><Mail className="h-3 w-3" />Reçu e-mail</button>}
+                        {inv.payments?.some((payment: any) => !payment.cancelledAt) && <button onClick={() => void whatsappReceipt(inv.payments.find((payment: any) => !payment.cancelledAt))} className="inline-flex items-center gap-1 rounded-lg border border-green-200 px-2 py-1 text-[11px] text-green-700" title="Envoyer le reçu sur WhatsApp"><MessageCircle className="h-3 w-3" />Reçu WhatsApp</button>}
                       </td>
                     </tr>
                   );
@@ -804,6 +814,14 @@ export const FinancesPage: React.FC = () => {
                 className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs hover:bg-white"
               >
                 {t("Close")}</button>
+              {currentReceiptPayment.payment?.id && !currentReceiptPayment.payment.cancelledAt && <button
+                type="button"
+                onClick={() => { setShowReceiptModal(false); void whatsappReceipt(currentReceiptPayment.payment); }}
+                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold shadow-md"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Envoyer sur WhatsApp</span>
+              </button>}
               <button
                 type="button"
                 onClick={handlePrintReceipt}

@@ -26,13 +26,16 @@ import { StaffAttendancePage } from './pages/StaffAttendancePage';
 import { DataTransferPage } from './pages/DataTransferPage';
 import { FeeSettingsPage } from './pages/FeeSettingsPage';
 import { QuranCirclesPage } from './pages/QuranCirclesPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 const AttendanceScanPage = lazy(() => import('./pages/AttendanceScanPage').then((module) => ({ default: module.AttendanceScanPage })));
 
 const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { authenticated, initializing } = useAuth();
+  const { authenticated, initializing, user } = useAuth();
   const location = useLocation();
   if (initializing) return <div className="grid min-h-screen place-items-center text-slate-500">{t("Checking your session…")}</div>;
+  // A temporary password (parent access, administrator reset) must be replaced before anything else.
+  if (authenticated && user?.mustChangePassword && location.pathname !== '/password') return <Navigate to="/password" replace />;
   return authenticated ? <>{children}</> : <Navigate to="/login" replace state={location.pathname === '/teacher-badge' ? { returnTo: location.pathname + location.hash } : undefined} />;
 };
 
@@ -57,6 +60,7 @@ export const App: React.FC = () => (
           <Route index element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><DashboardPage /></RequireRoles>} />
           <Route path="students" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT']}><StudentsPage /></RequireRoles>} />
           <Route path="quran-circles" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR']}><QuranCirclesPage /></RequireRoles>} />
+          <Route path="notifications" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><NotificationsPage /></RequireRoles>} />
           <Route path="parent-portal" element={<RequireRoles roles={['PARENT']}><ParentPortalPage /></RequireRoles>} />
           <Route path="academic-transition" element={<RequireRoles roles={['ADMIN','DIRECTEUR']}><AcademicTransitionPage /></RequireRoles>} />
           <Route path="parents" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><ParentsPage /></RequireRoles>} />

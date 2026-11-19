@@ -92,12 +92,19 @@ model User {
   role        Role     @default(ENSEIGNANT)
   phone       String?
   mustChangePassword Boolean @default(false)
+  // Parent account created from a parent record (sign-in with the phone number).
+  // One account per parent is enforced by the application and by the unique Keycloak username;
+  // no unique index here: `prisma db push` refuses to add one to an existing table at startup.
+  parentId    String?
+  parent      Parent?  @relation("ParentAccount", fields: [parentId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   classrooms  Classroom[] @relation("TeacherClasses")
   staffAttendances StaffAttendance[]
   staffCard StaffQrCard?
+
+  @@index([parentId])
 }
 
 model StaffQrCard {
@@ -188,6 +195,9 @@ model Parent {
   address     String?
   profession  String?
   relation    String?   @default("Parent") // "Père", "Mère", "Tuteur"
+  whatsappPhone  String?            // Numéro WhatsApp si différent du téléphone principal
+  whatsappOptOut Boolean @default(false) // Le parent ne souhaite pas recevoir de messages WhatsApp
+  accounts    User[]    @relation("ParentAccount")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -556,4 +566,27 @@ model Refund {
   createdAt DateTime @default(now())
   @@index([paymentId, createdAt])
   @@index([refundedOn])
+}
+
+// Additive log of WhatsApp messages prepared for parents. The app only opens WhatsApp with
+// a pre-filled text (free wa.me link); the staff member sends it from the school's phone.
+model WhatsAppMessageLog {
+  id             String   @id @default(uuid())
+  kind           String   // ABSENCE, LATE, PAYMENT, REMINDER, ANNOUNCEMENT
+  referenceId    String?  // Attendance, payment or invoice concerned; announcement batch
+  studentId      String?
+  parentId       String?
+  recipientPhone String
+  message        String
+  dedupeKey      String   @unique
+  openCount      Int      @default(1)
+  actorId        String
+  actorName      String
+  actorRole      String
+  createdAt      DateTime @default(now())
+  openedAt       DateTime @default(now())
+
+  @@index([referenceId])
+  @@index([studentId, openedAt])
+  @@index([openedAt])
 }

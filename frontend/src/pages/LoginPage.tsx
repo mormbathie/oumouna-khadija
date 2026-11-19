@@ -75,9 +75,9 @@ export const LoginPage: React.FC = () => {
             <p className="text-xs text-slate-500">{t('The link expires after 15 minutes. Check your spam folder too.')}</p>
           </form> : <form onSubmit={handleSubmit} className="space-y-4 text-sm">
             <div>
-              <label htmlFor="username" className="font-semibold text-slate-700 block mb-1">{t('Username')}</label>
+              <label htmlFor="username" className="font-semibold text-slate-700 block mb-1">{t('Username or phone number')}</label>
               <input id="username" type="text" autoComplete="username" required value={username}
-                onChange={(event) => setUsername(event.target.value)} placeholder={t('Your username')}
+                onChange={(event) => setUsername(event.target.value)} placeholder={t('Username or phone number (77 123 45 67)')}
                 className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none text-slate-800" />
             </div>
             <div>
