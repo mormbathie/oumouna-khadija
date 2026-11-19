@@ -95,12 +95,14 @@ export const dashboardApi = {
 
 export const studentsApi = {
   quote: (data: any) => api.post('/students/fee-quote', data).then(r=>r.data),
-  getAll: (params?: { classId?: string; search?: string; status?: string; fullDay?: string }) =>
+  getAll: (params?: { classId?: string; quranCircle?: string; search?: string; status?: string; fullDay?: string }) =>
     api.get('/students', { params }).then((r) => r.data),
   getOne: (id: string) => api.get(`/students/${id}`).then((r) => r.data),
   getPhoto: (id: string) => api.get(`/students/${id}/photo`, { responseType: 'blob' }).then((r) => r.data),
   create: (data: any) => api.post('/students', data).then((r) => r.data),
   update: (id: string, data: any) => api.put(`/students/${id}`, data).then((r) => r.data),
+  assignQuranCircle: (data: { studentIds: string[]; quranCircle: string | null }) =>
+    api.put('/students/quran-circle/batch', data).then((r) => r.data),
   applyRegistrationDiscount: (id: string, data: { invoiceId: string; amount: number; type: string; reason: string }) =>
     api.put(`/students/${id}/registration-discount`, data).then((r) => r.data),
   refundRegistrationDiscount: (id: string, data: { invoiceId: string; refundedOn: string; paymentMethod: string; recipient: string; requestKey: string }) =>

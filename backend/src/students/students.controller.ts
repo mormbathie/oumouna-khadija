@@ -20,19 +20,28 @@ export class StudentsController {
   @ApiQuery({ name: 'classId', required: false })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'quranCircle', required: false })
   async findAll(
     @Query('classId') classId?: string,
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('fullDay') fullDay?: string,
+    @Query('quranCircle') quranCircle?: string,
     @CurrentUser() user?: any,
   ) {
-    return this.studentsService.findAll({ classId, search, status, fullDay }, user);
+    return this.studentsService.findAll({ classId, search, status, fullDay, quranCircle }, user);
   }
 
   @Post('fee-quote')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
   async quote(@Body() body: any) { return this.studentsService.quote(body); }
+
+  @Put('quran-circle/batch')
+  @Roles('ADMIN', 'DIRECTEUR')
+  @ApiOperation({ summary: 'Affecter plusieurs élèves à une halkha coranique' })
+  async assignQuranCircle(@Body() body: { studentIds: string[]; quranCircle?: string | null }, @CurrentUser() actor: any) {
+    return this.studentsService.assignQuranCircle(body, actor);
+  }
 
   @Put(':id/registration-discount')
   @Roles('DIRECTEUR')

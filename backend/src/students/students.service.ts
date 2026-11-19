@@ -8,17 +8,22 @@ import { ActingUser, actorStamp } from '../audit/actor';
 import { randomUUID } from 'node:crypto';
 import { normalizeEmail } from '../common/email';
 import { cashDay, dayRange, openCashDay } from '../finances/cash-day';
+import { quranCircleValue } from './quran-circles';
 
 @Injectable()
 export class StudentsService {
   constructor(private prisma: PrismaService, private readonly documents: DocumentsService) {}
 
-  async findAll(params: { classId?: string; search?: string; status?: string; fullDay?: string }, requester: any) {
+  async findAll(params: { classId?: string; quranCircle?: string; search?: string; status?: string; fullDay?: string }, requester: any) {
     const { classId, search, status, fullDay } = params;
 
     // A departure preserves the complete archive but removes the pupil from every active roster.
     // Departed pupils remain available from the dedicated "Départs et remboursements" register.
     const where: any = { departure: { is: null } };
+    if (params.quranCircle !== undefined) {
+      try { where.quranCircle = quranCircleValue(params.quranCircle); }
+      catch (error: any) { throw new BadRequestException(error.message); }
+    }
     if (fullDay !== undefined) {
       if (!['true', 'false'].includes(fullDay)) throw new BadRequestException('Filtre journée continue invalide.');
       where.fullDay = fullDay === 'true';
@@ -34,6 +39,7 @@ export class StudentsService {
         { lastName: { contains: search, mode: 'insensitive' } },
         { matricule: { contains: search, mode: 'insensitive' } },
         { schoolMatricule: { contains: search, mode: 'insensitive' } },
+        { quranCircle: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -151,7 +157,7 @@ export class StudentsService {
       where: { studentId: id },
       _count: { _all: true },
     }), (!isTeacher && !isParent) ? this.prisma.businessAudit.findMany({
-      where: { entityId: id, action: { in: ['STUDENT_CREATED', 'STUDENT_UPDATED', 'STUDENT_DEPARTED'] } },
+      where: { entityId: id, action: { in: ['STUDENT_CREATED', 'STUDENT_UPDATED', 'STUDENT_DEPARTED', 'STUDENT_QURAN_CIRCLE_ASSIGNED'] } },
       orderBy: { createdAt: 'desc' },
       take: 100,
     }) : Promise.resolve([])]);
@@ -252,6 +258,7 @@ export class StudentsService {
     schoolItemsProvided?: string;
     originClass?: string;
     quranLevel?: string;
+    quranCircle?: string;
     duplicateOverrideReason?: string;
     registrationKind?: 'NEW' | 'RENEWAL';
   }, actor: ActingUser) {
@@ -259,7 +266,12 @@ export class StudentsService {
     const schoolMatricule = String(data.schoolMatricule || '').trim() || null;
     const schoolEntryDate = this.schoolEntryDate(data.schoolEntryDate, data.dateOfBirth);
     const registrationKind: 'NEW' | 'RENEWAL' = data.registrationKind === 'RENEWAL' ? 'RENEWAL' : 'NEW';
+    let quranCircle: string | null | undefined;
+    try { quranCircle = quranCircleValue(data.quranCircle); }
+    catch (error: any) { throw new BadRequestException(error.message); }
     if (schoolMatricule && schoolMatricule.length > 100) throw new BadRequestException('Le matricule école ne peut pas dépasser 100 caractères.');
+    if (String(data.originClass || '').trim().length > 400) throw new BadRequestException('La classe d’origine ne peut pas dépasser 400 caractères.');
+    if (String(data.quranLevel || '').trim().length > 400) throw new BadRequestException('Le niveau du Coran ne peut pas dépasser 400 caractères.');
     const options = schoolOptions(data as any);
     const selectedClass = data.classroomId ? await this.prisma.classroom.findUnique({ where: { id: data.classroomId }, }) : null;
     if (data.classroomId && !selectedClass) throw new BadRequestException('Classe sélectionnée introuvable.');
@@ -325,6 +337,9 @@ export class StudentsService {
         gender: data.gender,
         dateOfBirth: new Date(data.dateOfBirth),
         placeOfBirth: data.placeOfBirth,
+        originClass: data.originClass?.trim() || null,
+        quranLevel: data.quranLevel?.trim() || null,
+        quranCircle: quranCircle ?? null,
         address: data.address,
         bloodGroup: data.bloodGroup,
         photoUrl: data.photoUrl,
@@ -433,6 +448,36 @@ export class StudentsService {
       projectedBalance: projectedAmount === null ? null : Math.max(0, projectedAmount - (invoice?.paidAmount || 0)) };
   }
 
+  async assignQuranCircle(data: { studentIds: string[]; quranCircle?: string | null }, actor: ActingUser) {
+    if (!Array.isArray(data.studentIds)) throw new BadRequestException('Sélection d’élèves invalide.');
+    const studentIds = [...new Set(data.studentIds.map(id => String(id || '').trim()).filter(Boolean))];
+    if (!studentIds.length) throw new BadRequestException('Sélectionnez au moins un élève.');
+    if (studentIds.length > 500) throw new BadRequestException('Vous ne pouvez pas modifier plus de 500 élèves à la fois.');
+    let quranCircle: string | null;
+    try { quranCircle = quranCircleValue(data.quranCircle ?? null) ?? null; }
+    catch (error: any) { throw new BadRequestException(error.message); }
+    const author = actorStamp(actor);
+    return this.prisma.$transaction(async tx => {
+      const students = await tx.student.findMany({
+        where: { id: { in: studentIds }, departure: { is: null } },
+        select: { id: true, quranCircle: true },
+      });
+      if (students.length !== studentIds.length) {
+        throw new BadRequestException('Un ou plusieurs élèves sont introuvables ou ont quitté l’établissement. Actualisez la liste.');
+      }
+      const changed = students.filter(student => student.quranCircle !== quranCircle);
+      if (changed.length) {
+        await tx.student.updateMany({ where: { id: { in: changed.map(student => student.id) } }, data: { quranCircle, updatedById: author.id, updatedByName: author.name } });
+        await tx.businessAudit.createMany({ data: changed.map(student => ({
+          action: 'STUDENT_QURAN_CIRCLE_ASSIGNED', entityId: student.id,
+          actorId: author.id, actorName: author.name, actorRole: author.role,
+          details: JSON.stringify({ previousQuranCircle: student.quranCircle, quranCircle }),
+        })) });
+      }
+      return { selectedCount: studentIds.length, updatedCount: changed.length, quranCircle };
+    });
+  }
+
   async applyRegistrationDiscount(studentId: string, data: { invoiceId?: string; amount?: number; type?: string; reason?: string }, actor: ActingUser) {
     const author = actorStamp(actor);
     const amount = Number(data.amount);
@@ -538,6 +583,17 @@ export class StudentsService {
     studentData.updatedByName = author.name;
     for (const field of ['firstName', 'lastName', 'gender', 'placeOfBirth', 'address', 'bloodGroup', 'status', 'photoUrl']) {
       if (data[field] !== undefined) studentData[field] = data[field];
+    }
+    for (const field of ['originClass', 'quranLevel']) {
+      if (data[field] !== undefined) {
+        const value = String(data[field] || '').trim();
+        if (value.length > 400) throw new BadRequestException(`${field === 'originClass' ? 'La classe d’origine' : 'Le niveau du Coran'} ne peut pas dépasser 400 caractères.`);
+        studentData[field] = value || null;
+      }
+    }
+    if (data.quranCircle !== undefined) {
+      try { studentData.quranCircle = quranCircleValue(data.quranCircle); }
+      catch (error: any) { throw new BadRequestException(error.message); }
     }
     if (data.schoolMatricule !== undefined) {
       const value = String(data.schoolMatricule || '').trim();

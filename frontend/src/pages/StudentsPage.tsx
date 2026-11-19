@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { classesApi, parentsApi, studentsApi } from '../services/api';
+import { quranCircles } from '../config/quranCircles';
 
 const studentDocuments: { value: string; label: string; accept: string }[] = [
   { value: 'BIRTH_CERTIFICATE', label: 'Extrait de naissance', accept: '.pdf,.jpg,.jpeg,.png,.webp' },
@@ -31,6 +32,7 @@ const formatError = (error: any) => {
 };
 const inputClass = 'mt-1 w-full min-w-0 rounded-lg border border-slate-200 bg-white p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500';
 const discountLabel = (type?: string) => ({ DISCOUNT: 'Réduction accordée', SOCIAL_CASE: 'Cas social', STAFF_CHILD_NP: 'Enfant personnel NP', STAFF_CHILD_P: 'Enfant personnel P' }[type || ''] || 'Réduction accordée');
+const studentActionLabel = (action: string) => ({ STUDENT_CREATED: 'Dossier créé', STUDENT_UPDATED: 'Dossier modifié', STUDENT_DEPARTED: 'Départ enregistré', STUDENT_QURAN_CIRCLE_ASSIGNED: 'Halkha coranique modifiée' }[action] || action);
 const emptyGuardian = (relation = 'Mother') => ({ firstName: '', lastName: '', phone: '', email: '', address: '', profession: '', relation });
 
 export const StudentsPage: React.FC = () => {
@@ -49,6 +51,7 @@ export const StudentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [selectedQuranCircle, setSelectedQuranCircle] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const attendanceSummary = selectedStudent?.attendanceSummary || { total: 0, present: 0, absent: 0, late: 0, excused: 0 };
@@ -70,7 +73,7 @@ export const StudentsPage: React.FC = () => {
   const [savingRefund, setSavingRefund] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', gender: 'MALE', dateOfBirth: '2019-01-01',
-    placeOfBirth: '', bloodGroup: '', address: '', classroomId: '', schoolMatricule: '', schoolEntryDate: new Date().toISOString().slice(0, 10), originClass: '', quranLevel: '',
+    placeOfBirth: '', bloodGroup: '', address: '', classroomId: '', schoolMatricule: '', schoolEntryDate: new Date().toISOString().slice(0, 10), originClass: '', quranLevel: '', quranCircle: '',
     parentChoice: 'new', parentId: '', parentFirstName: '', parentLastName: '',
     parentPhone: '', parentEmail: '', parentAddress: '', parentProfession: '',
     parentRelation: 'Father', generateInvoice: true, registrationKind: 'NEW' as 'NEW'|'RENEWAL',
@@ -82,7 +85,7 @@ export const StudentsPage: React.FC = () => {
     try {
       setLoading(true);
       const [studentsRes, classesRes, parentsRes] = await Promise.all([
-        studentsApi.getAll({ search, classId: selectedClass || undefined }),
+        studentsApi.getAll({ search, classId: selectedClass || undefined, quranCircle: selectedQuranCircle || undefined }),
         parentPortal ? Promise.resolve([]) : classesApi.getAll(),
         canRegister ? parentsApi.getAll() : Promise.resolve([]),
       ]);
@@ -99,7 +102,7 @@ export const StudentsPage: React.FC = () => {
     }
   };
 
-  useEffect(() => { void loadData(); }, [selectedClass]);
+  useEffect(() => { void loadData(); }, [selectedClass, selectedQuranCircle]);
 
   useEffect(() => {
     let active = true;
@@ -165,6 +168,7 @@ export const StudentsPage: React.FC = () => {
       schoolEntryDate: selectedStudent.schoolEntryDate ? new Date(selectedStudent.schoolEntryDate).toISOString().slice(0, 10) : '',
       originClass: selectedStudent.originClass || '',
       quranLevel: selectedStudent.quranLevel || '',
+      quranCircle: selectedStudent.quranCircle || '',
       classroomId: selectedStudent.enrollments?.[0]?.classroomId || '',
       registrationKind: selectedStudent.enrollments?.[0]?.registrationKind === 'RENEWAL' ? 'RENEWAL' : 'NEW',
       supplies: selectedStudent.supplies || false, fullDay: selectedStudent.fullDay || false, transportZone: selectedStudent.transportZone || null, karate: selectedStudent.karate || false, eveningClasses: selectedStudent.eveningClasses || false, hairCare: selectedStudent.hairCare || false, pharmacyKit: selectedStudent.pharmacyKit || false, emergencyContactName: selectedStudent.emergencyContactName || '', emergencyContactPhone: selectedStudent.emergencyContactPhone || '', healthNotes: selectedStudent.healthNotes || '', schoolItemsProvided: selectedStudent.schoolItemsProvided || '',
@@ -257,6 +261,7 @@ export const StudentsPage: React.FC = () => {
         schoolEntryDate: formData.schoolEntryDate,
         originClass: formData.originClass.trim() || undefined,
         quranLevel: formData.quranLevel.trim() || undefined,
+        quranCircle: formData.quranCircle || undefined,
         registrationKind: formData.registrationKind,
         generateInvoice: formData.generateInvoice,
         supplies: formData.supplies, fullDay: formData.fullDay, transportZone: formData.transportZone, karate: formData.karate, eveningClasses: formData.eveningClasses, hairCare: formData.hairCare, pharmacyKit: formData.pharmacyKit, emergencyContactName: formData.emergencyContactName, emergencyContactPhone: formData.emergencyContactPhone, healthNotes: formData.healthNotes, schoolItemsProvided: formData.schoolItemsProvided,
@@ -292,7 +297,7 @@ export const StudentsPage: React.FC = () => {
         created = await studentsApi.create({ ...payload, duplicateOverrideReason: reason.trim() });
       }
       setShowAddModal(false);
-      setFormData((previous) => ({ ...previous, firstName: '', lastName: '', schoolMatricule: '', schoolEntryDate: new Date().toISOString().slice(0, 10), originClass: '', quranLevel: '', registrationKind: 'NEW', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentAddress: '', parentProfession: '', additionalGuardians: [], supplies: false, fullDay: false, transportZone: null, karate: false, eveningClasses: false, hairCare: false, pharmacyKit: false, emergencyContactName: '', emergencyContactPhone: '', healthNotes: '', schoolItemsProvided: '', placeOfBirth: '', address: '', bloodGroup: '' }));
+      setFormData((previous) => ({ ...previous, firstName: '', lastName: '', schoolMatricule: '', schoolEntryDate: new Date().toISOString().slice(0, 10), originClass: '', quranLevel: '', quranCircle: '', registrationKind: 'NEW', parentFirstName: '', parentLastName: '', parentPhone: '', parentEmail: '', parentAddress: '', parentProfession: '', additionalGuardians: [], supplies: false, fullDay: false, transportZone: null, karate: false, eveningClasses: false, hairCare: false, pharmacyKit: false, emergencyContactName: '', emergencyContactPhone: '', healthNotes: '', schoolItemsProvided: '', placeOfBirth: '', address: '', bloodGroup: '' }));
       await loadData();
       await handleOpenDetails(created.id, manager ? 'documents' : 'overview');
     } catch (error: any) {
@@ -397,7 +402,7 @@ export const StudentsPage: React.FC = () => {
         {canRegister && <button onClick={() => setShowAddModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-medium text-white shadow-md hover:bg-amber-700"><UserPlus className="h-4 w-4" /><span>{t("New enrollment")}</span></button>}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 lg:flex-row lg:items-center lg:p-4">
         <form onSubmit={handleSearchSubmit} className="relative w-full sm:max-w-sm">
           <input type="search" placeholder={t("Search by name or student ID…")} value={search} onChange={(event) => setSearch(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -410,6 +415,12 @@ export const StudentsPage: React.FC = () => {
             </select>
           </label>
         )}
+        <label className="flex w-full items-center gap-2 text-xs text-slate-500 lg:ml-auto lg:w-auto">
+          <span className="shrink-0">Halkha :</span>
+          <select value={selectedQuranCircle} onChange={(event) => setSelectedQuranCircle(event.target.value)} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 lg:max-w-[310px]" dir="rtl">
+            <option value="">Toutes les halkhas</option>{quranCircles.map((circle) => <option key={circle} value={circle}>{circle}</option>)}
+          </select>
+        </label>
       </div>
 
       <section aria-label={t('Élèves sur mobile')} className="space-y-3 md:hidden">
@@ -417,7 +428,7 @@ export const StudentsPage: React.FC = () => {
           const classroom = student.enrollments?.[0]?.classroom;
           const balance = student.invoices?.reduce((sum: number, inv: any) => sum + inv.balance, 0) || 0;
           return <article key={student.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-            <div className="flex items-start gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 font-bold text-amber-800">{student.firstName?.[0]}{student.lastName?.[0]}</div><div className="min-w-0 flex-1"><h3 className="break-words text-sm font-bold text-slate-900">{student.firstName} {student.lastName}{student.departure && <span className="ml-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">{t("A quitté l’établissement")}</span>}</h3><p className="mt-1 break-all font-mono text-xs text-amber-700">{student.matricule}</p><p className="mt-1 text-xs text-slate-500">{classroom?.name || t('Unassigned')} · {t(student.gender === 'MALE' ? 'Boy' : 'Girl')}</p></div></div>
+            <div className="flex items-start gap-3"><div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 font-bold text-amber-800">{student.firstName?.[0]}{student.lastName?.[0]}</div><div className="min-w-0 flex-1"><h3 className="break-words text-sm font-bold text-slate-900">{student.firstName} {student.lastName}{student.departure && <span className="ml-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">{t("A quitté l’établissement")}</span>}</h3><p className="mt-1 break-all font-mono text-xs text-amber-700">{student.matricule}</p><p className="mt-1 text-xs text-slate-500">{classroom?.name || t('Unassigned')} · {t(student.gender === 'MALE' ? 'Boy' : 'Girl')}</p><p className="mt-1 text-xs font-semibold text-emerald-700" dir={student.quranCircle ? 'rtl' : undefined}>{student.quranCircle || 'Halkha non affectée'}</p></div></div>
             <div className="mt-4 rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">{t('Parent / guardian')}</p><p className="mt-1 text-sm font-medium text-slate-800">{student.parent ? `${student.parent.firstName} ${student.parent.lastName}` : t('Not provided')}</p>{student.parent?.phone && <a href={`tel:${student.parent.phone.replace(/[^+0-9]/g, '')}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-amber-700">{student.parent.phone}</a>}</div>
             <div className="mt-3 flex items-center justify-between gap-2">{canSeeFinances ? <span className={`rounded-full px-2.5 py-1.5 text-xs font-medium ${balance > 0 ? 'bg-amber-50 text-amber-800' : 'bg-amber-50 text-amber-800'}`}>{balance > 0 ? `${t('Balance:')} ${balance.toLocaleString()} ${t('F')}` : t('Paid up')}</span> : <span />}<button onClick={() => void handleOpenDetails(student.id)} className="flex min-h-11 items-center gap-2 rounded-xl bg-amber-600 px-4 text-sm font-semibold text-white"><Eye className="h-4 w-4" />{t('Dossier')}</button></div>
           </article>;
@@ -426,19 +437,20 @@ export const StudentsPage: React.FC = () => {
 
       <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left text-xs">
+          <table className="w-full min-w-[1050px] text-left text-xs">
             <thead className="border-b border-slate-200 bg-slate-50 font-semibold uppercase tracking-wider text-slate-600"><tr>
-              <th className="px-5 py-3.5">{t("Student ID & name")}</th><th className="px-4 py-3.5">{t("Class")}</th><th className="px-4 py-3.5">{t("Gender")}</th><th className="px-4 py-3.5">{t("Parent / guardian")}</th>{canSeeFinances && <th className="px-4 py-3.5">{t("Financial status")}</th>}<th className="px-5 py-3.5 text-right">{t("Actions")}</th>
+              <th className="px-5 py-3.5">{t("Student ID & name")}</th><th className="px-4 py-3.5">{t("Class")}</th><th className="px-4 py-3.5">Halkha coranique</th><th className="px-4 py-3.5">{t("Gender")}</th><th className="px-4 py-3.5">{t("Parent / guardian")}</th>{canSeeFinances && <th className="px-4 py-3.5">{t("Financial status")}</th>}<th className="px-5 py-3.5 text-right">{t("Actions")}</th>
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {loading ? <tr><td colSpan={canSeeFinances ? 6 : 5} className="p-8 text-center text-slate-400">{t("Loading records…")}</td></tr>
-                : students.length === 0 ? <tr><td colSpan={canSeeFinances ? 6 : 5} className="p-8 text-center text-slate-400">{t("No students found.")}</td></tr>
+              {loading ? <tr><td colSpan={canSeeFinances ? 7 : 6} className="p-8 text-center text-slate-400">{t("Loading records…")}</td></tr>
+                : students.length === 0 ? <tr><td colSpan={canSeeFinances ? 7 : 6} className="p-8 text-center text-slate-400">{t("No students found.")}</td></tr>
                   : students.map((student) => {
                     const classroom = student.enrollments?.[0]?.classroom;
                     const balance = student.invoices?.reduce((total: number, invoice: any) => total + invoice.balance, 0) || 0;
                     return <tr key={student.id} className="hover:bg-slate-50">
                       <td className="px-5 py-3.5"><div className="flex items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-800">{student.firstName?.[0]}{student.lastName?.[0]}</div><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-800">{student.firstName} {student.lastName}{student.departure && <span className="ml-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">{t("A quitté l’établissement")}</span>}</p><span className="inline-block rounded bg-amber-50 px-1.5 py-0.5 font-mono text-[11px] text-amber-700">{student.matricule}</span></div></div></td>
                       <td className="px-4 py-3.5"><span className="rounded-md bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">{classroom?.name || t("Unassigned")}</span></td>
+                      <td className="px-4 py-3.5"><span className={student.quranCircle ? 'font-semibold text-emerald-700' : 'italic text-slate-400'} dir={student.quranCircle ? 'rtl' : undefined}>{student.quranCircle || 'Non affectée'}</span></td>
                       <td className="px-4 py-3.5 text-slate-600">{student.gender === 'MALE' ? t("Boy") : t("Girl")}</td>
                       <td className="px-4 py-3.5">{student.parent ? <><p className="font-medium text-slate-700">{student.parent.firstName} {student.parent.lastName}</p><p className="text-[11px] text-slate-400">{student.parent.phone}</p></> : <span className="italic text-slate-400">{t("Not provided")}</span>}</td>
                       {canSeeFinances && <td className="px-4 py-3.5">{balance === 0 ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800"><CheckCircle2 className="h-3 w-3" />{t("Paid up")}</span> : <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-medium text-amber-800"><AlertTriangle className="h-3 w-3" />{t("Balance:")}{balance.toLocaleString()} {t("F")}</span>}</td>}
@@ -466,6 +478,7 @@ export const StudentsPage: React.FC = () => {
                 <label className="text-xs font-medium text-slate-700">Date d’entrée dans l’établissement *<input required type="date" max={new Date().toISOString().slice(0,10)} value={formData.schoolEntryDate} onChange={(e) => setFormData({ ...formData, schoolEntryDate: e.target.value })} className={inputClass} /><span className="mt-1 block text-[11px] font-normal text-slate-500">Date réelle d’arrivée à l’école, même antérieure à la plateforme.</span></label>
                 <label className="text-xs font-medium text-slate-700">Classe d’origine<input value={formData.originClass} onChange={(e) => setFormData({ ...formData, originClass: e.target.value })} maxLength={400} placeholder="Ancienne classe ou établissement" className={inputClass} /></label>
                 <label className="text-xs font-medium text-slate-700">Niveau du Coran<input value={formData.quranLevel} onChange={(e) => setFormData({ ...formData, quranLevel: e.target.value })} maxLength={400} placeholder="Ex. Sourate, hizb ou niveau" className={inputClass} /></label>
+                <label className="text-xs font-medium text-slate-700 sm:col-span-2">Halkha coranique<select value={formData.quranCircle} onChange={(e) => setFormData({ ...formData, quranCircle: e.target.value })} className={inputClass} dir="rtl"><option value="">À affecter plus tard</option>{quranCircles.map((circle) => <option key={circle} value={circle}>{circle}</option>)}</select><span className="mt-1 block text-left text-[11px] font-normal text-slate-500" dir="ltr">Groupe coranique indépendant de la classe scolaire.</span></label>
                 <label className="text-xs font-medium text-slate-700 sm:col-span-2">{t("Student address")}<input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className={inputClass} /></label>
                 <label className="text-xs font-medium text-slate-700 sm:col-span-2">Type d’inscription *<select required value={formData.registrationKind} onChange={(e) => setFormData({ ...formData, registrationKind: e.target.value as 'NEW'|'RENEWAL' })} className={inputClass}><option value="NEW">Nouvelle inscription — tarif de la classe</option><option value="RENEWAL">Réinscription — tarif de la classe</option></select></label>
                 <label className="text-xs font-medium text-slate-700 sm:col-span-2">{t("Assigned class *")}<select required value={formData.classroomId} onChange={(e) => setFormData({ ...formData, classroomId: e.target.value, karate: ['TPS','PS'].includes(classes.find(c=>c.id===e.target.value)?.level) ? false : formData.karate, supplies: ['CI','CP','CE1','CE2','CM1','CM2'].includes(classes.find(c=>c.id===e.target.value)?.level) ? formData.supplies : false, fullDay: supportsFullDay(classes.find(c=>c.id===e.target.value)) ? formData.fullDay : false })} disabled={!classes.length} className={inputClass}><option value="">{classes.length ? t("Choose a class…") : t("No classes created")}</option>{classes.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.name} {t("— initial amount")}{(classroom.effectiveRegistrationFee ?? classroom.registrationFee)?.toLocaleString()} {t("F")}</option>)}</select>{!classes.length && <span className="mt-1 block text-amber-700">{t("Create a class in")}<Link className="underline" to="/classes">{t("Classes & Subjects")}</Link>.</span>}</label>
@@ -524,6 +537,7 @@ export const StudentsPage: React.FC = () => {
                   <label className="text-xs font-medium text-slate-700">Date d’entrée dans l’établissement<input type="date" max={new Date().toISOString().slice(0,10)} value={editData.schoolEntryDate} onChange={(e) => setEditData({ ...editData, schoolEntryDate: e.target.value })} className={inputClass} /><span className="mt-1 block text-[11px] font-normal text-slate-500">À compléter pour les anciens dossiers.</span></label>
                   <label className="text-xs font-medium text-slate-700">Classe d’origine<input value={editData.originClass} onChange={(e) => setEditData({ ...editData, originClass: e.target.value })} maxLength={400} className={inputClass} /></label>
                   <label className="text-xs font-medium text-slate-700">Niveau du Coran<input value={editData.quranLevel} onChange={(e) => setEditData({ ...editData, quranLevel: e.target.value })} maxLength={400} className={inputClass} /></label>
+                  <label className="text-xs font-medium text-slate-700 sm:col-span-2">Halkha coranique<select value={editData.quranCircle || ''} onChange={(e) => setEditData({ ...editData, quranCircle: e.target.value })} className={inputClass} dir="rtl"><option value="">Non affectée</option>{quranCircles.map((circle) => <option key={circle} value={circle}>{circle}</option>)}</select></label>
                   <label className="text-xs font-medium text-slate-700">Type d’inscription<select value={editData.registrationKind || 'NEW'} onChange={(e) => setEditData({ ...editData, registrationKind: e.target.value })} className={inputClass}><option value="NEW">Nouvelle inscription</option><option value="RENEWAL">Réinscription — tarif de la classe</option></select></label>
                   <label className="text-xs font-medium text-slate-700 sm:col-span-2">{t("Adresse")}<input value={editData.address} onChange={(e) => setEditData({ ...editData, address: e.target.value })} className={inputClass} /></label><label className="text-xs font-medium text-slate-700 sm:col-span-2">{t("Current class")}<select value={editData.classroomId} onChange={(e) => setEditData({ ...editData, classroomId: e.target.value, karate: ['TPS','PS'].includes(classes.find(c=>c.id===e.target.value)?.level) ? false : editData.karate, supplies: ['CI','CP','CE1','CE2','CM1','CM2'].includes(classes.find(c=>c.id===e.target.value)?.level) ? editData.supplies : false, fullDay: supportsFullDay(classes.find(c=>c.id===e.target.value)) ? editData.fullDay : false })} className={inputClass}><option value="">{t("Keep unchanged")}</option>{classes.map((classroom) => <option key={classroom.id} value={classroom.id}>{classroom.name}</option>)}</select></label>
                 </div></section>
@@ -534,8 +548,8 @@ export const StudentsPage: React.FC = () => {
               </form> : <>
                 <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-xs sm:grid-cols-4"><div><span className="block text-slate-400">{t("Born")}</span><b className="text-slate-800">{new Date(selectedStudent.dateOfBirth).toLocaleDateString(locale())}</b></div><div><span className="block text-slate-400">{t("Place")}</span><b className="text-slate-800">{selectedStudent.placeOfBirth || t("Not provided")}</b></div><div><span className="block text-slate-400">{t("Class")}</span><b className="text-amber-700">{selectedStudent.enrollments?.[0]?.classroom?.name || t("Unassigned")}</b></div><div><span className="block text-slate-400">{t("Blood type")}</span><b className="text-slate-800">{selectedStudent.bloodGroup || t("Not provided")}</b></div></div>
                 {manager && <div className="rounded-xl border border-slate-200 p-3 text-xs text-slate-600"><p>{t("Created by:")}<strong>{selectedStudent.createdByName || t("History unavailable")}</strong>{selectedStudent.createdByRole ? ` · ${roleLabel(selectedStudent.createdByRole)}` : ''} · {new Date(selectedStudent.createdAt).toLocaleString(locale())}</p><p className="mt-1">{t("Class assigned by:")}<strong>{selectedStudent.enrollments?.[0]?.registeredByName || t("History unavailable")}</strong>{selectedStudent.enrollments?.[0]?.createdAt ? ` · ${new Date(selectedStudent.enrollments[0].createdAt).toLocaleString(locale())}` : ''}</p>{selectedStudent.updatedByName && <p className="mt-1">{t("Last updated by:")}<strong>{selectedStudent.updatedByName}</strong> · {new Date(selectedStudent.updatedAt).toLocaleString(locale())}</p>}</div>}
-                <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-xs"><div><span className="block text-slate-400">Matricule interne</span><b>{selectedStudent.matricule}</b></div><div><span className="block text-slate-400">Matricule historique école</span><b>{selectedStudent.schoolMatricule || 'Non renseigné'}</b></div><div><span className="block text-slate-400">Date d’entrée dans l’établissement</span><b>{selectedStudent.schoolEntryDate ? new Date(selectedStudent.schoolEntryDate).toLocaleDateString(locale()) : 'À compléter'}</b></div><div><span className="block text-slate-400">Classe d’origine</span><b>{selectedStudent.originClass || 'Non renseignée'}</b></div><div><span className="block text-slate-400">Niveau du Coran</span><b>{selectedStudent.quranLevel || 'Non renseigné'}</b></div></div>
-                {manager && selectedStudent.actionHistory?.length > 0 && <div className="rounded-xl border border-slate-200 p-4"><h4 className="mb-2 text-xs font-bold uppercase text-slate-500">Historique horodaté du dossier</h4>{selectedStudent.actionHistory.map((entry:any) => <p key={entry.id} className="border-t border-slate-100 py-2 text-xs text-slate-600"><b>{new Date(entry.createdAt).toLocaleString(locale())}</b> · {entry.actorName} · {entry.action === 'STUDENT_CREATED' ? 'Dossier créé' : entry.action === 'STUDENT_UPDATED' ? 'Dossier modifié' : 'Départ enregistré'}</p>)}</div>}
+                <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 text-xs"><div><span className="block text-slate-400">Matricule interne</span><b>{selectedStudent.matricule}</b></div><div><span className="block text-slate-400">Matricule historique école</span><b>{selectedStudent.schoolMatricule || 'Non renseigné'}</b></div><div><span className="block text-slate-400">Date d’entrée dans l’établissement</span><b>{selectedStudent.schoolEntryDate ? new Date(selectedStudent.schoolEntryDate).toLocaleDateString(locale()) : 'À compléter'}</b></div><div><span className="block text-slate-400">Classe d’origine</span><b>{selectedStudent.originClass || 'Non renseignée'}</b></div><div><span className="block text-slate-400">Halkha coranique</span><b className="text-emerald-700" dir={selectedStudent.quranCircle ? 'rtl' : undefined}>{selectedStudent.quranCircle || 'Non affectée'}</b></div><div><span className="block text-slate-400">Niveau du Coran</span><b>{selectedStudent.quranLevel || 'Non renseigné'}</b></div></div>
+                {manager && selectedStudent.actionHistory?.length > 0 && <div className="rounded-xl border border-slate-200 p-4"><h4 className="mb-2 text-xs font-bold uppercase text-slate-500">Historique horodaté du dossier</h4>{selectedStudent.actionHistory.map((entry:any) => <p key={entry.id} className="border-t border-slate-100 py-2 text-xs text-slate-600"><b>{new Date(entry.createdAt).toLocaleString(locale())}</b> · {entry.actorName} · {studentActionLabel(entry.action)}</p>)}</div>}
                 {(selectedStudent.guardians?.length ? selectedStudent.guardians.map((item:any) => ({ ...item.parent, relation: item.relation })) : selectedStudent.parent ? [selectedStudent.parent] : []).map((parent:any, index:number) => <div key={parent.id || index} className="rounded-xl border border-slate-200 p-4"><h4 className="mb-2 text-xs font-bold uppercase text-slate-500">Responsable {index + 1} · {t(parent.relation || 'Parent')}</h4><div className="flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-slate-800">{parent.firstName} {parent.lastName}</p><p className="text-slate-500">{parent.profession || t("Occupation not provided")}</p><p className="text-slate-500">{parent.email || ''}</p></div><span className="inline-flex items-center gap-1 text-slate-600"><Phone className="h-3.5 w-3.5 text-amber-600" />{parent.phone}</span></div></div>)}
               </>}
               <button type="button" onClick={()=>printStudentInformation(selectedStudent)} className="rounded-lg bg-amber-700 px-4 py-2 text-xs font-semibold text-white">{t('Print student information sheet')}</button>

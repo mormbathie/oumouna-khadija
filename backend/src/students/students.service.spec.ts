@@ -10,6 +10,21 @@ describe('Active student roster', () => {
       where: expect.objectContaining({ departure: { is: null } }),
     }));
   });
+
+  it('filters pupils independently by their Quran circle', async () => {
+    const prisma: any = { student: { findMany: jest.fn(async () => []) } };
+    const service = new StudentsService(prisma, {} as any);
+    const quranCircle = 'حلقة الإمام أبوبكر سل';
+    await service.findAll({ quranCircle }, { roles: ['DIRECTEUR'] });
+    expect(prisma.student.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ quranCircle }),
+    }));
+  });
+
+  it('rejects an unknown Quran circle', async () => {
+    const service = new StudentsService({} as any, {} as any);
+    await expect(service.findAll({ quranCircle: 'Groupe inconnu' }, { roles: ['DIRECTEUR'] })).rejects.toThrow('Halkha coranique invalide');
+  });
 });
 
 describe('Registration adjustments preserve recorded receipts', () => {
@@ -33,6 +48,13 @@ describe('Registration adjustments preserve recorded receipts', () => {
   });
   it('does not reprice an unrelated profile edit',async()=>{
     const {service,tx}=setup();await service.update('child',{firstName:'Updated'},actor);expect(tx.invoice.update).not.toHaveBeenCalled();expect(tx.businessAudit.create).toHaveBeenCalledWith({data:expect.objectContaining({action:'STUDENT_UPDATED',entityId:'child'})});
+  });
+  it('assigns a Quran circle without changing financial data',async()=>{
+    const {service,tx,invoice}=setup();
+    await service.update('child',{quranCircle:'حلقة الحاجة زينب جه'},actor);
+    expect(tx.student.update).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({quranCircle:'حلقة الحاجة زينب جه'})}));
+    expect(tx.invoice.update).not.toHaveBeenCalled();
+    expect(invoice.amount).toBe(100000);
   });
   it('reprices an unpaid registration invoice when the class is corrected',async()=>{
     const {service,invoice,tx}=setup(40000,0);
@@ -69,6 +91,33 @@ describe('Historical school entry date', () => {
   it('rejects a date before birth or in the future', () => {
     expect(() => (service as any).schoolEntryDate('2017-09-15', '2018-04-03')).toThrow('naissance');
     expect(() => (service as any).schoolEntryDate('2999-01-01', '2018-04-03')).toThrow('future');
+  });
+});
+
+describe('Bulk Quran-circle assignment', () => {
+  const actor = { userId: 'director', username: 'direction', roles: ['DIRECTEUR'] };
+  it('updates only changed active pupils and writes an audit entry for each one', async () => {
+    const students = [
+      { id: 'one', quranCircle: null },
+      { id: 'two', quranCircle: 'حلقة الإمام أبوبكر سل' },
+    ];
+    const tx: any = {
+      student: { findMany: jest.fn(async () => students), updateMany: jest.fn(async () => ({ count: 1 })) },
+      businessAudit: { createMany: jest.fn(async () => ({ count: 1 })) },
+    };
+    const prisma: any = { $transaction: jest.fn(async fn => fn(tx)) };
+    const service = new StudentsService(prisma, {} as any);
+    const result = await service.assignQuranCircle({ studentIds: ['one', 'two'], quranCircle: 'حلقة الإمام أبوبكر سل' }, actor);
+    expect(result).toEqual({ selectedCount: 2, updatedCount: 1, quranCircle: 'حلقة الإمام أبوبكر سل' });
+    expect(tx.student.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: { in: ['one'] } } }));
+    expect(tx.businessAudit.createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({ action: 'STUDENT_QURAN_CIRCLE_ASSIGNED', entityId: 'one', actorRole: 'DIRECTEUR' })] });
+  });
+
+  it('refuses a partial batch when a selected pupil is unavailable', async () => {
+    const tx: any = { student: { findMany: jest.fn(async () => [{ id: 'one', quranCircle: null }]), updateMany: jest.fn() }, businessAudit: { createMany: jest.fn() } };
+    const service = new StudentsService({ $transaction: jest.fn(async fn => fn(tx)) } as any, {} as any);
+    await expect(service.assignQuranCircle({ studentIds: ['one', 'missing'], quranCircle: null }, actor)).rejects.toThrow('introuvables');
+    expect(tx.student.updateMany).not.toHaveBeenCalled();
   });
 });
 

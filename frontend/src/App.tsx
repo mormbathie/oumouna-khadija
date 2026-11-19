@@ -25,6 +25,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { StaffAttendancePage } from './pages/StaffAttendancePage';
 import { DataTransferPage } from './pages/DataTransferPage';
 import { FeeSettingsPage } from './pages/FeeSettingsPage';
+import { QuranCirclesPage } from './pages/QuranCirclesPage';
 
 const AttendanceScanPage = lazy(() => import('./pages/AttendanceScanPage').then((module) => ({ default: module.AttendanceScanPage })));
 
@@ -55,6 +56,7 @@ export const App: React.FC = () => (
         <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
           <Route index element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><DashboardPage /></RequireRoles>} />
           <Route path="students" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT']}><StudentsPage /></RequireRoles>} />
+          <Route path="quran-circles" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR']}><QuranCirclesPage /></RequireRoles>} />
           <Route path="parent-portal" element={<RequireRoles roles={['PARENT']}><ParentPortalPage /></RequireRoles>} />
           <Route path="academic-transition" element={<RequireRoles roles={['ADMIN','DIRECTEUR']}><AcademicTransitionPage /></RequireRoles>} />
           <Route path="parents" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><ParentsPage /></RequireRoles>} />

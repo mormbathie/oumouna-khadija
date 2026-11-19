@@ -75,6 +75,7 @@ jobs:
           node test/academic-transition.cjs
           node test/registration-atomicity.cjs
           node test/parent-identity.cjs
+          node test/quran-circles.cjs
           TEST_DATABASE_URL="$DATABASE_URL" node test/additive-financial-patch.cjs
       - name: Verify deployment rollback scenarios
         working-directory: .

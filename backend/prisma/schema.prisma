@@ -209,6 +209,7 @@ model Student {
   placeOfBirth  String?
   originClass   String?
   quranLevel    String?
+  quranCircle   String?       // Halkha coranique, indépendante de la classe scolaire
   gender        Gender
   address       String?
   transportZone Int?
@@ -244,6 +245,7 @@ model Student {
   documents     StudentDocument[]
 
   @@index([schoolMatricule])
+  @@index([quranCircle])
 }
 
 model StudentGuardian {
