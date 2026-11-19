@@ -21,7 +21,8 @@ if containers:
 refs = output('images','--format','{{.Repository}}:{{.Tag}}').splitlines()
 remove=[]
 for ref in refs:
-    if not re.fullmatch(r'mormbathie/oumouna-khadija-(backend|frontend):[a-f0-9]{40}|oumouna-khadija-(backend|frontend):latest',ref):
+    # Release tags, plus old ':latest' tags (published or local) left by earlier deployments.
+    if not re.fullmatch(r'(mormbathie/)?oumouna-khadija-(backend|frontend):([a-f0-9]{40}|latest)',ref):
         continue
     image = json.loads(output('image','inspect',ref))[0]['Id']
     if image not in protected:
