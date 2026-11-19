@@ -87,9 +87,17 @@ printf '%s\n' "$timestamp" > "$staging/.complete"
 mv -- "$staging" "$backup_root/$backup_name"
 trap - EXIT
 
-# Keep completed backups for seven days. Incomplete/unrecognized directories stay.
+# Keep only the most recent completed backups (the one just published included) to save disk space.
+# Names start with a UTC timestamp, so a reverse name sort lists the newest first.
+# Incomplete/unrecognized directories are never counted nor removed.
+keep_backups=2
+kept_backups=0
 while IFS= read -r -d '' old_backup; do
   if [[ -f "$old_backup/.complete" && ! -L "$old_backup/.complete" ]]; then
+    if (( kept_backups < keep_backups )); then
+      kept_backups=$((kept_backups + 1))
+      continue
+    fi
     if ! rm -f -- "$old_backup/postgres.sql.gz" "$old_backup/keycloak.sql.gz" \
       "$old_backup/school-documents.tar.gz" "$old_backup/deployment-config.tar.gz" "$old_backup/.complete" \
       || ! rmdir -- "$old_backup"; then
@@ -97,6 +105,6 @@ while IFS= read -r -d '' old_backup; do
     fi
   fi
 done < <(find "$backup_root" -mindepth 1 -maxdepth 1 -type d \
-  -name '????-??-??T??-??-??Z-*' -mtime +6 -print0)
+  -name '????-??-??T??-??-??Z-*' -print0 | sort -z -r)
 
 printf 'Local backup completed: %s\n' "$backup_root/$backup_name"

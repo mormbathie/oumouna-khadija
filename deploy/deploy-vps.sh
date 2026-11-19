@@ -168,6 +168,12 @@ fi
 rollback_armed=false
 printf 'Production application is healthy at Git SHA %s.\n' "$APP_VERSION"
 
+# Free disk space: remove obsolete application image tags only. The running release and the
+# rollback images recorded in deploy/last-release.json are protected; no volume or data is touched.
+if [[ -f deploy/cleanup-docker.py ]]; then
+  python3 deploy/cleanup-docker.py --apply || printf 'Docker image cleanup requires attention.\n' >&2
+fi
+
 # Observability is optional and independent from school data. Refresh replaced log paths.
 if [[ -f /opt/assakina-observability/agent.compose.yaml ]]; then
   python3 "$PWD/deploy/observability/refresh-agent.py" || printf 'Telemetry refresh requires attention.\n' >&2

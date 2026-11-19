@@ -160,8 +160,8 @@ et revoir toute modification de schéma avant une mise à jour.
 ## Sauvegardes
 
 `deploy/backup.sh` sauvegarde les deux bases et les documents dans
-`/var/backups/oumou-salamat/daily/`, avec des fichiers privés et sept jours
-de conservation. Seules les sauvegardes complètes sont publiées. Le timer
+`/var/backups/oumou-salamat/daily/`, avec des fichiers privés. Seules les deux
+sauvegardes complètes les plus récentes sont conservées pour économiser l'espace disque. Seules les sauvegardes complètes sont publiées. Le timer
 `oumou-salamat-backup.timer` les lance chaque jour à 02 h, heure de Tunis,
 avec un décalage aléatoire maximal de dix minutes.
 

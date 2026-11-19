@@ -15,7 +15,7 @@
 Les copies externes utilisent un dossier **AsSakinaBackups** sur le Google Drive
 connecté, avec chiffrement du contenu et des noms de fichiers par rclone crypt.
 La copie est relue et vérifiée avant publication de son marqueur de réussite.
-Le serveur conserve aussi les sauvegardes locales habituelles pendant sept jours.
+Le serveur conserve aussi les deux dernières sauvegardes locales complètes.
 Les copies Google Drive ne sont pas supprimées automatiquement.
 
 Une clé de récupération est enregistrée dans le fichier local privé
