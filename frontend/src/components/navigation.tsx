@@ -1,4 +1,4 @@
-import { createLucideIcon, LayoutDashboard, GraduationCap, ContactRound, UsersRound, CalendarRange, CalendarClock, ReceiptText, ShieldCheck, ChartColumnIncreasing, Fingerprint, BookOpenCheck, ClipboardCheck, ScanQrCode, School, UserRoundCog, ArrowLeftRight, Landmark, CircleUserRound, KeyRound, BadgeDollarSign, LibraryBig, MessageCircle, BedDouble } from 'lucide-react';
+import { createLucideIcon, LayoutDashboard, GraduationCap, ContactRound, UsersRound, CalendarRange, CalendarClock, ReceiptText, ShieldCheck, ChartColumnIncreasing, Fingerprint, BookOpenCheck, ClipboardCheck, ScanQrCode, School, UserRoundCog, ArrowLeftRight, Landmark, CircleUserRound, KeyRound, BadgeDollarSign, LibraryBig, MessageCircle, BedDouble, ToggleRight } from 'lucide-react';
 
 // A kimono collar, sleeves and belt: a distinct symbol for the school uniform sale.
 const KimonoIcon = createLucideIcon('Kimono', [
@@ -13,6 +13,7 @@ export const navigationVisuals = {
   '/': { icon: LayoutDashboard, color: 'text-sky-300 bg-sky-400/10 border-sky-400/15', light: 'text-sky-700 bg-sky-50 border-sky-100' },
   '/students': { icon: GraduationCap, color: 'text-amber-300 bg-amber-400/10 border-amber-400/15', light: 'text-amber-700 bg-amber-50 border-amber-100' },
   '/quran-circles': { icon: LibraryBig, color: 'text-emerald-300 bg-emerald-400/10 border-emerald-400/15', light: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
+  '/features': { icon: ToggleRight, color: 'text-emerald-300 bg-emerald-400/10 border-emerald-400/15', light: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
   '/boarding': { icon: BedDouble, color: 'text-indigo-300 bg-indigo-400/10 border-indigo-400/15', light: 'text-indigo-700 bg-indigo-50 border-indigo-100' },
   '/notifications': { icon: MessageCircle, color: 'text-green-300 bg-green-400/10 border-green-400/15', light: 'text-green-700 bg-green-50 border-green-100' },
   '/parents': { icon: ContactRound, color: 'text-stone-300 bg-stone-400/10 border-stone-400/15', light: 'text-stone-700 bg-stone-50 border-stone-100' },
@@ -44,6 +45,6 @@ export const navigationCategories = [
   { id: 'finance', label: 'Comptabilité', routes: ['/finances', '/refunds', '/registration-report', '/finance-control'] },
   { id: 'activities', label: 'Activités & équipements', routes: ['/karate', '/kimono'] },
   { id: 'attendance', label: 'Présences & personnel', routes: ['/attendance', '/attendance/scan', '/staff-attendance', '/teacher-badge'] },
-  { id: 'administration', label: 'Administration', routes: ['/users', '/fee-settings', '/data-transfer', '/school-information'] },
+  { id: 'administration', label: 'Administration', routes: ['/users', '/features', '/fee-settings', '/data-transfer', '/school-information'] },
   { id: 'account', label: 'Mon compte', routes: ['/profile'] },
 ];

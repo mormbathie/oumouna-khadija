@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import api, { financesApi, notificationsApi } from '../services/api';
 import { useAuth } from '../auth/AuthContext';
 import { WhatsAppModal } from '../components/WhatsAppLinks';
+import { useFeatures } from '../auth/FeaturesContext';
 
 const money = (value: number) => `${Number(value || 0).toLocaleString('fr-FR')} F CFA`;
 export function FinanceControlPage() {
   const { hasRole } = useAuth();
+  const whatsappEnabled = useFeatures().isEnabled('whatsapp');
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
   const [cash, setCash] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -88,7 +90,7 @@ export function FinanceControlPage() {
           <div className="text-right"><p className="font-bold text-stone-900">{money(invoice.amount)}</p>{invoice.balance > 0 ? <p className="text-xs font-semibold text-amber-700">Reste {money(invoice.balance)}</p> : <p className="text-xs font-semibold text-emerald-700">Soldée</p>}</div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {invoice.balance > 0 && <><button disabled={busy} onClick={()=>openPlan(invoice)} className={btn}>Échéancier</button><button disabled={busy} onClick={()=>openReminder(invoice)} className={btn}>Relance e-mail</button><button disabled={busy} onClick={()=>openWhatsappReminder(invoice)} className={`${btn} border-emerald-200 text-emerald-700 hover:bg-emerald-50`}>Relance WhatsApp</button></>}
+          {invoice.balance > 0 && <><button disabled={busy} onClick={()=>openPlan(invoice)} className={btn}>Échéancier</button><button disabled={busy} onClick={()=>openReminder(invoice)} className={btn}>Relance e-mail</button>{whatsappEnabled && <button disabled={busy} onClick={()=>openWhatsappReminder(invoice)} className={`${btn} border-emerald-200 text-emerald-700 hover:bg-emerald-50`}>Relance WhatsApp</button>}</>}
           <button disabled={busy || invoice.paidAmount > 0} title={invoice.paidAmount > 0 ? 'Annulez d’abord ses paiements' : undefined} onClick={() => cancel('invoices', invoice.id)} className={danger}>Annuler la facture</button>
         </div>
         {invoice.payments?.length > 0 && <ul className="space-y-1 rounded-xl bg-stone-50 p-2">{invoice.payments.map((payment: any) => <li key={payment.id} className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">

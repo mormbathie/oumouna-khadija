@@ -3,17 +3,18 @@ import type { ReactNode } from 'react';
 import { BedDouble, CalendarCheck, CheckSquare2, DoorOpen, HeartPulse, LayoutGrid, Plus, RefreshCw, Search, Trash2, UserCheck, Wallet } from 'lucide-react';
 import { boardingApi, classesApi, studentsApi } from '../services/api';
 import { useAuth } from '../auth/AuthContext';
+import { useFeatures } from '../auth/FeaturesContext';
 import { money } from '../config/school';
 
 type Tab = 'overview' | 'regime' | 'rooms' | 'rollcall' | 'leaves' | 'health' | 'pocket';
-const tabs: { id: Tab; label: string; icon: typeof BedDouble }[] = [
+const tabs: { id: Tab; label: string; icon: typeof BedDouble; feature?: string }[] = [
   { id: 'overview', label: 'Vue d’ensemble', icon: LayoutGrid },
   { id: 'regime', label: 'Affecter des internes', icon: UserCheck },
   { id: 'rooms', label: 'Chambres et lits', icon: BedDouble },
-  { id: 'rollcall', label: 'Appel du soir', icon: CalendarCheck },
-  { id: 'leaves', label: 'Sorties et visites', icon: DoorOpen },
-  { id: 'health', label: 'Santé', icon: HeartPulse },
-  { id: 'pocket', label: 'Argent de poche', icon: Wallet },
+  { id: 'rollcall', label: 'Appel du soir', icon: CalendarCheck, feature: 'boarding.rollCall' },
+  { id: 'leaves', label: 'Sorties et visites', icon: DoorOpen, feature: 'boarding.leaves' },
+  { id: 'health', label: 'Santé', icon: HeartPulse, feature: 'boarding.health' },
+  { id: 'pocket', label: 'Argent de poche', icon: Wallet, feature: 'boarding.pocketMoney' },
 ];
 const input = 'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500';
 const button = 'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50';
@@ -51,6 +52,7 @@ function BoarderSelect({ boarders, value, onChange, label = 'Élève interne' }:
 export function BoardingPage() {
   const { hasRole } = useAuth();
   const canManageRooms = hasRole(['ADMIN', 'DIRECTEUR']);
+  const { isEnabled } = useFeatures();
   const [tab, setTab] = useState<Tab>('overview');
   const [boarders, setBoarders] = useState<any[]>([]);
   const [error, setError] = useState('');
@@ -71,7 +73,7 @@ export function BoardingPage() {
       <p className="mt-1 text-sm text-slate-500">Les internes sont les élèves au régime « Interne », inscrits cette année ({boarders.length} élève(s)).</p>
     </div>
     <nav className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-      {tabs.filter(item => item.id !== 'regime' || canManageRooms).map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => { setTab(id); setError(''); setNotice(''); }}
+      {tabs.filter(item => (item.id !== 'regime' || canManageRooms) && (!item.feature || isEnabled(item.feature))).map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => { setTab(id); setError(''); setNotice(''); }}
         className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${tab === id ? 'bg-[#30331f] text-white shadow' : 'text-slate-600 hover:bg-stone-100'}`}><Icon className="h-4 w-4"/>{label}</button>)}
     </nav>
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
@@ -152,6 +154,8 @@ function Regime({ run, reloadBoarders }: Shared) {
 }
 
 function Overview({ boarders }: Shared) {
+  const { isEnabled } = useFeatures();
+  const pocketOn = isEnabled('boarding.pocketMoney');
   const [stats, setStats] = useState<any>(null);
   const [search, setSearch] = useState('');
   useEffect(() => { void boardingApi.overview().then(setStats).catch(() => undefined); }, []);
@@ -159,7 +163,8 @@ function Overview({ boarders }: Shared) {
     const needle = search.trim().toLocaleLowerCase();
     return needle ? boarders.filter(student => `${student.firstName} ${student.lastName} ${student.matricule} ${student.classroom?.name || ''} ${student.boardingBed?.room?.name || ''}`.toLocaleLowerCase().includes(needle)) : boarders;
   }, [boarders, search]);
-  const tiles = stats ? [
+  const tileFeatures: Record<string, string> = { 'En sortie': 'boarding.leaves', 'Appel de ce soir': 'boarding.rollCall', 'Infirmerie aujourd’hui': 'boarding.health', 'Argent de poche gardé': 'boarding.pocketMoney' };
+  const allTiles = stats ? [
     ['Internes', stats.boarders, `${stats.boys} garçons · ${stats.girls} filles`, 'text-indigo-700'],
     ['Lits libres', stats.freeBeds, `${stats.occupiedBeds} occupés sur ${stats.beds}`, 'text-emerald-700'],
     ['En sortie', stats.onLeave, stats.lateReturns ? `${stats.lateReturns} retour(s) en retard` : 'aucun retard', stats.lateReturns ? 'text-rose-700' : 'text-sky-700'],
@@ -167,18 +172,19 @@ function Overview({ boarders }: Shared) {
     ['Infirmerie aujourd’hui', stats.healthToday, 'passage(s)', 'text-amber-700'],
     ['Argent de poche gardé', money(stats.pocketMoneyHeld), 'pour tous les internes', 'text-slate-800'],
   ] : [];
+  const tiles = allTiles.filter(([label]) => !tileFeatures[String(label)] || isEnabled(tileFeatures[String(label)]));
   return <div className="space-y-5">
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">{tiles.map(([label, value, hint, color]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className={`mt-1 text-2xl font-bold ${color}`}>{value}</p><p className="text-xs text-slate-500">{hint}</p></div>)}</div>
     <Card title="Liste des internes" actions={<label className="relative w-full sm:w-72"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Nom, classe, chambre…" className={`${input} pl-9`}/></label>}>
       <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm">
-        <thead className="text-xs uppercase text-slate-500"><tr><th className="py-2">Élève</th><th>Classe</th><th>Lit</th><th>Situation</th><th>Argent de poche</th><th>Contact</th></tr></thead>
+        <thead className="text-xs uppercase text-slate-500"><tr><th className="py-2">Élève</th><th>Classe</th><th>Lit</th><th>Situation</th>{pocketOn && <th>Argent de poche</th>}<th>Contact</th></tr></thead>
         <tbody className="divide-y divide-slate-100">{filtered.map(student => <tr key={student.id}>
           <td className="py-2"><b className="text-slate-800">{name(student)}</b><span className="block font-mono text-xs text-slate-500">{student.matricule}</span></td>
           <td>{student.classroom?.name || '—'}</td>
           <td>{student.boardingBed ? `${student.boardingBed.room.name} · ${student.boardingBed.label}` : <span className="text-amber-700">Sans lit</span>}</td>
           <td>{student.currentLeave ? <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">En sortie · retour {dateTimeText(student.currentLeave.expectedReturnAt)}</span> : <span className="text-xs text-emerald-700">À l’internat</span>}</td>
-          <td>{money(student.pocketBalance)}</td>
+          {pocketOn && <td>{money(student.pocketBalance)}</td>}
           <td className="text-xs text-slate-600">{student.emergencyContactPhone || student.parent?.phone || '—'}</td>
         </tr>)}</tbody>
       </table>{!filtered.length && <p className="p-6 text-center text-sm text-slate-500">Aucun interne.</p>}</div>

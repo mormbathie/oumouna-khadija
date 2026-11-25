@@ -711,3 +711,11 @@ model PocketMoneyEntry {
 
   @@index([studentId, createdAt])
 }
+
+// Optional modules switched on or off by the administrator (missing row = default state).
+model FeatureFlag {
+  key           String   @id
+  enabled       Boolean
+  updatedByName String?
+  updatedAt     DateTime @updatedAt
+}

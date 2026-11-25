@@ -122,6 +122,13 @@ export const boardingApi = {
   recordPocketMoney: (data: { studentId: string; kind: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; label: string }) => api.post('/boarding/pocket-money', data).then((r) => r.data),
 };
 
+export type FeatureInfo = { key: string; label: string; description: string; category: string; parent?: string; defaultEnabled: boolean; enabled: boolean; effective: boolean };
+export const featuresApi = {
+  states: () => api.get<Record<string, boolean>>('/features').then((r) => r.data),
+  list: () => api.get<FeatureInfo[]>('/features/admin').then((r) => r.data),
+  set: (key: string, enabled: boolean) => api.put<FeatureInfo[]>(`/features/${encodeURIComponent(key)}`, { enabled }).then((r) => r.data),
+};
+
 export const dashboardApi = {
   getSummary: (params?: {mode?:string;start?:string;end?:string}) => api.get('/dashboard/summary', {params}).then((r) => r.data),
 };

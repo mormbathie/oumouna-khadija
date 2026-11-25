@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, Shield, Menu, X, Search } from 'lucide-react';
 import { CommandPalette } from './CommandPalette';
+import { useFeatures } from '../auth/FeaturesContext';
 import { useAuth } from '../auth/AuthContext';
 import { LanguageSelector } from './LanguageSelector';
 import { roleLabel } from '../i18n';
@@ -15,6 +16,7 @@ const roleNames = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'C
 
 export const Layout: React.FC = () => {
   const { user, logout, hasRole } = useAuth();
+  const { isEnabled } = useFeatures();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const content = useRef<HTMLElement>(null);
@@ -34,30 +36,31 @@ export const Layout: React.FC = () => {
   const navItems = [
     { to: '/', label: t("Dashboard"), icon: navigationVisuals['/'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/students', label: t("Enrollment & Students"), icon: navigationVisuals['/students'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT'] },
-    { to: '/quran-circles', label: t("Quran circles"), icon: navigationVisuals['/quran-circles'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
-    { to: '/boarding', label: t("Boarding"), icon: navigationVisuals['/boarding'].icon, roles: ['ADMIN', 'DIRECTEUR', 'SURVEILLANT_INTERNAT'] },
-    { to: '/notifications', label: t("WhatsApp messages"), icon: navigationVisuals['/notifications'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
-    { to: '/parent-portal', label: 'Espace parents', icon: navigationVisuals['/parent-portal'].icon, roles: ['PARENT'] },
+    { to: '/quran-circles', feature: 'quranCircles', label: t("Quran circles"), icon: navigationVisuals['/quran-circles'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
+    { to: '/boarding', feature: 'boarding', label: t("Boarding"), icon: navigationVisuals['/boarding'].icon, roles: ['ADMIN', 'DIRECTEUR', 'SURVEILLANT_INTERNAT'] },
+    { to: '/notifications', feature: 'whatsapp', label: t("WhatsApp messages"), icon: navigationVisuals['/notifications'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
+    { to: '/parent-portal', feature: 'parentPortal', label: 'Espace parents', icon: navigationVisuals['/parent-portal'].icon, roles: ['PARENT'] },
     { to: '/academic-transition', label: 'Passage d’année', icon: navigationVisuals['/academic-transition'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
     { to: '/parents', label: t("Parents & Guardians"), icon: navigationVisuals['/parents'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
-    { to: '/kimono', label: t('Kimono sales'), icon: navigationVisuals['/kimono'].icon, roles: ['ADMIN','DIRECTEUR','COMPTABLE'] },
-    { to: '/karate', label: t('Monthly karate payments'), icon: navigationVisuals['/karate'].icon, roles: ['ADMIN','DIRECTEUR','COMPTABLE'] },
+    { to: '/kimono', feature: 'activities', label: t('Kimono sales'), icon: navigationVisuals['/kimono'].icon, roles: ['ADMIN','DIRECTEUR','COMPTABLE'] },
+    { to: '/karate', feature: 'activities', label: t('Monthly karate payments'), icon: navigationVisuals['/karate'].icon, roles: ['ADMIN','DIRECTEUR','COMPTABLE'] },
     { to: '/refunds', label: t('Départs et remboursements'), icon: navigationVisuals['/refunds'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/finance-control', label: 'Contrôle financier', icon: navigationVisuals['/finance-control'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/registration-report', label: t('Synthèse des inscriptions'), icon: navigationVisuals['/registration-report'].icon, roles: ['ADMIN','DIRECTEUR','COMPTABLE'] },
-    { to: '/teacher-badge', label: t('Mon pointage'), icon: navigationVisuals['/teacher-badge'].icon, roles: ['ENSEIGNANT'] },
+    { to: '/teacher-badge', feature: 'staffAttendance', label: t('Mon pointage'), icon: navigationVisuals['/teacher-badge'].icon, roles: ['ENSEIGNANT'] },
     { to: '/finances', label: t("Invoices & Payments"), icon: navigationVisuals['/finances'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
-    { to: '/grades', label: t("Grades & Report Cards"), icon: navigationVisuals['/grades'].icon, roles: ['ADMIN', 'DIRECTEUR', 'ENSEIGNANT'] },
-    { to: '/attendance', label: t("Attendance & Absences"), icon: navigationVisuals['/attendance'].icon, roles: ['ADMIN', 'DIRECTEUR', 'ENSEIGNANT'] },
-    { to: '/attendance/scan', label: t("Scan Student QR Codes"), icon: navigationVisuals['/attendance/scan'].icon, roles: ['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE'] },
+    { to: '/grades', feature: 'grades', label: t("Grades & Report Cards"), icon: navigationVisuals['/grades'].icon, roles: ['ADMIN', 'DIRECTEUR', 'ENSEIGNANT'] },
+    { to: '/attendance', feature: 'attendance', label: t("Attendance & Absences"), icon: navigationVisuals['/attendance'].icon, roles: ['ADMIN', 'DIRECTEUR', 'ENSEIGNANT'] },
+    { to: '/attendance/scan', feature: 'attendance', label: t("Scan Student QR Codes"), icon: navigationVisuals['/attendance/scan'].icon, roles: ['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE'] },
     { to: '/classes', label: t("Classes & Subjects"), icon: navigationVisuals['/classes'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT'] },
     { to: '/users', label: t("User Management"), icon: navigationVisuals['/users'].icon, roles: ['ADMIN'] },
+    { to: '/features', label: 'Modules et fonctionnalités', icon: navigationVisuals['/features'].icon, roles: ['ADMIN'] },
     { to: '/fee-settings', label: 'Paramètres des tarifs', icon: navigationVisuals['/fee-settings'].icon, roles: ['ADMIN'] },
-    { to: '/staff-attendance', label: t("Teacher Attendance"), icon: navigationVisuals['/staff-attendance'].icon, roles: ['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE'] },
-    { to: '/data-transfer', label: t("Import / Export"), icon: navigationVisuals['/data-transfer'].icon, roles: ['ADMIN'] },
+    { to: '/staff-attendance', feature: 'staffAttendance', label: t("Teacher Attendance"), icon: navigationVisuals['/staff-attendance'].icon, roles: ['ADMIN', 'DIRECTEUR', 'CONTROLEUR_PRESENCE'] },
+    { to: '/data-transfer', feature: 'dataTransfer', label: t("Import / Export"), icon: navigationVisuals['/data-transfer'].icon, roles: ['ADMIN'] },
     { to: '/school-information', label: t('School information and fees'), icon: navigationVisuals['/school-information'].icon, roles: roleNames },
     { to: '/profile', label: t("My Profile"), icon: navigationVisuals['/profile'].icon, roles: roleNames },
-  ].filter((item) => hasRole(item.roles));
+  ].filter((item) => hasRole(item.roles) && (!(item as { feature?: string }).feature || isEnabled((item as { feature?: string }).feature!)));
 
   const groups = navigationCategories.map(category => ({ ...category, items: category.routes.map(route => navItems.find(item => item.to === route)).filter((item): item is typeof navItems[number] => Boolean(item)) })).filter(category => category.items.length);
 

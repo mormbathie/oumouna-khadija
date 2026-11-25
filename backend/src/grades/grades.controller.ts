@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { GradesService } from './grades.service';
@@ -8,6 +9,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Term } from '@prisma/client';
 
 @ApiTags('Notes & Bulletins')
+@RequireFeature('grades')
 @Controller('grades')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Controller, Get, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -11,6 +12,7 @@ import { BUSINESS_MODELS, DataTransferService } from './data-transfer.service';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
+@RequireFeature('dataTransfer')
 @Controller('data-transfer')
 export class DataTransferController {
   constructor(private readonly service: DataTransferService) {}

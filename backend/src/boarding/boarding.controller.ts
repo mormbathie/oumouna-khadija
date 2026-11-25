@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -9,6 +10,7 @@ import { BoardingService } from './boarding.service';
 const STAFF = ['ADMIN', 'DIRECTEUR', 'SURVEILLANT_INTERNAT'];
 
 @ApiTags('Internat')
+@RequireFeature('boarding')
 @Controller('boarding')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
@@ -33,22 +35,22 @@ export class BoardingController {
   @Put('beds/:id/student') @Roles(...STAFF) @ApiOperation({ summary: 'Affecter un interne à un lit ou libérer le lit' })
   assignBed(@Param('id') id: string, @Body() body: { studentId?: string | null }) { return this.service.assignBed(id, body); }
 
-  @Get('roll-call') @Roles(...STAFF) rollCall(@Query('date') date?: string) { return this.service.rollCall(date); }
-  @Post('roll-call') @Roles(...STAFF) @ApiOperation({ summary: 'Enregistrer l’appel du soir' })
+  @RequireFeature('boarding.rollCall') @Get('roll-call') @Roles(...STAFF) rollCall(@Query('date') date?: string) { return this.service.rollCall(date); }
+  @RequireFeature('boarding.rollCall') @Post('roll-call') @Roles(...STAFF) @ApiOperation({ summary: 'Enregistrer l’appel du soir' })
   saveRollCall(@Body() body: any, @CurrentUser() actor: any) { return this.service.saveRollCall(body, actor); }
 
-  @Get('leaves') @Roles(...STAFF) leaves(@Query('open') open?: string, @Query('studentId') studentId?: string) { return this.service.leaves({ open, studentId }); }
-  @Post('leaves') @Roles(...STAFF) @ApiOperation({ summary: 'Enregistrer une sortie (qui récupère l’élève, retour prévu)' })
+  @RequireFeature('boarding.leaves') @Get('leaves') @Roles(...STAFF) leaves(@Query('open') open?: string, @Query('studentId') studentId?: string) { return this.service.leaves({ open, studentId }); }
+  @RequireFeature('boarding.leaves') @Post('leaves') @Roles(...STAFF) @ApiOperation({ summary: 'Enregistrer une sortie (qui récupère l’élève, retour prévu)' })
   createLeave(@Body() body: any, @CurrentUser() actor: any) { return this.service.createLeave(body, actor); }
-  @Post('leaves/:id/return') @Roles(...STAFF) returnLeave(@Param('id') id: string, @Body() body: any, @CurrentUser() actor: any) { return this.service.returnLeave(id, body, actor); }
+  @RequireFeature('boarding.leaves') @Post('leaves/:id/return') @Roles(...STAFF) returnLeave(@Param('id') id: string, @Body() body: any, @CurrentUser() actor: any) { return this.service.returnLeave(id, body, actor); }
 
-  @Get('visits') @Roles(...STAFF) visits(@Query('studentId') studentId?: string) { return this.service.visits(studentId); }
-  @Post('visits') @Roles(...STAFF) createVisit(@Body() body: any, @CurrentUser() actor: any) { return this.service.createVisit(body, actor); }
+  @RequireFeature('boarding.leaves') @Get('visits') @Roles(...STAFF) visits(@Query('studentId') studentId?: string) { return this.service.visits(studentId); }
+  @RequireFeature('boarding.leaves') @Post('visits') @Roles(...STAFF) createVisit(@Body() body: any, @CurrentUser() actor: any) { return this.service.createVisit(body, actor); }
 
-  @Get('health') @Roles(...STAFF) health(@Query('studentId') studentId?: string) { return this.service.health(studentId); }
-  @Post('health') @Roles(...STAFF) createHealth(@Body() body: any, @CurrentUser() actor: any) { return this.service.createHealth(body, actor); }
+  @RequireFeature('boarding.health') @Get('health') @Roles(...STAFF) health(@Query('studentId') studentId?: string) { return this.service.health(studentId); }
+  @RequireFeature('boarding.health') @Post('health') @Roles(...STAFF) createHealth(@Body() body: any, @CurrentUser() actor: any) { return this.service.createHealth(body, actor); }
 
-  @Get('pocket-money/:studentId') @Roles(...STAFF) pocketMoney(@Param('studentId') studentId: string) { return this.service.pocketMoney(studentId); }
-  @Post('pocket-money') @Roles(...STAFF) @ApiOperation({ summary: 'Dépôt ou retrait d’argent de poche' })
+  @RequireFeature('boarding.pocketMoney') @Get('pocket-money/:studentId') @Roles(...STAFF) pocketMoney(@Param('studentId') studentId: string) { return this.service.pocketMoney(studentId); }
+  @RequireFeature('boarding.pocketMoney') @Post('pocket-money') @Roles(...STAFF) @ApiOperation({ summary: 'Dépôt ou retrait d’argent de poche' })
   recordPocketMoney(@Body() body: any, @CurrentUser() actor: any) { return this.service.recordPocketMoney(body, actor); }
 }

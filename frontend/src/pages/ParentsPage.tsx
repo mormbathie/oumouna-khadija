@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { parentsApi } from '../services/api';
 import { ParentAccess } from '../components/ParentAccess';
+import { useFeatures } from '../auth/FeaturesContext';
 
 const ParentWhatsApp: React.FC<{ parent: any; onSaved: () => void }> = ({ parent, onSaved }) => {
   const [editing, setEditing] = useState(false);
@@ -53,6 +54,7 @@ const ParentWhatsApp: React.FC<{ parent: any; onSaved: () => void }> = ({ parent
 };
 
 export const ParentsPage: React.FC = () => {
+  const { isEnabled } = useFeatures();
   const [parents, setParents] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -179,8 +181,8 @@ export const ParentsPage: React.FC = () => {
                     <Phone className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                     <span className="font-medium text-slate-800">{p.phone}</span>
                   </div>
-                  <ParentWhatsApp key={`${p.id}-${p.whatsappPhone || ''}-${p.whatsappOptOut}`} parent={p} onSaved={loadParents} />
-                  <ParentAccess parent={p} onChanged={loadParents} />
+                  {isEnabled('whatsapp') && <ParentWhatsApp key={`${p.id}-${p.whatsappPhone || ''}-${p.whatsappOptOut}`} parent={p} onSaved={loadParents} />}
+                  {isEnabled('parentPortal') && <ParentAccess parent={p} onChanged={loadParents} />}
                   {p.email && (
                     <div className="flex items-center space-x-2">
                       <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />

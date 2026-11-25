@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, StreamableFile } from '@nestjs/common';
 import { Readable } from 'node:stream';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
@@ -36,6 +37,7 @@ export class StudentsController {
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
   async quote(@Body() body: any) { return this.studentsService.quote(body); }
 
+  @RequireFeature('quranCircles')
   @Put('quran-circle/batch')
   @Roles('ADMIN', 'DIRECTEUR')
   @ApiOperation({ summary: 'Affecter plusieurs élèves à une halkha coranique' })

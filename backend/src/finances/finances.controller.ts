@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { RegistrationReportService } from './registration-report.service';
 import type { RegistrationReportQuery } from './registration-report.service';
 import { Controller, Get, Post, Body, Param, Query, Res, UseGuards } from '@nestjs/common';
@@ -129,6 +130,7 @@ export class FinancesController {
     return this.financesService.generateTuitionInvoicesForClass(body, actor);
   }
 
+  @RequireFeature('activities')
   @Post('activities/invoices')
   @Roles('ADMIN', 'DIRECTEUR', 'COMPTABLE')
   async activityInvoice(@Body() body: { studentId: string; category: string; month?: string }, @CurrentUser() actor: any) {

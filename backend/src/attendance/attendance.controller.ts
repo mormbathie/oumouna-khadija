@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AttendanceService } from './attendance.service';
@@ -7,6 +8,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Présences & Absences')
+@RequireFeature('attendance')
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

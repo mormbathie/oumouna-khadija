@@ -15,6 +15,7 @@ import { StaffAttendanceModule } from './staff-attendance/staff-attendance.modul
 import { DataTransferModule } from './data-transfer/data-transfer.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { BoardingModule } from './boarding/boarding.module';
+import { FeaturesModule } from './features/features.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -25,6 +26,7 @@ import { AppService } from './app.service';
       envFilePath: '.env',
     }),
     PrismaModule,
+    FeaturesModule,
     AuthModule,
     ClassesModule,
     ParentsModule,

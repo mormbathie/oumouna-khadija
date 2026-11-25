@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { DoorBadgeService } from './door-badge.service';
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -10,6 +11,7 @@ import { StaffAttendanceService } from './staff-attendance.service';
 @ApiTags('Pointage des professeurs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
+@RequireFeature('staffAttendance')
 @Controller('staff-attendance')
 export class StaffAttendanceController {
   constructor(private readonly service: StaffAttendanceService, private readonly door: DoorBadgeService) {}

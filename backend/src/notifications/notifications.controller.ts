@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -7,6 +8,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('Messages WhatsApp')
+@RequireFeature('whatsapp')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

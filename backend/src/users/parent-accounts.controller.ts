@@ -1,3 +1,4 @@
+import { RequireFeature } from '../features/feature.decorator';
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -7,6 +8,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 
 @ApiTags('Accès parents')
+@RequireFeature('parentPortal')
 @Controller('parents')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
