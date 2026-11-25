@@ -22,6 +22,7 @@ enum Role {
   ENSEIGNANT
   PARENT
   CONTROLEUR_PRESENCE
+  SURVEILLANT_INTERNAT
 }
 
 enum Gender {
@@ -253,6 +254,12 @@ model Student {
   reportCards   ReportCard[]
   attendances   Attendance[]
   documents     StudentDocument[]
+  boardingBed       BoardingBed?
+  boardingLeaves    BoardingLeave[]
+  boardingVisits    BoardingVisit[]
+  boardingRollCalls BoardingRollCall[]
+  boardingHealth    BoardingHealthLog[]
+  pocketMoney       PocketMoneyEntry[]
 
   @@index([schoolMatricule])
   @@index([quranCircle])
@@ -589,4 +596,116 @@ model WhatsAppMessageLog {
   @@index([referenceId])
   @@index([studentId, openedAt])
   @@index([openedAt])
+}
+
+// ── Internat (boarding) — additive tables; boarders are pupils of boarding classes ──
+
+model BoardingRoom {
+  id             String        @id @default(uuid())
+  name           String        @unique
+  building       String?
+  gender         Gender?       // null = mixte
+  supervisorName String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  beds           BoardingBed[]
+}
+
+model BoardingBed {
+  id         String       @id @default(uuid())
+  roomId     String
+  room       BoardingRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  label      String
+  studentId  String?      @unique
+  student    Student?     @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  assignedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@unique([roomId, label])
+}
+
+model BoardingLeave {
+  id               String    @id @default(uuid())
+  studentId        String
+  student          Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind             String    // WEEKEND, HOLIDAY, MEDICAL, FAMILY, OTHER
+  departedAt       DateTime
+  expectedReturnAt DateTime
+  returnedAt       DateTime?
+  pickupName       String
+  pickupRelation   String?
+  pickupPhone      String?
+  notes            String?
+  actorId          String
+  actorName        String
+  actorRole        String
+  returnActorName  String?
+  createdAt        DateTime  @default(now())
+
+  @@index([studentId, departedAt])
+  @@index([returnedAt])
+}
+
+model BoardingVisit {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  visitorName String
+  relation    String?
+  phone       String?
+  visitedAt   DateTime
+  notes       String?
+  actorId     String
+  actorName   String
+  createdAt   DateTime @default(now())
+
+  @@index([studentId, visitedAt])
+}
+
+model BoardingRollCall {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  status    String   // PRESENT, ABSENT, ON_LEAVE, SICK
+  notes     String?
+  actorId   String
+  actorName String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, date])
+  @@index([date])
+}
+
+model BoardingHealthLog {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  occurredAt     DateTime
+  reason         String
+  care           String?
+  medication     String?
+  parentNotified Boolean  @default(false)
+  actorId        String
+  actorName      String
+  createdAt      DateTime @default(now())
+
+  @@index([studentId, occurredAt])
+}
+
+// Signed ledger: deposits are positive, withdrawals negative. Rows are never edited.
+model PocketMoneyEntry {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount    Int
+  label     String
+  actorId   String
+  actorName String
+  actorRole String
+  createdAt DateTime @default(now())
+
+  @@index([studentId, createdAt])
 }

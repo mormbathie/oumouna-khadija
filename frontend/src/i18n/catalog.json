@@ -4998,5 +4998,15 @@
     "fr": "Identifiant ou numéro (77 123 45 67)",
     "en": "Username or phone number (77 123 45 67)",
     "ar": "اسم المستخدم أو الرقم (77 123 45 67)"
+  },
+  "Boarding supervisor": {
+    "fr": "Surveillant d’internat",
+    "en": "Boarding supervisor",
+    "ar": "مشرف القسم الداخلي"
+  },
+  "Boarding": {
+    "fr": "Internat",
+    "en": "Boarding",
+    "ar": "القسم الداخلي"
   }
 }

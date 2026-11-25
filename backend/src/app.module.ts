@@ -14,6 +14,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { StaffAttendanceModule } from './staff-attendance/staff-attendance.module';
 import { DataTransferModule } from './data-transfer/data-transfer.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { BoardingModule } from './boarding/boarding.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -37,6 +38,7 @@ import { AppService } from './app.service';
     StaffAttendanceModule,
     DataTransferModule,
     NotificationsModule,
+    BoardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

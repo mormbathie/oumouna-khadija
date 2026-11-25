@@ -92,7 +92,7 @@ export class AuthService {
     ];
     const localUser = identifiers.length ? await this.prisma.user.findFirst({ where: { OR: identifiers } }) : null;
 
-    const rolePriority = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE'];
+    const rolePriority = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE', 'SURVEILLANT_INTERNAT'];
     const appRole = rolePriority.find((role) => (user.roles || []).includes(role));
     let syncedUser = localUser;
     if (user.userId && user.email && user.username && appRole) {

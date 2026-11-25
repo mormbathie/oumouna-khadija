@@ -98,6 +98,29 @@ export const notificationsApi = {
   logOpened: (data: { kind: string; referenceId?: string; phone: string; studentId?: string; parentId?: string; message: string }) => api.post('/notifications/opened', data).then((r) => r.data),
 };
 
+export const boardingApi = {
+  overview: () => api.get('/boarding/overview').then((r) => r.data),
+  boarders: (search?: string) => api.get('/boarding/boarders', { params: { search } }).then((r) => r.data),
+  rooms: () => api.get('/boarding/rooms').then((r) => r.data),
+  createRoom: (data: any) => api.post('/boarding/rooms', data).then((r) => r.data),
+  updateRoom: (id: string, data: any) => api.patch(`/boarding/rooms/${id}`, data).then((r) => r.data),
+  deleteRoom: (id: string) => api.delete(`/boarding/rooms/${id}`).then((r) => r.data),
+  addBed: (roomId: string, label: string) => api.post(`/boarding/rooms/${roomId}/beds`, { label }).then((r) => r.data),
+  deleteBed: (id: string) => api.delete(`/boarding/beds/${id}`).then((r) => r.data),
+  assignBed: (bedId: string, studentId: string | null) => api.put(`/boarding/beds/${bedId}/student`, { studentId }).then((r) => r.data),
+  rollCall: (date: string) => api.get('/boarding/roll-call', { params: { date } }).then((r) => r.data),
+  saveRollCall: (date: string, records: { studentId: string; status: string; notes?: string }[]) => api.post('/boarding/roll-call', { date, records }).then((r) => r.data),
+  leaves: (params?: { open?: string; studentId?: string }) => api.get('/boarding/leaves', { params }).then((r) => r.data),
+  createLeave: (data: any) => api.post('/boarding/leaves', data).then((r) => r.data),
+  returnLeave: (id: string) => api.post(`/boarding/leaves/${id}/return`, {}).then((r) => r.data),
+  visits: () => api.get('/boarding/visits').then((r) => r.data),
+  createVisit: (data: any) => api.post('/boarding/visits', data).then((r) => r.data),
+  health: () => api.get('/boarding/health').then((r) => r.data),
+  createHealth: (data: any) => api.post('/boarding/health', data).then((r) => r.data),
+  pocketMoney: (studentId: string) => api.get(`/boarding/pocket-money/${studentId}`).then((r) => r.data),
+  recordPocketMoney: (data: { studentId: string; kind: 'DEPOSIT' | 'WITHDRAWAL'; amount: number; label: string }) => api.post('/boarding/pocket-money', data).then((r) => r.data),
+};
+
 export const dashboardApi = {
   getSummary: (params?: {mode?:string;start?:string;end?:string}) => api.get('/dashboard/summary', {params}).then((r) => r.data),
 };

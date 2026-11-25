@@ -23,6 +23,7 @@ const roleOptions = [
   { value: 'ENSEIGNANT', label: t("Enseignant") },
   { value: 'PARENT', label: 'Parent' },
   { value: 'CONTROLEUR_PRESENCE', label: t("Attendance officer") },
+  { value: 'SURVEILLANT_INTERNAT', label: t("Boarding supervisor") },
 ];
 
 function errorMessage(error: any) {

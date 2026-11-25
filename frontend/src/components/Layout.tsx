@@ -10,7 +10,7 @@ import { useAuth } from '../auth/AuthContext';
 import { LanguageSelector } from './LanguageSelector';
 import { roleLabel } from '../i18n';
 
-const roleNames = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE'];
+const roleNames = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE', 'SURVEILLANT_INTERNAT'];
 
 export const Layout: React.FC = () => {
   const { user, logout, hasRole } = useAuth();
@@ -33,6 +33,7 @@ export const Layout: React.FC = () => {
     { to: '/', label: t("Dashboard"), icon: navigationVisuals['/'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/students', label: t("Enrollment & Students"), icon: navigationVisuals['/students'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT'] },
     { to: '/quran-circles', label: t("Quran circles"), icon: navigationVisuals['/quran-circles'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
+    { to: '/boarding', label: t("Boarding"), icon: navigationVisuals['/boarding'].icon, roles: ['ADMIN', 'DIRECTEUR', 'SURVEILLANT_INTERNAT'] },
     { to: '/notifications', label: t("WhatsApp messages"), icon: navigationVisuals['/notifications'].icon, roles: ['ADMIN', 'DIRECTEUR', 'COMPTABLE'] },
     { to: '/parent-portal', label: 'Espace parents', icon: navigationVisuals['/parent-portal'].icon, roles: ['PARENT'] },
     { to: '/academic-transition', label: 'Passage d’année', icon: navigationVisuals['/academic-transition'].icon, roles: ['ADMIN', 'DIRECTEUR'] },
@@ -59,7 +60,7 @@ export const Layout: React.FC = () => {
   const groups = navigationCategories.map(category => ({ ...category, items: category.routes.map(route => navItems.find(item => item.to === route)).filter((item): item is typeof navItems[number] => Boolean(item)) })).filter(category => category.items.length);
 
   const mobileShortNames: Record<string, string> = { '/': 'Accueil', '/parent-portal': 'Mes enfants', '/students': 'Élèves', '/finances': 'Paiements', '/attendance/scan': 'Scanner', '/attendance': 'Présences', '/grades': 'Notes', '/profile': 'Profil', '/teacher-badge': 'Badger' };
-  const mobilePriority = activeRole === 'PARENT' ? ['/parent-portal', '/students', '/profile'] : activeRole === 'ENSEIGNANT' ? ['/teacher-badge', '/students', '/grades', '/profile'] : activeRole === 'CONTROLEUR_PRESENCE' ? ['/attendance/scan', '/attendance', '/profile'] : ['/', '/students', '/finances', '/attendance/scan', '/attendance', '/profile'];
+  const mobilePriority = activeRole === 'PARENT' ? ['/parent-portal', '/students', '/profile'] : activeRole === 'ENSEIGNANT' ? ['/teacher-badge', '/students', '/grades', '/profile'] : activeRole === 'CONTROLEUR_PRESENCE' ? ['/attendance/scan', '/attendance', '/profile'] : activeRole === 'SURVEILLANT_INTERNAT' ? ['/boarding', '/profile'] : ['/', '/students', '/finances', '/attendance/scan', '/attendance', '/profile'];
   const mobileTabs = mobilePriority
     .map(to => navItems.find(item => item.to === to)).filter((item): item is typeof navItems[number] => Boolean(item)).slice(0, 4);
   const currentPage = navItems.find(item => item.to === pathname);

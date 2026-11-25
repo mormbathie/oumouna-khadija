@@ -16,7 +16,7 @@ import { PARENT_EMAIL_DOMAIN, isTechnicalParentEmail } from '../auth/parent-scop
 import { whatsappNumber } from '../notifications/whatsapp-templates';
 import { ActingUser, actorStamp } from '../audit/actor';
 
-const APP_ROLES = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE'];
+const APP_ROLES = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE', 'SURVEILLANT_INTERNAT'];
 
 @Injectable()
 export class UsersService {
@@ -432,7 +432,7 @@ export class UsersService {
           name: roleName,
           description: roleName === 'CONTROLEUR_PRESENCE'
             ? 'Contrôle des présences par scan des QR codes'
-            : roleName,
+            : roleName === 'SURVEILLANT_INTERNAT' ? 'Gestion de l’internat : chambres, appel du soir, sorties, santé' : roleName,
         }),
       });
     } catch (error) {
@@ -470,7 +470,7 @@ export class UsersService {
 
   async syncLocalUser(user: { id: string; username: string; email: string; firstName: string; lastName: string; roles: string[] }) {
     if (!user.id || !user.email || !user.username) return;
-    const roleName = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE']
+    const roleName = ['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT', 'CONTROLEUR_PRESENCE', 'SURVEILLANT_INTERNAT']
       .find((candidate) => user.roles.includes(candidate)) || 'ENSEIGNANT';
     const data = {
       keycloakId: user.id,

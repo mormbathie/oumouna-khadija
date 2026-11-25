@@ -4,7 +4,7 @@
   "displayName": "Institut Oumouna Khadija",
   "loginTheme": "oumouna-khadija",
   "emailTheme": "oumouna-khadija",
-  "internationalizationEnabled": false,
+  "internationalizationEnabled": true,
   "defaultLocale": "fr",
   "sslRequired": "external",
   "registrationAllowed": false,
@@ -41,6 +41,10 @@
       {
         "name": "CONTROLEUR_PRESENCE",
         "description": "Contrôle des présences par scan des QR codes"
+      },
+      {
+        "name": "SURVEILLANT_INTERNAT",
+        "description": "Gestion de l’internat : chambres, appel du soir, sorties, santé"
       }
     ]
   },
@@ -139,11 +143,9 @@
       ]
     }
   ],
-  "internationalizationEnabled": true,
   "supportedLocales": [
     "fr",
     "en",
     "ar"
-  ],
-  "defaultLocale": "fr"
+  ]
 }

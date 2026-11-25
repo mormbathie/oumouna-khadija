@@ -27,6 +27,7 @@ import { DataTransferPage } from './pages/DataTransferPage';
 import { FeeSettingsPage } from './pages/FeeSettingsPage';
 import { QuranCirclesPage } from './pages/QuranCirclesPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { BoardingPage } from './pages/BoardingPage';
 
 const AttendanceScanPage = lazy(() => import('./pages/AttendanceScanPage').then((module) => ({ default: module.AttendanceScanPage })));
 
@@ -42,12 +43,12 @@ const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const RequireRoles: React.FC<{ roles: string[]; children: React.ReactNode }> = ({ roles, children }) => {
   const { hasRole } = useAuth();
   if (hasRole(roles)) return <>{children}</>;
-  return <Navigate to={hasRole(['PARENT']) ? '/parent-portal' : hasRole(['ENSEIGNANT']) ? '/students' : '/'} replace />;
+  return <Navigate to={hasRole(['PARENT']) ? '/parent-portal' : hasRole(['SURVEILLANT_INTERNAT']) ? '/boarding' : hasRole(['ENSEIGNANT']) ? '/students' : '/'} replace />;
 };
 
 const HomeByRole: React.FC = () => {
   const { hasRole } = useAuth();
-  const destination = hasRole(['CONTROLEUR_PRESENCE']) ? '/attendance/scan' : hasRole(['PARENT']) ? '/parent-portal' : hasRole(['ENSEIGNANT']) ? '/students' : '/';
+  const destination = hasRole(['SURVEILLANT_INTERNAT']) ? '/boarding' : hasRole(['CONTROLEUR_PRESENCE']) ? '/attendance/scan' : hasRole(['PARENT']) ? '/parent-portal' : hasRole(['ENSEIGNANT']) ? '/students' : '/';
   return <Navigate to={destination} replace />;
 };
 
@@ -61,6 +62,7 @@ export const App: React.FC = () => (
           <Route path="students" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE', 'ENSEIGNANT', 'PARENT']}><StudentsPage /></RequireRoles>} />
           <Route path="quran-circles" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR']}><QuranCirclesPage /></RequireRoles>} />
           <Route path="notifications" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><NotificationsPage /></RequireRoles>} />
+          <Route path="boarding" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'SURVEILLANT_INTERNAT']}><BoardingPage /></RequireRoles>} />
           <Route path="parent-portal" element={<RequireRoles roles={['PARENT']}><ParentPortalPage /></RequireRoles>} />
           <Route path="academic-transition" element={<RequireRoles roles={['ADMIN','DIRECTEUR']}><AcademicTransitionPage /></RequireRoles>} />
           <Route path="parents" element={<RequireRoles roles={['ADMIN', 'DIRECTEUR', 'COMPTABLE']}><ParentsPage /></RequireRoles>} />

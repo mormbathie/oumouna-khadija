@@ -36,7 +36,7 @@ export function translateMessage(message: string): string {
   return t(message);
 }
 export function roleLabel(role: string) {
-  const labels: Record<string, string> = { ADMIN: 'Administrateur', DIRECTEUR: 'Directeur', COMPTABLE: 'Comptable', ENSEIGNANT: 'Enseignant', PARENT: 'Parent', CONTROLEUR_PRESENCE: 'Attendance officer' };
+  const labels: Record<string, string> = { ADMIN: 'Administrateur', DIRECTEUR: 'Directeur', COMPTABLE: 'Comptable', ENSEIGNANT: 'Enseignant', PARENT: 'Parent', CONTROLEUR_PRESENCE: 'Attendance officer', SURVEILLANT_INTERNAT: 'Boarding supervisor' };
   return t(labels[role] || role);
 }
 export function statusLabel(status: string) {
