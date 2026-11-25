@@ -21,6 +21,9 @@ export class BoardingController {
   @Get('boarders') @Roles(...STAFF) @ApiOperation({ summary: 'Liste des internes (classes d’internat de l’année en cours)' })
   boarders(@Query('search') search?: string) { return this.service.boarders(search); }
 
+  @Put('boarders/batch') @Roles('ADMIN', 'DIRECTEUR') @ApiOperation({ summary: 'Passer un groupe d’élèves en interne ou en externe' })
+  setBoarders(@Body() body: { studentIds: string[]; isBoarder: boolean }, @CurrentUser() actor: any) { return this.service.setBoarders(body, actor); }
+
   @Get('rooms') @Roles(...STAFF) rooms() { return this.service.rooms(); }
   @Post('rooms') @Roles('ADMIN', 'DIRECTEUR') createRoom(@Body() body: any) { return this.service.createRoom(body); }
   @Patch('rooms/:id') @Roles('ADMIN', 'DIRECTEUR') updateRoom(@Param('id') id: string, @Body() body: any) { return this.service.updateRoom(id, body); }

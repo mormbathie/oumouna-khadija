@@ -221,6 +221,7 @@ model Student {
   originClass   String?
   quranLevel    String?
   quranCircle   String?       // Halkha coranique, indépendante de la classe scolaire
+  isBoarder     Boolean       @default(false) // Régime : interne (dort à l'internat) ou externe
   gender        Gender
   address       String?
   transportZone Int?
@@ -263,6 +264,7 @@ model Student {
 
   @@index([schoolMatricule])
   @@index([quranCircle])
+  @@index([isBoarder])
 }
 
 model StudentGuardian {

@@ -253,6 +253,7 @@ export class StudentsService {
     originClass?: string;
     quranLevel?: string;
     quranCircle?: string;
+    isBoarder?: boolean;
     duplicateOverrideReason?: string;
     registrationKind?: 'NEW' | 'RENEWAL';
   }, actor: ActingUser) {
@@ -263,6 +264,7 @@ export class StudentsService {
     let quranCircle: string | null | undefined;
     try { quranCircle = quranCircleValue(data.quranCircle); }
     catch (error: any) { throw new BadRequestException(error.message); }
+    if (data.isBoarder !== undefined && typeof data.isBoarder !== 'boolean') throw new BadRequestException('Régime (interne / externe) invalide.');
     if (schoolMatricule && schoolMatricule.length > 100) throw new BadRequestException('Le matricule école ne peut pas dépasser 100 caractères.');
     if (String(data.originClass || '').trim().length > 400) throw new BadRequestException('La classe d’origine ne peut pas dépasser 400 caractères.');
     if (String(data.quranLevel || '').trim().length > 400) throw new BadRequestException('Le niveau du Coran ne peut pas dépasser 400 caractères.');
@@ -334,6 +336,7 @@ export class StudentsService {
         originClass: data.originClass?.trim() || null,
         quranLevel: data.quranLevel?.trim() || null,
         quranCircle: quranCircle ?? null,
+        isBoarder: data.isBoarder === true,
         address: data.address,
         bloodGroup: data.bloodGroup,
         photoUrl: data.photoUrl,
@@ -585,6 +588,10 @@ export class StudentsService {
         studentData[field] = value || null;
       }
     }
+    if (data.isBoarder !== undefined) {
+      if (typeof data.isBoarder !== 'boolean') throw new BadRequestException('Régime (interne / externe) invalide.');
+      studentData.isBoarder = data.isBoarder;
+    }
     if (data.quranCircle !== undefined) {
       try { studentData.quranCircle = quranCircleValue(data.quranCircle); }
       catch (error: any) { throw new BadRequestException(error.message); }
@@ -668,6 +675,8 @@ export class StudentsService {
         }
 
         await tx.student.update({ where: { id }, data: studentData });
+        // A day pupil no longer occupies a boarding bed.
+        if (studentData.isBoarder === false) await tx.boardingBed.updateMany({ where: { studentId: id }, data: { studentId: null, assignedAt: null } });
         if ((data.classroomId || data.registrationKind !== undefined) && classroom) {
           await tx.enrollment.upsert({ where: { studentId_academicYearId: { studentId: id, academicYearId: classroom.academicYearId } },
             update: { classroomId: classroom.id, registrationKind, status: 'REGISTERED', registeredById: author.id, registeredByName: author.name, registeredByRole: author.role },

@@ -18,6 +18,7 @@ node prisma/apply-financial-options.cjs
 npx --no-install prisma db push --skip-generate
 node prisma/apply-class-fees.cjs
 node prisma/apply-snack-registration-fix.cjs
+node prisma/apply-boarder-flag.cjs
 
 echo "ℹ️  Les données de démonstration ne sont jamais rejouées au démarrage."
 echo "   Pour une base locale vide, lancez le seed manuellement depuis backend/."

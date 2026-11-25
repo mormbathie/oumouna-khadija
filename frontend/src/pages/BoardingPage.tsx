@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { BedDouble, CalendarCheck, DoorOpen, HeartPulse, LayoutGrid, Plus, RefreshCw, Search, Trash2, Wallet } from 'lucide-react';
-import { boardingApi } from '../services/api';
+import { BedDouble, CalendarCheck, CheckSquare2, DoorOpen, HeartPulse, LayoutGrid, Plus, RefreshCw, Search, Trash2, UserCheck, Wallet } from 'lucide-react';
+import { boardingApi, classesApi, studentsApi } from '../services/api';
 import { useAuth } from '../auth/AuthContext';
 import { money } from '../config/school';
 
-type Tab = 'overview' | 'rooms' | 'rollcall' | 'leaves' | 'health' | 'pocket';
+type Tab = 'overview' | 'regime' | 'rooms' | 'rollcall' | 'leaves' | 'health' | 'pocket';
 const tabs: { id: Tab; label: string; icon: typeof BedDouble }[] = [
   { id: 'overview', label: 'Vue d’ensemble', icon: LayoutGrid },
+  { id: 'regime', label: 'Affecter des internes', icon: UserCheck },
   { id: 'rooms', label: 'Chambres et lits', icon: BedDouble },
   { id: 'rollcall', label: 'Appel du soir', icon: CalendarCheck },
   { id: 'leaves', label: 'Sorties et visites', icon: DoorOpen },
@@ -67,15 +68,16 @@ export function BoardingPage() {
   return <div className="mx-auto max-w-7xl space-y-5">
     <div>
       <h2 className="flex items-center gap-2 text-xl font-bold text-slate-800"><BedDouble className="h-6 w-6 text-[#8a7330]"/>Internat</h2>
-      <p className="mt-1 text-sm text-slate-500">Les internes sont les élèves inscrits cette année dans une classe d’internat ({boarders.length} élève(s)).</p>
+      <p className="mt-1 text-sm text-slate-500">Les internes sont les élèves au régime « Interne », inscrits cette année ({boarders.length} élève(s)).</p>
     </div>
     <nav className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-      {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => { setTab(id); setError(''); setNotice(''); }}
+      {tabs.filter(item => item.id !== 'regime' || canManageRooms).map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => { setTab(id); setError(''); setNotice(''); }}
         className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${tab === id ? 'bg-[#30331f] text-white shadow' : 'text-slate-600 hover:bg-stone-100'}`}><Icon className="h-4 w-4"/>{label}</button>)}
     </nav>
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
     {tab === 'overview' && <Overview {...shared}/>}
+    {tab === 'regime' && canManageRooms && <Regime {...shared}/>}
     {tab === 'rooms' && <Rooms {...shared} canManage={canManageRooms}/>}
     {tab === 'rollcall' && <RollCall {...shared}/>}
     {tab === 'leaves' && <Leaves {...shared}/>}
@@ -85,6 +87,69 @@ export function BoardingPage() {
 }
 
 type Shared = { boarders: any[]; run: (action: () => Promise<unknown>, success?: string) => Promise<boolean>; reloadBoarders: () => Promise<void> };
+
+/** Select a group of pupils and make them boarders or day pupils in one operation. */
+function Regime({ run, reloadBoarders }: Shared) {
+  const [students, setStudents] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState({ search: '', classId: '', regime: '' });
+  const [loading, setLoading] = useState(true);
+  const load = async () => {
+    setLoading(true);
+    try { const [rows, classRows] = await Promise.all([studentsApi.getAll({ status: 'ACTIVE' }), classesApi.getAll()]); setStudents(rows); setClasses(classRows); }
+    catch { /* shown by actions */ } finally { setLoading(false); }
+  };
+  useEffect(() => { void load(); }, []);
+  const filtered = useMemo(() => {
+    const needle = filters.search.trim().toLocaleLowerCase();
+    return students.filter(student => {
+      const classroom = student.enrollments?.[0]?.classroom;
+      if (filters.classId && classroom?.id !== filters.classId) return false;
+      if (filters.regime === 'BOARDER' && !student.isBoarder) return false;
+      if (filters.regime === 'DAY' && student.isBoarder) return false;
+      return !needle || `${student.firstName} ${student.lastName} ${student.matricule} ${classroom?.name || ''}`.toLocaleLowerCase().includes(needle);
+    });
+  }, [students, filters]);
+  const visibleIds = filtered.map(student => student.id);
+  const allVisible = visibleIds.length > 0 && visibleIds.every(id => selected.has(id));
+  const toggle = (id: string) => setSelected(current => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const toggleVisible = () => setSelected(current => { const next = new Set(current); visibleIds.forEach(id => allVisible ? next.delete(id) : next.add(id)); return next; });
+  const apply = (isBoarder: boolean) => {
+    if (!selected.size) return;
+    if (!window.confirm(isBoarder ? `Mettre ${selected.size} élève(s) à l’internat ?` : `Passer ${selected.size} élève(s) en externe ? Leurs lits seront libérés.`)) return;
+    void run(async () => {
+      const result = await boardingApi.setBoarders([...selected], isBoarder);
+      setSelected(new Set()); await load(); await reloadBoarders();
+      return result;
+    }, isBoarder ? 'Élèves mis à l’internat.' : 'Élèves passés en externe.');
+  };
+  const counts = { boarders: students.filter(student => student.isBoarder).length, day: students.filter(student => !student.isBoarder).length };
+  return <Card title="Affecter des internes" actions={<span className="text-xs text-slate-500">{counts.boarders} interne(s) · {counts.day} externe(s)</span>}>
+    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_200px_180px]">
+      <label className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input value={filters.search} onChange={event => setFilters({ ...filters, search: event.target.value })} placeholder="Nom, matricule, classe…" className={`${input} pl-9`}/></label>
+      <select value={filters.classId} onChange={event => setFilters({ ...filters, classId: event.target.value })} className={input}><option value="">Toutes les classes</option>{classes.map(classroom => <option key={classroom.id} value={classroom.id}>{classroom.name}</option>)}</select>
+      <select value={filters.regime} onChange={event => setFilters({ ...filters, regime: event.target.value })} className={input}><option value="">Internes et externes</option><option value="BOARDER">Internes seulement</option><option value="DAY">Externes seulement</option></select>
+    </div>
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={toggleVisible} disabled={!visibleIds.length} className={ghost}><CheckSquare2 className="h-4 w-4"/>{allVisible ? 'Désélectionner les résultats' : 'Sélectionner tous les résultats'}</button><span className="text-sm text-slate-500">{filtered.length} affiché(s) · <b>{selected.size} sélectionné(s)</b></span></div>
+      <div className="flex flex-wrap gap-2"><button type="button" disabled={!selected.size} onClick={() => apply(true)} className={primary}>Mettre à l’internat</button><button type="button" disabled={!selected.size} onClick={() => apply(false)} className={ghost}>Passer en externe</button></div>
+    </div>
+    <div className="mt-3 max-h-[60vh] overflow-auto rounded-xl border border-slate-100">
+      {loading ? <p className="p-6 text-center text-sm text-slate-500">Chargement…</p> : <table className="w-full min-w-[560px] text-left text-sm">
+        <thead className="sticky top-0 bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="w-12 px-3 py-2"><input type="checkbox" aria-label="Tout sélectionner" checked={allVisible} onChange={toggleVisible}/></th><th className="px-3 py-2">Élève</th><th className="px-3 py-2">Classe</th><th className="px-3 py-2">Régime</th></tr></thead>
+        <tbody className="divide-y divide-slate-100">{filtered.map(student => <tr key={student.id} className={selected.has(student.id) ? 'bg-amber-50/60' : 'hover:bg-slate-50'}>
+          <td className="px-3 py-2"><input type="checkbox" aria-label={`Sélectionner ${name(student)}`} checked={selected.has(student.id)} onChange={() => toggle(student.id)}/></td>
+          <td className="px-3 py-2"><b className="text-slate-800">{name(student)}</b><span className="block font-mono text-xs text-slate-500">{student.matricule}</span></td>
+          <td className="px-3 py-2">{student.enrollments?.[0]?.classroom?.name || <span className="text-slate-400">Non inscrit cette année</span>}</td>
+          <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${student.isBoarder ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>{student.isBoarder ? 'Interne' : 'Externe'}</span></td>
+        </tr>)}</tbody>
+      </table>}
+      {!loading && !filtered.length && <p className="p-6 text-center text-sm text-slate-500">Aucun élève ne correspond.</p>}
+    </div>
+    <p className="mt-2 text-xs text-slate-500">Seuls les élèves inscrits cette année peuvent être mis à l’internat. Le régime se modifie aussi dans la fiche de l’élève.</p>
+  </Card>;
+}
 
 function Overview({ boarders }: Shared) {
   const [stats, setStats] = useState<any>(null);
@@ -123,7 +188,7 @@ function Overview({ boarders }: Shared) {
 
 function Rooms({ boarders, run, reloadBoarders, canManage }: Shared & { canManage: boolean }) {
   const [rooms, setRooms] = useState<any[]>([]);
-  const [form, setForm] = useState({ name: '', building: '', gender: '', beds: '6', supervisorName: '' });
+  const [form, setForm] = useState({ name: '', building: '', gender: 'MALE', beds: '6', supervisorName: '' });
   const load = async () => { try { setRooms(await boardingApi.rooms()); } catch { /* shown by actions */ } };
   useEffect(() => { void load(); }, []);
   const placed = new Set(rooms.flatMap(room => room.beds.map((bed: any) => bed.studentId).filter(Boolean)));
@@ -133,11 +198,11 @@ function Rooms({ boarders, run, reloadBoarders, canManage }: Shared & { canManag
   return <div className="space-y-5">
     {canManage && <Card title="Nouvelle chambre">
       <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6" onSubmit={event => { event.preventDefault(); void run(async () => {
-        await boardingApi.createRoom({ ...form, gender: form.gender || null, beds: Number(form.beds) }); setForm({ name: '', building: '', gender: '', beds: '6', supervisorName: '' }); await load();
+        await boardingApi.createRoom({ ...form, beds: Number(form.beds) }); setForm({ name: '', building: '', gender: form.gender, beds: '6', supervisorName: '' }); await load();
       }, 'Chambre créée.'); }}>
         <input required placeholder="Nom (ex. Chambre 1)" value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} className={`${input} lg:col-span-2`}/>
         <input placeholder="Bâtiment" value={form.building} onChange={event => setForm({ ...form, building: event.target.value })} className={input}/>
-        <select value={form.gender} onChange={event => setForm({ ...form, gender: event.target.value })} className={input}><option value="">Mixte</option><option value="MALE">Garçons</option><option value="FEMALE">Filles</option></select>
+        <select value={form.gender} onChange={event => setForm({ ...form, gender: event.target.value })} className={input}><option value="MALE">Garçons</option><option value="FEMALE">Filles</option></select>
         <input type="number" min={0} max={100} value={form.beds} onChange={event => setForm({ ...form, beds: event.target.value })} className={input} aria-label="Nombre de lits"/>
         <button className={primary}><Plus className="h-4 w-4"/>Créer</button>
         <input placeholder="Surveillant(e) responsable" value={form.supervisorName} onChange={event => setForm({ ...form, supervisorName: event.target.value })} className={`${input} lg:col-span-3`}/>
@@ -149,7 +214,7 @@ function Rooms({ boarders, run, reloadBoarders, canManage }: Shared & { canManag
       const free = room.beds.filter((bed: any) => !bed.studentId).length;
       const candidates = (bed: any) => boarders.filter(student => (!room.gender || student.gender === room.gender) && (!placed.has(student.id) || student.id === bed.studentId));
       return <Card key={room.id} title={`${room.name}${room.building ? ` · ${room.building}` : ''}`} actions={<span className="flex items-center gap-2">
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{room.gender === 'MALE' ? 'Garçons' : room.gender === 'FEMALE' ? 'Filles' : 'Mixte'} · {free} libre(s)/{room.beds.length}</span>
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{room.gender === 'FEMALE' ? 'Filles' : 'Garçons'} · {free} libre(s)/{room.beds.length}</span>
         {canManage && <button type="button" title="Supprimer la chambre" onClick={() => { if (window.confirm(`Supprimer ${room.name} ?`)) void run(async () => { await boardingApi.deleteRoom(room.id); await load(); }); }} className="rounded p-1 text-rose-600 hover:bg-rose-50"><Trash2 className="h-4 w-4"/></button>}
       </span>}>
         {room.supervisorName && <p className="mb-3 text-xs text-slate-500">Responsable : {room.supervisorName}</p>}

@@ -7,11 +7,12 @@ export const BOARDING_PROGRAMS = ['DAARA_BOARDING', 'FRANCO_ARAB_BOARDING'];
 export const ROLL_CALL_STATUSES = ['PRESENT', 'ABSENT', 'ON_LEAVE', 'SICK'] as const;
 export const LEAVE_KINDS = ['WEEKEND', 'HOLIDAY', 'MEDICAL', 'FAMILY', 'OTHER'] as const;
 
-// Boarders are the active pupils enrolled this year in a boarding class.
+// Boarders are the active pupils marked "interne" and enrolled for the current school year.
 export const boarderWhere: Prisma.StudentWhereInput = {
   status: 'ACTIVE',
+  isBoarder: true,
   departure: { is: null },
-  enrollments: { some: { status: 'REGISTERED', academicYear: { isCurrent: true }, classroom: { program: { in: BOARDING_PROGRAMS } } } },
+  enrollments: { some: { status: 'REGISTERED', academicYear: { isCurrent: true } } },
 };
 
 const text = (value: unknown, max: number, label: string, required = false) => {
@@ -38,7 +39,7 @@ export class BoardingService {
 
   private async assertBoarder(studentId: string, tx: Prisma.TransactionClient = this.prisma) {
     const student = await tx.student.findFirst({ where: { AND: [{ id: String(studentId || '') }, boarderWhere] }, select: { id: true, gender: true, firstName: true, lastName: true } });
-    if (!student) throw new BadRequestException('Cet élève n’est pas un interne actif (classe d’internat de l’année en cours).');
+    if (!student) throw new BadRequestException('Cet élève n’est pas un interne actif (régime « Interne », inscrit cette année).');
     return student;
   }
 
@@ -94,6 +95,34 @@ export class BoardingService {
     }));
   }
 
+  /** Puts a group of pupils in the boarding house or back to day pupils; day pupils lose their bed. */
+  async setBoarders(input: { studentIds?: string[]; isBoarder?: boolean }, actor: ActingUser) {
+    const author = actorStamp(actor);
+    if (typeof input?.isBoarder !== 'boolean') throw new BadRequestException('Régime invalide.');
+    if (!Array.isArray(input.studentIds)) throw new BadRequestException('Sélection d’élèves invalide.');
+    const ids = [...new Set(input.studentIds.map(id => String(id || '').trim()).filter(Boolean))];
+    if (!ids.length) throw new BadRequestException('Sélectionnez au moins un élève.');
+    if (ids.length > 1000) throw new BadRequestException('Vous ne pouvez pas modifier plus de 1 000 élèves à la fois.');
+    const isBoarder = input.isBoarder;
+    return this.prisma.$transaction(async tx => {
+      const students = await tx.student.findMany({
+        where: { id: { in: ids }, status: 'ACTIVE', departure: { is: null }, ...(isBoarder ? { enrollments: { some: { status: 'REGISTERED', academicYear: { isCurrent: true } } } } : {}) },
+        select: { id: true, isBoarder: true },
+      });
+      if (students.length !== ids.length) throw new BadRequestException(isBoarder
+        ? 'Un ou plusieurs élèves sont introuvables, partis ou non inscrits cette année. Actualisez la liste.'
+        : 'Un ou plusieurs élèves sont introuvables ou partis. Actualisez la liste.');
+      const changed = students.filter(student => student.isBoarder !== isBoarder).map(student => student.id);
+      if (changed.length) {
+        await tx.student.updateMany({ where: { id: { in: changed } }, data: { isBoarder, updatedById: author.id, updatedByName: author.name } });
+        if (!isBoarder) await tx.boardingBed.updateMany({ where: { studentId: { in: changed } }, data: { studentId: null, assignedAt: null } });
+        await tx.businessAudit.createMany({ data: changed.map(entityId => ({ action: 'STUDENT_BOARDING_CHANGED', entityId, actorId: author.id, actorName: author.name, actorRole: author.role,
+          details: JSON.stringify({ isBoarder }) })) });
+      }
+      return { selectedCount: ids.length, updatedCount: changed.length, isBoarder };
+    });
+  }
+
   // ── Rooms and beds ─────────────────────────────────────────────────────────────
 
   rooms() {
@@ -104,14 +133,15 @@ export class BoardingService {
   }
 
   private roomData(input: any) {
-    const gender = input?.gender ? String(input.gender) : null;
-    if (gender && !['MALE', 'FEMALE'].includes(gender)) throw new BadRequestException('Type de chambre invalide.');
+    // Every room is for boys or for girls: there are no mixed rooms.
+    const gender = String(input?.gender || '');
+    if (!['MALE', 'FEMALE'].includes(gender)) throw new BadRequestException('Choisissez une chambre de garçons ou de filles.');
     return {
       name: text(input?.name, 80, 'Le nom de la chambre', true)!,
       building: text(input?.building, 80, 'Le bâtiment'),
       supervisorName: text(input?.supervisorName, 120, 'Le surveillant'),
       notes: text(input?.notes, 500, 'Les notes'),
-      gender: gender as Gender | null,
+      gender: gender as Gender,
     };
   }
 

@@ -101,6 +101,7 @@ export const notificationsApi = {
 export const boardingApi = {
   overview: () => api.get('/boarding/overview').then((r) => r.data),
   boarders: (search?: string) => api.get('/boarding/boarders', { params: { search } }).then((r) => r.data),
+  setBoarders: (studentIds: string[], isBoarder: boolean) => api.put('/boarding/boarders/batch', { studentIds, isBoarder }).then((r) => r.data),
   rooms: () => api.get('/boarding/rooms').then((r) => r.data),
   createRoom: (data: any) => api.post('/boarding/rooms', data).then((r) => r.data),
   updateRoom: (id: string, data: any) => api.patch(`/boarding/rooms/${id}`, data).then((r) => r.data),
