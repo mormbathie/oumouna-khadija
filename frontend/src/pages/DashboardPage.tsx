@@ -55,7 +55,7 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-amber-700 via-stone-700 to-slate-900 rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#30331f] via-[#3d4128] to-[#6b5b26] rounded-2xl p-4 md:p-6 text-white shadow-lg relative overflow-hidden ring-1 ring-[#b3973f]/30">
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center space-x-2 bg-amber-500/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-amber-200 mb-3 hidden md:inline-flex border border-amber-400/30">
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />

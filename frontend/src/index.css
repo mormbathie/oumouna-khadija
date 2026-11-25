@@ -9,11 +9,51 @@
   display: none;
 }
 
+@theme {
+  --color-brand-olive: #30331f;
+  --color-brand-olive-dark: #24271a;
+  --color-brand-gold: #b3973f;
+  --color-brand-gold-soft: #f4ecd2;
+  --color-brand-cream: #f5f1e7;
+}
+
 @layer base {
   body {
     @apply text-stone-900 font-sans antialiased;
     background: #f5f1e7;
+    text-rendering: optimizeLegibility;
   }
+  /* Soft default borders: plain `border` utilities no longer draw black lines. */
+  *, ::before, ::after, ::backdrop { border-color: var(--color-stone-200); }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary, select:not(:disabled) { cursor: pointer; }
+  button, a, input, select, textarea { transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .1s ease; }
+  button:not(:disabled):active { transform: translateY(1px); }
+  /* Consistent fields everywhere; page utilities still take precedence over this base layer. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), select, textarea {
+    background-color: #fff; border-radius: .6rem; border: 1px solid var(--color-stone-300);
+  }
+  input:not([type="checkbox"]):not([type="radio"]):focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: none; border-color: var(--color-brand-gold); box-shadow: 0 0 0 3px rgb(179 151 63 / .22);
+  }
+  input[type="checkbox"], input[type="radio"] { accent-color: #a2862f; }
+  :focus-visible { outline-color: var(--color-brand-gold); }
+  ::placeholder { color: var(--color-stone-400); }
+  table { border-collapse: collapse; }
+  thead th { font-weight: 600; }
+  tbody tr { transition: background-color .12s ease; }
+  * { scrollbar-width: thin; scrollbar-color: rgb(48 51 31 / .25) transparent; }
+}
+
+/* Fluid page and dialog entrances (disabled for people who prefer less motion). */
+@keyframes page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes overlay-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.page-enter { animation: page-enter .22s ease-out both; }
+.fixed.inset-0.z-50 { animation: overlay-enter .15s ease-out both; backdrop-filter: blur(3px); }
+.fixed.inset-0.z-50 > div, .fixed.inset-0.z-50 > form, [role="dialog"] > div { animation: dialog-enter .2s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .fixed.inset-0.z-50, .fixed.inset-0.z-50 > div, .fixed.inset-0.z-50 > form, [role="dialog"] > div { animation: none; }
+  button:not(:disabled):active { transform: none; }
 }
 
 :root {
@@ -30,8 +70,8 @@
     linear-gradient(135deg, rgb(255 255 255 / .72), transparent 45%);
 }
 
-.oumouna-canvas > div > section,
-.oumouna-canvas > div > div.bg-white {
+.oumouna-canvas > .page-enter > div > section,
+.oumouna-canvas > .page-enter > div > div.bg-white {
   box-shadow: 0 10px 30px rgb(48 51 31 / .06);
 }
 

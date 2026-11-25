@@ -66,12 +66,12 @@ export function BoardingPage() {
   const shared = { boarders, run, reloadBoarders: loadBoarders };
   return <div className="mx-auto max-w-7xl space-y-5">
     <div>
-      <h2 className="flex items-center gap-2 text-xl font-bold text-slate-800"><BedDouble className="h-6 w-6 text-indigo-600"/>Internat</h2>
+      <h2 className="flex items-center gap-2 text-xl font-bold text-slate-800"><BedDouble className="h-6 w-6 text-[#8a7330]"/>Internat</h2>
       <p className="mt-1 text-sm text-slate-500">Les internes sont les élèves inscrits cette année dans une classe d’internat ({boarders.length} élève(s)).</p>
     </div>
     <nav className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
       {tabs.map(({ id, label, icon: Icon }) => <button key={id} type="button" onClick={() => { setTab(id); setError(''); setNotice(''); }}
-        className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${tab === id ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}><Icon className="h-4 w-4"/>{label}</button>)}
+        className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${tab === id ? 'bg-[#30331f] text-white shadow' : 'text-slate-600 hover:bg-stone-100'}`}><Icon className="h-4 w-4"/>{label}</button>)}
     </nav>
     {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
     {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
@@ -103,7 +103,7 @@ function Overview({ boarders }: Shared) {
     ['Argent de poche gardé', money(stats.pocketMoneyHeld), 'pour tous les internes', 'text-slate-800'],
   ] : [];
   return <div className="space-y-5">
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{tiles.map(([label, value, hint, color]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">{tiles.map(([label, value, hint, color]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className={`mt-1 text-2xl font-bold ${color}`}>{value}</p><p className="text-xs text-slate-500">{hint}</p></div>)}</div>
     <Card title="Liste des internes" actions={<label className="relative w-full sm:w-72"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Nom, classe, chambre…" className={`${input} pl-9`}/></label>}>
       <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm">
