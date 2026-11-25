@@ -70,7 +70,7 @@ export const Layout: React.FC = () => {
   const paletteItems = groups.flatMap(group => group.items.map(item => ({ to: item.to, label: item.label, group: t(group.label), icon: item.icon })));
   useEffect(() => {
     setMobileMenuOpen(false);
-    if (window.matchMedia('(max-width: 767px)').matches) content.current?.scrollTo({ top: 0 });
+    if (window.matchMedia('(max-width: 1023px)').matches) content.current?.scrollTo({ top: 0 });
   }, [pathname]);
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
@@ -87,7 +87,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="mobile-app flex h-dvh min-h-0 overflow-hidden bg-[#f5f1e7] text-stone-800">
-      <aside id="desktop-sidebar" aria-label={t('Menu principal')} data-collapsed={sidebarCollapsed} className={`hidden md:flex md:shrink-0 md:flex-col border-e border-[#b3973f]/30 bg-[#30331f] text-white shadow-2xl transition-[width] duration-200 motion-reduce:transition-none ${sidebarCollapsed ? 'md:w-20' : 'md:w-72'}`}>
+      <aside id="desktop-sidebar" aria-label={t('Menu principal')} data-collapsed={sidebarCollapsed} className={`hidden lg:flex lg:shrink-0 lg:flex-col border-e border-[#b3973f]/30 bg-[#30331f] text-white shadow-2xl transition-[width] duration-200 motion-reduce:transition-none ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-72'}`}>
         <div className={`flex min-h-20 shrink-0 items-center gap-3 border-b border-white/10 bg-[#282b1a] ${sidebarCollapsed ? 'justify-center px-2' : 'px-5'}`}>
           <img src={school.logo} alt={sidebarCollapsed ? school.shortName : ''} title={school.name} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#b3973f] bg-white object-contain shadow-lg" />
           {!sidebarCollapsed && <div className="min-w-0"><h1 className="text-base font-black leading-tight tracking-wide">{school.shortName}</h1><p className="mt-1 text-[9px] font-bold uppercase tracking-[.18em] text-amber-300">{school.tagline}</p></div>}
@@ -107,7 +107,7 @@ export const Layout: React.FC = () => {
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-20 hidden min-h-16 items-center justify-between gap-4 border-b border-[#e4dcc5] bg-[#fffdf8]/90 px-6 backdrop-blur md:flex">
+        <header className="sticky top-0 z-20 hidden min-h-16 items-center justify-between gap-4 border-b border-[#e4dcc5] bg-[#fffdf8]/90 px-6 backdrop-blur lg:flex">
           <div className="flex min-w-0 items-center gap-3">
             <button onClick={toggleSidebar} aria-controls="desktop-sidebar" aria-expanded={!sidebarCollapsed} title={t(sidebarCollapsed ? 'Développer le menu' : 'Réduire le menu')} aria-label={t(sidebarCollapsed ? 'Développer le menu' : 'Réduire le menu')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-700"><Menu className="h-5 w-5" /></button>
             <div className="min-w-0">
@@ -116,23 +116,24 @@ export const Layout: React.FC = () => {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button type="button" onClick={() => setPaletteOpen(true)} className="flex h-10 w-64 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-500 hover:border-amber-300 lg:w-72"><Search className="h-4 w-4" /><span className="flex-1 text-left">Rechercher un module…</span><kbd className="rounded border border-stone-200 bg-stone-50 px-1.5 text-[10px] font-semibold text-stone-500">Ctrl K</kbd></button>
+            <button type="button" onClick={() => setPaletteOpen(true)} aria-label="Rechercher un module" title="Rechercher un module (Ctrl+K)" className="flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 hover:border-amber-300 xl:hidden"><Search className="h-4 w-4" /></button>
+            <button type="button" onClick={() => setPaletteOpen(true)} className="hidden h-10 w-72 items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-500 hover:border-amber-300 xl:flex"><Search className="h-4 w-4" /><span className="flex-1 text-left">Rechercher un module…</span><kbd className="rounded border border-stone-200 bg-stone-50 px-1.5 text-[10px] font-semibold text-stone-500">Ctrl K</kbd></button>
             <LanguageSelector />
             <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{visibleRole}</span>
           </div>
         </header>
-        <header className="mobile-topbar z-20 flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 md:hidden">
+        <header className="mobile-topbar z-20 flex shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 lg:hidden">
           <div className="flex min-w-0 items-center gap-2.5"><img src={school.logo} alt="" className="h-10 w-10 shrink-0 rounded-xl border border-amber-100 object-contain" /><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-900">{school.shortName}</p><p className="truncate text-xs text-slate-500">{mobileMenuOpen ? t('Tous les modules') : currentPage?.label || school.shortName}</p></div></div>
           <div className="flex shrink-0 items-center gap-2"><LanguageSelector /><button onClick={() => navigate('/profile')} aria-label={t('My Profile')} className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 font-bold uppercase text-amber-800"><ProfileAvatar fallback={user?.firstName?.[0] || user?.username?.[0] || 'U'} /></button></div>
         </header>
         <main ref={content} className="mobile-content oumouna-canvas min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-7"><div key={pathname} className="page-enter"><Outlet /></div></main>
         <CommandPalette items={paletteItems} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-        {mobileMenuOpen && <section aria-label={t('Tous les modules')} className="mobile-modules absolute inset-x-0 z-40 overflow-y-auto bg-slate-50 p-4 md:hidden">
+        {mobileMenuOpen && <section aria-label={t('Tous les modules')} className="mobile-modules absolute inset-x-0 z-40 overflow-y-auto bg-slate-50 p-4 lg:hidden">
           <div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-bold text-slate-900">{t('Tous les modules')}</h2><p className="text-sm text-slate-500">{visibleRole} · {yearName}</p></div><button onClick={() => setMobileMenuOpen(false)} aria-label={t('Close menu')} className="rounded-xl border bg-white p-3"><X className="h-5 w-5" /></button></div>
           <nav aria-label={t('Tous les modules')} className="space-y-6">{groups.map(group=><section key={group.id} aria-labelledby={`mobile-category-${group.id}`}><h3 id={`mobile-category-${group.id}`} className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">{t(group.label)}</h3><div className="grid grid-cols-2 gap-3">{group.items.map(item=>{const Icon=item.icon; const visual=navigationVisuals[item.to as keyof typeof navigationVisuals]; return <NavLink key={item.to} to={item.to} end={item.to==='/'} onClick={()=>setMobileMenuOpen(false)} className={({isActive})=>`flex min-h-28 flex-col items-start justify-center gap-3 rounded-2xl border p-4 text-sm font-semibold ${isActive?'border-amber-600 bg-amber-50 text-amber-900':'border-slate-200 bg-white text-slate-700'}`}><span className={`flex h-11 w-11 items-center justify-center rounded-xl border ${visual.light}`}><Icon className="h-6 w-6" strokeWidth={1.8}/></span><span>{item.label}</span></NavLink>;})}</div></section>)}</nav>
           <button onClick={handleLogout} className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white text-sm font-semibold text-rose-700"><LogOut className="h-5 w-5" />{t('Sign out')}</button>
         </section>}
-        <nav aria-label={t('Navigation mobile')} className="mobile-bottom-nav z-30 flex shrink-0 border-t border-slate-200 bg-white px-1 md:hidden">
+        <nav aria-label={t('Navigation mobile')} className="mobile-bottom-nav z-30 flex shrink-0 border-t border-slate-200 bg-white px-1 lg:hidden">
           {mobileTabs.map(item => { const Icon = item.icon; return <NavLink key={item.to} to={item.to} end={item.to === '/'} onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold ${isActive && !mobileMenuOpen ? 'text-amber-700' : 'text-slate-500'}`}><Icon className="h-5 w-5" /><span>{t(mobileShortNames[item.to] || item.label)}</span></NavLink>; })}
           <button onClick={() => setMobileMenuOpen(value => !value)} aria-expanded={mobileMenuOpen} className={`flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold ${mobileMenuOpen ? 'text-amber-700' : 'text-slate-500'}`}><Menu className="h-5 w-5" /><span>{t('Menu')}</span></button>
         </nav>

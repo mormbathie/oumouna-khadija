@@ -302,7 +302,7 @@ export const FinancesPage: React.FC = () => {
       <p className="text-sm text-slate-600">{t('Encaissements bruts')} : {(stats?.grossCollected || 0).toLocaleString(locale())} F CFA · {t('Remboursements')} : {(stats?.totalRefunded || 0).toLocaleString(locale())} F CFA · {t('Encaissements nets')} : {(stats?.totalCollected || 0).toLocaleString(locale())} F CFA</p>
       <nav className="grid grid-cols-1 gap-2 rounded-2xl border bg-white p-2 sm:grid-cols-3" aria-label="Catégories financières">{([['REGISTRATION','Inscriptions'],['TUITION','Mensualités'],['OTHER','Fournitures et autres services']] as const).map(([key,label])=><button key={key} onClick={()=>{setFinanceGroup(key);setBillingMonthFilter('');setTypeFilter('');}} className={`rounded-xl px-4 py-3 text-sm font-semibold ${financeGroup===key?'bg-amber-600 text-white':'text-slate-600 hover:bg-slate-50'}`}>{label}</button>)}</nav>
       {/* Financial KPIs */}
-      <div className="mobile-finance-kpis grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="mobile-finance-kpis grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
             {t("Total Invoiced")}</span>
@@ -335,7 +335,7 @@ export const FinancesPage: React.FC = () => {
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
             {t("Invoice Status")}</span>
-          <div className="flex items-center space-x-2 text-xs mt-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs mt-2">
             <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">
               {stats?.byStatus?.PAID || 0} {t("Paids")}</span>
             <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">
@@ -349,7 +349,7 @@ export const FinancesPage: React.FC = () => {
       {/* Filters */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
         <label className="relative min-w-64 flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input type="search" value={searchFilter} onChange={e=>setSearchFilter(e.target.value)} placeholder="Rechercher un élève, matricule ou numéro de facture…" className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm focus:ring-2 focus:ring-amber-500"/></label>
-        <div className="mobile-finance-filters flex items-center space-x-4">
+        <div className="mobile-finance-filters flex flex-wrap items-center gap-3">
           <select aria-label="Année scolaire" value={yearFilter} onChange={e=>{setYearFilter(e.target.value);setClassFilter('');}} className="rounded-lg border bg-slate-50 px-2.5 py-1.5"><option value="">Toutes les années</option>{academicYears.map(y=><option key={y.id} value={y.id}>{y.name}</option>)}</select>
           <div className="flex items-center space-x-2">
             <Filter className="w-3.5 h-3.5 text-slate-400" />
