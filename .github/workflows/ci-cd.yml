@@ -80,6 +80,7 @@ jobs:
           node test/parent-accounts.cjs
           node test/student-deletion.cjs
           node test/boarding.cjs
+          node test/snack-registration-fix.cjs
           TEST_DATABASE_URL="$DATABASE_URL" node test/additive-financial-patch.cjs
       - name: Verify deployment rollback scenarios
         working-directory: .
