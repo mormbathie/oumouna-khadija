@@ -705,9 +705,53 @@ export class StudentsService {
     });
   }
 
-  async remove(id: string) {
-    // No financial or school history may disappear through a dossier deletion.
-    throw new BadRequestException('La suppression des dossiers est désactivée. Utilisez Départs et remboursements pour conserver l’historique.');
+  /**
+   * Administrator-only permanent deletion of a pupil and everything attached to it (enrolments,
+   * invoices, payments, refunds, grades, attendance, documents). Past cash totals change: the
+   * administrator must retype the matricule and give a reason; a summary stays in the audit log.
+   */
+  async remove(id: string, input: { confirmMatricule?: string; reason?: string }, actor: ActingUser) {
+    const author = actorStamp(actor);
+    if (author.role !== 'ADMIN') throw new ForbiddenException('Seul l’administrateur peut supprimer un dossier élève.');
+    const reason = String(input?.reason || '').trim();
+    if (reason.length < 10 || reason.length > 1000) throw new BadRequestException('Indiquez le motif de la suppression (10 à 1 000 caractères).');
+    const storageKeys = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`SELECT id FROM "Student" WHERE id = ${id} FOR UPDATE`);
+      const student = await tx.student.findUnique({ where: { id }, include: {
+        documents: { select: { storageKey: true } },
+        invoices: { select: { id: true, invoiceNumber: true, amount: true, paidAmount: true, payments: { select: { id: true, paymentNumber: true, amount: true, cancelledAt: true } } } },
+        enrollments: { select: { classroom: { select: { name: true } }, academicYear: { select: { name: true } } } },
+      } });
+      if (!student) throw new NotFoundException('Élève introuvable.');
+      if (String(input?.confirmMatricule || '').trim().toUpperCase() !== student.matricule.toUpperCase()) {
+        throw new BadRequestException('Le matricule saisi ne correspond pas à ce dossier. Suppression annulée.');
+      }
+      const invoiceIds = student.invoices.map(invoice => invoice.id);
+      const paymentIds = student.invoices.flatMap(invoice => invoice.payments.map(payment => payment.id));
+      const refunds = await tx.refund.findMany({ where: { paymentId: { in: paymentIds } }, select: { refundNumber: true, amount: true } });
+      // Rows protected by "Restrict" relations or without a database link to the pupil go first.
+      await tx.refund.deleteMany({ where: { paymentId: { in: paymentIds } } });
+      await tx.studentDeparture.deleteMany({ where: { studentId: id } });
+      await tx.paymentInstallment.deleteMany({ where: { invoiceId: { in: invoiceIds } } });
+      await tx.paymentReminder.deleteMany({ where: { invoiceId: { in: invoiceIds } } });
+      await tx.whatsAppMessageLog.deleteMany({ where: { studentId: id } });
+      await tx.student.delete({ where: { id } });
+      const activePayments = student.invoices.flatMap(invoice => invoice.payments).filter(payment => !payment.cancelledAt);
+      await tx.businessAudit.create({ data: {
+        action: 'STUDENT_DELETED', entityId: id, actorId: author.id, actorName: author.name, actorRole: author.role, reason,
+        details: JSON.stringify({
+          matricule: student.matricule, name: `${student.firstName} ${student.lastName}`,
+          enrollments: student.enrollments.map(row => `${row.academicYear.name} ${row.classroom.name}`),
+          invoices: student.invoices.map(invoice => ({ number: invoice.invoiceNumber, amount: invoice.amount, paid: invoice.paidAmount })),
+          payments: student.invoices.flatMap(invoice => invoice.payments).map(payment => ({ number: payment.paymentNumber, amount: payment.amount, cancelled: Boolean(payment.cancelledAt) })),
+          refunds, totalPaidRemoved: activePayments.reduce((sum, payment) => sum + payment.amount, 0),
+        }),
+      } });
+      return student.documents.map(document => document.storageKey);
+    }, { timeout: 30000 });
+    // Files are removed only after the database deletion succeeded.
+    await this.documents.removeStoredFiles(storageKeys).catch(() => undefined);
+    return { id, deleted: true };
   }
 
   private schoolEntryDate(value: string | Date | undefined, birthValue: string | Date) {

@@ -1,6 +1,6 @@
 import { RegistrationFees } from '../components/RegistrationFees';
 import { SchoolOptions } from '../components/SchoolOptions';
-import { programFor, ageWarning, effectiveFees, money, supportsFullDay } from '../config/school';
+import { programFor, effectiveFees, money, supportsFullDay, transportTrips } from '../config/school';
 import { printStudentInformation } from '../utils/schoolDocuments';
 import { t, locale, roleLabel } from "../i18n/index";
 import React, { useEffect, useState } from 'react';
@@ -40,6 +40,7 @@ export const StudentsPage: React.FC = () => {
   const roles = (user?.roles || []).map((role) => role.toUpperCase());
   const manager = roles.includes('ADMIN') || roles.includes('DIRECTEUR');
   const isDirector = roles.includes('DIRECTEUR');
+  const isAdmin = roles.includes('ADMIN');
   const isAccountant = roles.includes('COMPTABLE');
   const canRegister = manager || roles.includes('COMPTABLE');
   const canSeeFinances = manager || (!roles.includes('ENSEIGNANT') && (roles.includes('COMPTABLE') || roles.includes('PARENT')));
@@ -80,6 +81,20 @@ export const StudentsPage: React.FC = () => {
     additionalGuardians: [] as ReturnType<typeof emptyGuardian>[],
     supplies: false, fullDay: false, transportZone: null as number|null, karate:false, eveningClasses:false, hairCare:false, pharmacyKit:false, emergencyContactName:'', emergencyContactPhone:'', healthNotes:'', schoolItemsProvided:'',
   });
+
+  const deleteStudentRecord = async (student: any) => {
+    if (!window.confirm(`ATTENTION : supprimer définitivement le dossier de ${student.firstName} ${student.lastName} ?\n\nCela efface aussi ses inscriptions, factures, paiements, reçus, remboursements, notes, présences et documents. Les totaux de caisse passés changeront. Cette action est irréversible.`)) return;
+    const confirmMatricule = window.prompt(`Pour confirmer, tapez le matricule de l’élève : ${student.matricule}`);
+    if (!confirmMatricule) return;
+    const reason = window.prompt('Motif de la suppression (10 caractères minimum), conservé dans le journal des actions :');
+    if (!reason) return;
+    try {
+      await studentsApi.delete(student.id, confirmMatricule, reason);
+      setSelectedStudent(null);
+      alert('Dossier supprimé.');
+      await loadData();
+    } catch (error: any) { alert(formatError(error)); }
+  };
 
   const loadData = async () => {
     try {
@@ -485,7 +500,7 @@ export const StudentsPage: React.FC = () => {
               </div></section>
 
               <section className="border-t border-slate-100 pt-5"><h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-700">{t("2. Parent / legal guardian")}</h4><div className="mb-4 flex flex-wrap gap-4 text-xs">
-                {ageWarning(formData.dateOfBirth, classes.find(c=>c.id===formData.classroomId)) && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{t('Below the recommended minimum age; enrolment is permitted.')}</p>}<RegistrationFees value={formData} classroomId={formData.classroomId}/><SchoolOptions level={classes.find(c=>c.id===formData.classroomId)?.level} allowFullDay={supportsFullDay(classes.find(c=>c.id===formData.classroomId))} value={formData} program={programFor(classes.find(c=>c.id===formData.classroomId))} onChange={v=>setFormData(prev=>({...prev,...v, emergencyContactName:v.emergencyContactName || '',emergencyContactPhone:v.emergencyContactPhone || '',healthNotes:v.healthNotes || '',schoolItemsProvided:v.schoolItemsProvided || ''}))}/>
+                <RegistrationFees value={formData} classroomId={formData.classroomId}/><SchoolOptions level={classes.find(c=>c.id===formData.classroomId)?.level} allowFullDay={supportsFullDay(classes.find(c=>c.id===formData.classroomId))} value={formData} program={programFor(classes.find(c=>c.id===formData.classroomId))} onChange={v=>setFormData(prev=>({...prev,...v, emergencyContactName:v.emergencyContactName || '',emergencyContactPhone:v.emergencyContactPhone || '',healthNotes:v.healthNotes || '',schoolItemsProvided:v.schoolItemsProvided || ''}))}/>
               <label className="flex items-center gap-2"><input type="radio" name="parentChoice" checked={formData.parentChoice === 'new'} onChange={() => setFormData({ ...formData, parentChoice: 'new' })} />{t("Nouveau parent")}</label>
                 <label className="flex items-center gap-2"><input type="radio" name="parentChoice" checked={formData.parentChoice === 'existing'} onChange={() => setFormData({ ...formData, parentChoice: 'existing' })} />{t("Existing parent")}</label>
               </div>
@@ -527,7 +542,7 @@ export const StudentsPage: React.FC = () => {
             </div>
             <div className="border-b border-slate-100 px-4 sm:px-6"><div className="flex gap-5"><button onClick={() => { setDetailsTab('overview'); setEditingDetails(false); }} className={`border-b-2 py-3 text-xs font-semibold ${detailsTab === 'overview' ? 'border-amber-600 text-amber-700' : 'border-transparent text-slate-500'}`}>{t("Informations")}</button>{manager && <button onClick={() => { setDetailsTab('documents'); setEditingDetails(false); }} className={`border-b-2 py-3 text-xs font-semibold ${detailsTab === 'documents' ? 'border-amber-600 text-amber-700' : 'border-transparent text-slate-500'}`}>{t("Documents")}</button>}</div></div>
 
-            {detailsTab === 'overview' && <div className="space-y-5 p-4 sm:p-6">{ageWarning(editingDetails ? editData?.dateOfBirth : selectedStudent.dateOfBirth,editingDetails ? classes.find(c=>c.id===editData?.classroomId) || selectedStudent.enrollments?.[0]?.classroom : selectedStudent.enrollments?.[0]?.classroom) && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{t('Below the recommended minimum age; enrolment is permitted.')}</p>}
+            {detailsTab === 'overview' && <div className="space-y-5 p-4 sm:p-6">
               {editingDetails && editData ? <form onSubmit={handleSaveDetails} className="space-y-5">
                 <section><h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-amber-700">{t("Student information")}</h4><div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="text-xs font-medium text-slate-700">{t("First name(s)")}<input required value={editData.firstName} onChange={(e) => setEditData({ ...editData, firstName: e.target.value })} className={inputClass} /></label><label className="text-xs font-medium text-slate-700">{t("Last name")}<input required value={editData.lastName} onChange={(e) => setEditData({ ...editData, lastName: e.target.value })} className={inputClass} /></label>
@@ -552,7 +567,8 @@ export const StudentsPage: React.FC = () => {
                 {manager && selectedStudent.actionHistory?.length > 0 && <div className="rounded-xl border border-slate-200 p-4"><h4 className="mb-2 text-xs font-bold uppercase text-slate-500">Historique horodaté du dossier</h4>{selectedStudent.actionHistory.map((entry:any) => <p key={entry.id} className="border-t border-slate-100 py-2 text-xs text-slate-600"><b>{new Date(entry.createdAt).toLocaleString(locale())}</b> · {entry.actorName} · {studentActionLabel(entry.action)}</p>)}</div>}
                 {(selectedStudent.guardians?.length ? selectedStudent.guardians.map((item:any) => ({ ...item.parent, relation: item.relation })) : selectedStudent.parent ? [selectedStudent.parent] : []).map((parent:any, index:number) => <div key={parent.id || index} className="rounded-xl border border-slate-200 p-4"><h4 className="mb-2 text-xs font-bold uppercase text-slate-500">Responsable {index + 1} · {t(parent.relation || 'Parent')}</h4><div className="flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-slate-800">{parent.firstName} {parent.lastName}</p><p className="text-slate-500">{parent.profession || t("Occupation not provided")}</p><p className="text-slate-500">{parent.email || ''}</p></div><span className="inline-flex items-center gap-1 text-slate-600"><Phone className="h-3.5 w-3.5 text-amber-600" />{parent.phone}</span></div></div>)}
               </>}
-              <button type="button" onClick={()=>printStudentInformation(selectedStudent)} className="rounded-lg bg-amber-700 px-4 py-2 text-xs font-semibold text-white">{t('Print student information sheet')}</button>
+              <div className="flex flex-wrap gap-2"><button type="button" onClick={()=>printStudentInformation(selectedStudent)} className="rounded-lg bg-amber-700 px-4 py-2 text-xs font-semibold text-white">{t('Print student information sheet')}</button>
+              {isAdmin && <button type="button" onClick={()=>void deleteStudentRecord(selectedStudent)} className="inline-flex items-center gap-1 rounded-lg border border-rose-300 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"><Trash2 className="h-3.5 w-3.5"/>Supprimer définitivement le dossier</button>}</div>
               {!editingDetails && <SchoolOptions level={selectedStudent.enrollments?.[0]?.classroom?.level} allowFullDay={supportsFullDay(selectedStudent.enrollments?.[0]?.classroom)} value={selectedStudent} disabled program={programFor(selectedStudent.enrollments?.[0]?.classroom)} onChange={()=>{}}/>}
               <section className="grid gap-4 rounded-xl border border-slate-200 p-4 sm:grid-cols-[minmax(0,1fr)_190px]">
                 <div className="flex min-w-0 items-center gap-4">

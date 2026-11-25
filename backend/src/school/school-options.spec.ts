@@ -5,7 +5,7 @@ describe('Options Oumouna Khadija', () => {
     for (const transportZone of [1, null]) expect(schoolOptions({ transportZone, karate: false })).toEqual({ transportZone, karate: false });
   });
   it('rejette les valeurs et pièces inconnues', () => {
-    for (const data of [{ transportZone: 2 }, { karate: 'true' }, { schoolItemsProvided: 'UNKNOWN' }, { healthNotes: 'x'.repeat(2001) }]) expect(() => schoolOptions(data)).toThrow();
+    for (const data of [{ transportZone: 4 }, { karate: 'true' }, { schoolItemsProvided: 'UNKNOWN' }, { healthNotes: 'x'.repeat(2001) }]) expect(() => schoolOptions(data)).toThrow();
   });
   it('accepte les pièces demandées par les fiches 2026-2027', () => {
     const items = 'BIRTH_CERTIFICATE,STUDENT_PHOTOS,VACCINATION_BOOK,BOARDING_KIT,SCHOOL_SUPPLIES';
@@ -26,8 +26,10 @@ describe('Options Oumouna Khadija', () => {
     const boarding = { level: 'TAHFIZ', program: 'DAARA_BOARDING', registrationFee: 160000, monthlyTuition: 91000 };
     expect(schoolFees({}, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 12000 });
     expect(schoolFees({ transportZone: 1 }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 24000 });
-    expect(schoolFees({ eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 22000 });
-    expect(schoolFees({ transportZone: 1, eveningClasses: true }, preschool)).toEqual({ registrationFee: 53000, monthlyTuition: 34000 });
+    expect(schoolFees({ eveningClasses: true }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 22000 });
+    expect(schoolFees({ transportZone: 2 }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 18000 });
+    expect(schoolFees({ transportZone: 3 }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 18000 });
+    expect(schoolFees({ transportZone: 1, eveningClasses: true }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 34000 });
     expect(schoolFees({ karate: true }, boarding)).toEqual({ registrationFee: 160000, monthlyTuition: 95000 });
     expect(schoolFees({ hairCare: true, pharmacyKit: true }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 17000 });
     expect(schoolFees({ registrationKind: 'RENEWAL' }, preschool)).toEqual({ registrationFee: 43000, monthlyTuition: 12000 });

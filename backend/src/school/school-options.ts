@@ -5,7 +5,8 @@ const ITEMS = ['BIRTH_CERTIFICATE','STUDENT_PHOTOS','VACCINATION_BOOK','BOARDING
 export function schoolOptions(data: Record<string, unknown>) {
   const result: Record<string, any> = {};
   if (data.transportZone !== undefined) {
-    if (data.transportZone !== null && ![1].includes(data.transportZone as number)) throw new BadRequestException('Option de transport invalide.');
+    // 1 = aller-retour, 2 = aller seulement, 3 = retour seulement.
+    if (data.transportZone !== null && ![1, 2, 3].includes(data.transportZone as number)) throw new BadRequestException('Option de transport invalide.');
     result.transportZone = data.transportZone;
   }
   for (const key of ['karate','eveningClasses','fullDay','supplies','hairCare','pharmacyKit']) if (data[key] !== undefined) {
@@ -25,7 +26,8 @@ export function validateProgramAge(_program: string | null | undefined, birth: s
   const date = new Date(birth);
   if (!Number.isFinite(date.getTime()) || date > new Date()) throw new BadRequestException('Date de naissance invalide.');
 }
-export const optionTariffs = { elementaryRegistration: 160000, supplies: 0, karateRegistration: 0, karateMonthly: 4000, snack: 10000, kimono: 10000, fullDayRegistration: 43000, elementaryFullDaySupplement: 0, fullDayMonthly: 12000, transport: { 1: 12000 } };
+export const optionTariffs = { elementaryRegistration: 160000, supplies: 0, karateRegistration: 0, karateMonthly: 4000, snack: 10000, kimono: 10000, fullDayRegistration: 43000, elementaryFullDaySupplement: 0, fullDayMonthly: 12000, transport: { 1: 12000, 2: 6000, 3: 6000 } as Record<number, number> };
+export const TRANSPORT_TRIPS: Record<number, string> = { 1: 'Aller-retour', 2: 'Aller seulement', 3: 'Retour seulement' };
 export type FeeOptions = { fullDay?: boolean; supplies?: boolean; karate?: boolean; eveningClasses?: boolean; hairCare?: boolean; pharmacyKit?: boolean; transportZone?: number | null; registrationKind?: 'NEW' | 'RENEWAL' };
 export type FeeClass = { level?: string; program?: string | null; registrationFee: number; reenrollmentFee?: number; monthlyTuition: number };
 export const elementaryClass = (classroom: FeeClass) => classroom.program === 'ELEMENTARY' || ['CI','CP','CE1','CE2','CM1','CM2'].includes(classroom.level || '');
@@ -49,7 +51,8 @@ export function schoolFees(student: FeeOptions, classroom: FeeClass) {
   const monthlyCanteen = student.supplies && classroom.program === 'PRESCHOOL' ? 12000 : 0;
   const monthlyHairCare = student.hairCare ? 3000 : 0;
   const monthlyPharmacy = student.pharmacyKit ? 2000 : 0;
-  return { registrationFee: student.registrationKind === 'RENEWAL' ? registrationBase : registrationBase + snack,
+  // Options are monthly services only: they never change the registration fee.
+  return { registrationFee: registrationBase,
     monthlyTuition: classroom.monthlyTuition + transport + snack + monthlyKarate + monthlyCanteen + monthlyHairCare + monthlyPharmacy };
 }
 

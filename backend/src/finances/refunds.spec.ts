@@ -21,9 +21,18 @@ describe('Refund and departure permissions', () => {
   it('rejects invalid and future dates', () => {
     for (const value of ['2026-02-30','not-a-date','2999-01-01']) expect(() => operationDate(value)).toThrow();
   });
-  it('never hard deletes a student, even without an invoice', async () => {
-    const db: any = { student: { delete: jest.fn() } };
-    await expect(new StudentsService(db,{} as any).remove('student')).rejects.toThrow('suppression');
-    expect(db.student.delete).not.toHaveBeenCalled();
+  it('lets only the administrator delete a dossier, after retyping its matricule', async () => {
+    const tx: any = { $queryRaw: jest.fn(), student: { findUnique: jest.fn(async () => ({ id: 'student', matricule: 'OK-2026-0001', firstName: 'A', lastName: 'B', documents: [], invoices: [], enrollments: [] })), delete: jest.fn() },
+      refund: { findMany: jest.fn(async () => []), deleteMany: jest.fn() }, studentDeparture: { deleteMany: jest.fn() }, paymentInstallment: { deleteMany: jest.fn() },
+      paymentReminder: { deleteMany: jest.fn() }, whatsAppMessageLog: { deleteMany: jest.fn() }, businessAudit: { create: jest.fn() } };
+    const db: any = { $transaction: jest.fn(async (fn: any) => fn(tx)) };
+    const service = new StudentsService(db, { removeStoredFiles: jest.fn(async () => undefined) } as any);
+    const reason = 'Dossier créé en double par erreur';
+    await expect(service.remove('student', { confirmMatricule: 'OK-2026-0001', reason }, { userId: 'd', username: 'dir', roles: ['DIRECTEUR'] })).rejects.toThrow('administrateur');
+    await expect(service.remove('student', { confirmMatricule: 'OK-2026-9999', reason }, { userId: 'a', username: 'admin', roles: ['ADMIN'] })).rejects.toThrow('ne correspond pas');
+    expect(tx.student.delete).not.toHaveBeenCalled();
+    await service.remove('student', { confirmMatricule: 'ok-2026-0001', reason }, { userId: 'a', username: 'admin', roles: ['ADMIN'] });
+    expect(tx.student.delete).toHaveBeenCalledWith({ where: { id: 'student' } });
+    expect(tx.businessAudit.create).toHaveBeenCalledWith({ data: expect.objectContaining({ action: 'STUDENT_DELETED', reason, actorRole: 'ADMIN' }) });
   });
 });

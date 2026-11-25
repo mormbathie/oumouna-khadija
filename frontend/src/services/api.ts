@@ -116,7 +116,7 @@ export const studentsApi = {
     api.put(`/students/${id}/registration-discount`, data).then((r) => r.data),
   refundRegistrationDiscount: (id: string, data: { invoiceId: string; refundedOn: string; paymentMethod: string; recipient: string; requestKey: string }) =>
     api.post(`/students/${id}/registration-discount/refund`, data).then((r) => r.data),
-  delete: (id: string) => api.delete(`/students/${id}`).then((r) => r.data),
+  delete: (id: string, confirmMatricule: string, reason: string) => api.delete(`/students/${id}`, { data: { confirmMatricule, reason } }).then((r) => r.data),
   uploadDocument: (id: string, category: string, file: File) => {
     const data = new FormData();
     data.append('file', file);

@@ -97,9 +97,9 @@ export class StudentsController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN', 'DIRECTEUR')
-  @ApiOperation({ summary: 'Supprimer un dossier élève (administrateur ou directeur)' })
-  async remove(@Param('id') id: string) {
-    return this.studentsService.remove(id);
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Supprimer définitivement un dossier élève et son historique (administrateur uniquement)' })
+  async remove(@Param('id') id: string, @Body() body: { confirmMatricule: string; reason: string }, @CurrentUser() actor: any) {
+    return this.studentsService.remove(id, body, actor);
   }
 }
